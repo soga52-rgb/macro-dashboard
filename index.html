@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全球總經局勢即時分析與市場面板</title>
+    <!-- 引入易讀的 Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* 淺色明亮模式專用色彩 (彭博/華爾街日報白底風格) */
+            --bg-color: #f8fafc;
+            --surface-color: #ffffff;
+            --border-color: #e2e8f0;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --accent-color: #0284c7;
+            --accent-glow: rgba(2, 132, 199, 0.1);
+            --up-color: #dc2626;  /* 比較深的紅色提升對比 */
+            --down-color: #16a34a; /* 比較深的綠色提升對比 */
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            /* Apple 官方字型設計 (-apple-system / PingFang TC) */
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "SF Pro TC", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 3rem 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        .header { text-align: center; margin-bottom: 2.5rem; }
+        .header h1 { 
+            font-size: 2.2rem; 
+            font-weight: 700; 
+            color: #0f172a; 
+            letter-spacing: -0.025em;
+        }
+        .header p { 
+            color: var(--text-secondary); 
+            font-size: 1.15rem; 
+            margin-top: 0.5rem; 
+            font-weight: 500;
+        }
+        
+        .dashboard-container { 
+            width: 100%; 
+            max-width: 1200px; 
+            background: var(--surface-color); 
+            border: 1px solid var(--border-color); 
+            border-radius: 16px; 
+            padding: 2.5rem; 
+            margin-bottom: 2rem; 
+            box-shadow: var(--shadow-md); 
+        }
+        
+        .section-title { 
+            font-size: 1.35rem; 
+            margin-bottom: 1.5rem; 
+            padding-bottom: 0.8rem; 
+            border-bottom: 2px solid #f1f5f9; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        /* 早報與新聞樣式 */
+        .summary-box {
+            background: #f0f9ff;
+            border-left: 5px solid var(--accent-color);
+            padding: 1.8rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            line-height: 1.8;
+            font-size: 1.1rem;
+            color: #0c4a6e;
+            box-shadow: var(--shadow-sm);
+        }
+        .summary-box b { color: var(--accent-color); font-size: 1.15rem; }
+        
+        .news-list {
+            list-style: none;
+            display: grid;
+            /* 將寬欄改為更實用的兩欄文字佈局，或在手機上變為單欄 */
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 1.2rem;
+        }
+        
+        .news-item a {
+            color: #334155;
+            text-decoration: none;
+            display: block;
+            padding: 1.2rem;
+            border-radius: 8px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+            font-size: 1.05rem;
+            font-weight: 500;
+            line-height: 1.5;
+            /* 解除 nowrap 的截斷，允許文字自然換行！ */
+            white-space: normal; 
+        }
+        .news-item a:hover {
+            background: #ffffff;
+            color: var(--accent-color);
+            border-color: #bae6fd;
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        /* 表格樣式優化 */
+        table { 
+            width: 100%; 
+            border-collapse: separate; 
+            border-spacing: 0; 
+        }
+        th, td { 
+            padding: 1.5rem 1.2rem; /* 拉寬儲存格內部留白 */
+            text-align: left; 
+            border-bottom: 1px solid var(--border-color); 
+            vertical-align: top; /* 讓文字靠上對齊方便掃描 */
+        }
+        th { 
+            font-weight: 600; 
+            color: var(--text-secondary); 
+            font-size: 0.95rem; 
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: #f8fafc; /* 表頭加一點淺底色分離區塊 */
+        }
+        tbody tr:hover { 
+            background-color: #f8fafc; 
+        }
+        tbody tr:last-child td { border-bottom: none; }
+        
+        .var-name { 
+            font-weight: 700; 
+            font-size: 1.15rem; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            color: var(--text-primary);
+        }
+        .status { font-size: 1.1rem; font-weight: 600; margin-top: 4px; }
+        .status-detail { font-size: 0.95rem; color: var(--text-secondary); font-weight: 400; display: block; margin-top: 4px; }
+        
+        .trend-up { color: var(--up-color); display: flex; align-items: center; gap: 4px; font-weight: 600; }
+        .trend-down { color: var(--down-color); display: flex; align-items: center; gap: 4px; font-weight: 600; }
+        .trend-strong { color: var(--accent-color); display: flex; align-items: center; gap: 4px; font-weight: 600; }
+        
+        .badge { 
+            display: inline-block; 
+            padding: 0.35rem 0.8rem; 
+            border-radius: 9999px; 
+            font-size: 0.8rem; 
+            font-weight: 600; 
+            background: #f1f5f9;
+            margin-top: 0.8rem;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .desc-text { 
+            color: #334155; 
+            font-size: 1.05rem; 
+            line-height: 1.7; 
+            max-width: 320px; 
+        }
+        
+        /* 圖表區塊 */
+        .charts-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
+            gap: 1.5rem; 
+            margin-top: 1rem; 
+        }
+        .chart-widget { 
+            background: #ffffff; 
+            border: 1px solid var(--border-color); 
+            border-radius: 12px; 
+            height: 320px; 
+            overflow: hidden; 
+            box-shadow: var(--shadow-sm); 
+        }
+        .icon-up::before { content: '▲'; } .icon-down::before { content: '▼'; } .icon-rocket::before { content: '🚀'; }
+
+        /* --- 折疊選單 (Accordion) 樣式 --- */
+        .news-accordion summary {
+            cursor: pointer; font-size: 1.05rem; font-weight: 600; color: var(--text-primary);
+            padding: 1rem 1.5rem; background: #f1f5f9; border-radius: 8px;
+            list-style: none; user-select: none; transition: background 0.2s ease;
+        }
+        .news-accordion summary::-webkit-details-marker { display: none; }
+        .news-accordion summary:hover { background: #e2e8f0; }
+        .news-accordion summary::after {
+            content: "▼"; float: right; font-size: 0.9rem; color: var(--text-secondary); transition: transform 0.3s ease;
+        }
+        .news-accordion[open] summary::after { transform: rotate(-180deg); }
+
+        /* --- 手機版響應式設計 (Apple-like Mobile UI) --- */
+        @media (max-width: 768px) {
+            body { padding: 1.5rem 1rem; }
+            .header h1 { font-size: 1.8rem; letter-spacing: -0.01em; }
+            .dashboard-container { padding: 1.5rem; }
+            
+            /* 將傳統 Table 轉換為流暢的手機讀取卡片 */
+            table, thead, tbody, th, td, tr { display: block; }
+            thead tr { display: none; }
+            tr { margin-bottom: 2rem; border: 1px solid var(--border-color); border-radius: 12px; background: #fff; box-shadow: var(--shadow-md); }
+            td { padding: 1rem; padding-left: 35%; position: relative; border-bottom: 1px solid #f1f5f9; }
+            td:last-child { border-bottom: none; }
+            
+            td::before {
+                position: absolute; left: 1rem; top: 1rem; width: 30%; white-space: nowrap;
+                font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);
+            }
+            td:nth-of-type(1)::before { content: "核心變數"; }
+            td:nth-of-type(2)::before { content: "當前狀態"; }
+            td:nth-of-type(3)::before { content: "短期趨勢"; }
+            td:nth-of-type(4)::before { content: "主要因素"; }
+            td:nth-of-type(5)::before { content: "交互影響"; }
+            
+            td:nth-of-type(1) { padding-left: 1rem; padding-top: 3rem; background: #f8fafc; border-top-left-radius: 12px; border-top-right-radius: 12px; }
+            td:nth-of-type(1)::before { top: 1rem; color: var(--accent-color); }
+            
+            .news-list { grid-template-columns: 1fr; }
+            .charts-grid { grid-template-columns: 1fr; }
+            .chart-widget { height: 280px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>全球總經局勢 綜合戰情室</h1>
+        <p>結合 AI 趨勢早報與即時市場動態 (圖表自動更新)</p>
+    </div>
+    
+    <!-- AI 綜合精煉早報 -->
+    <div class="dashboard-container">
+        <h2 class="section-title">📰 AI 總經情勢早報</h2>
+        <div class="summary-box" style="margin-bottom: 0;">
+            <b>專家短評：</b><br>
+            通膨黏性引發降息預期落空，推升美債殖利率並支撐美元強勢，對無息資產如黃金形成壓制。全球資金緊縮效應外溢，美元走強加劇亞幣貶值壓力，原油供給擔憂與地緣風險則使市場在抗通膨與衰退避險間擺盪，資產配置面臨極高波動風險。
+        </div>
+    </div>
+    
+    <!-- 總經變數分析 -->
+    <div class="dashboard-container">
+        <h2 class="section-title">📊 總經變數深入分析 (由 Gemini 自動推論)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>核心變數</th>
+                    <th>當前狀態</th>
+                    <th>短期趨勢</th>
+                    <th>主要驅動因素</th>
+                    <th>全球經濟交互影響</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+                <tr>
+                    <td>
+                        <div class="var-name">🔥 物價預期</div>
+                        <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #dc2626;">通膨頑固</span>
+                    </td>
+                    <td><div class="status trend-up">高檔震盪 <span class="status-detail">(核心CPI年增率回落緩慢)</span></div></td>
+                    <td><span class="trend-up icon-up">黏性增強</span></td>
+                    <td class="desc-text">勞動力市場供給受限與服務業成本支撐。</td>
+                    <td class="desc-text">迫使聯準會維持限制性利率，導致全球流動性緊縮。</td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="var-name">📉 美債殖利率 (10年期)</div>
+                        <span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #2563eb;">殖利率反彈</span>
+                    </td>
+                    <td><div class="status trend-down">居高不下 <span class="status-detail">(降息路徑修正)</span></div></td>
+                    <td><span class="trend-down icon-down">壓力續存</span></td>
+                    <td class="desc-text">市場對長期高利率政策的重新定價。</td>
+                    <td class="desc-text">對權益資產估值構成壓力，並提升黃金持有成本。</td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="var-name">🦅 美元指數 (DXY)</div>
+                        <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #059669;">強勢美元</span>
+                    </td>
+                    <td><div class="status trend-strong">高位盤整 <span class="status-detail">(避險買盤湧現)</span></div></td>
+                    <td><span class="trend-strong icon-rocket">持續強勢</span></td>
+                    <td class="desc-text">美歐利差擴大及全球地緣避險需求支撐。</td>
+                    <td class="desc-text">加速亞幣貶值，並削弱大宗商品以美元計價的吸引力。</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 即時走勢圖 -->
+    <div class="dashboard-container">
+        <h2 class="section-title">💹 全球核心資產 即時走勢圖</h2>
+        <div class="charts-grid">
+            <div class="chart-widget"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{"symbol": "FRED:DGS10","width": "100%","height": "100%","locale": "zh_TW","dateRange": "1M","colorTheme": "light","isTransparent": true,"autosize": true}</script></div></div>
+            <div class="chart-widget"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{"symbol": "CAPITALCOM:DXY","width": "100%","height": "100%","locale": "zh_TW","dateRange": "1M","colorTheme": "light","isTransparent": true,"autosize": true}</script></div></div>
+            <div class="chart-widget"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{"symbol": "OANDA:XAUUSD","width": "100%","height": "100%","locale": "zh_TW","dateRange": "1M","colorTheme": "light","isTransparent": true,"autosize": true}</script></div></div>
+            <div class="chart-widget"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{"symbol": "FX:USDJPY","width": "100%","height": "100%","locale": "zh_TW","dateRange": "1M","colorTheme": "light","isTransparent": true,"autosize": true}</script></div></div>
+            <div class="chart-widget"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{"symbol": "FX_IDC:USDTWD","width": "100%","height": "100%","locale": "zh_TW","dateRange": "1M","colorTheme": "light","isTransparent": true,"autosize": true}</script></div></div>
+            <div class="chart-widget"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{"symbol": "FX_IDC:USDKRW","width": "100%","height": "100%","locale": "zh_TW","dateRange": "1M","colorTheme": "light","isTransparent": true,"autosize": true}</script></div></div>
+            <div class="chart-widget"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{"symbol": "OANDA:WTICOUSD","width": "100%","height": "100%","locale": "zh_TW","dateRange": "1M","colorTheme": "light","isTransparent": true,"autosize": true}</script></div></div>
+        </div>
+    </div>
+
+    <!-- 原文新聞附錄區 (可折疊收納) -->
+    <div class="dashboard-container" style="padding: 1.5rem 2.5rem; margin-top: -1rem;">
+        <details class="news-accordion">
+            <summary>📌 點擊展開今日 15 則焦點新聞原文 (參考出處)</summary>
+            <ul class="news-list" style="margin-top: 1.5rem;">
+                
+                <li class="news-item">
+                    <a href="https://news.google.com/rss/articles/CBMingFBVV95cUxQLWJDTjBBalYwVHVpc0VxV1BwRE1xeUt1RWlLQ1VJdnJQRXNnb3p6MnFNbjRBV0s0TnlldW4wSVIycFRQeVNISWJ3VV9wMWdjX1ZndE1Tc24tNzc0anNYWjl0SVBsRDhSa0dVTWlyVVYxX0w5b2JhTFB0Tm9Vb2FwYVZubTU1SVJlcy0zMEpXOEM4ZlhiSU1QazdVQVlldw?oc=5" target="_blank">📄 Weekly market commentary - blackrock.com</a>
+                </li>
+                <li class="news-item">
+                    <a href="https://news.google.com/rss/articles/CBMioAFBVV95cUxOZ1BXeVdPR08tTmQ4MHdZMkloUzlsNjRjSE5VVmxyeVRrdDZqbDI3Tm5VVUdfYTdZM0dOYjkzVFBuMGhJUzZEM3E0RDBkc0RTUXd2VFdMdm5uenpPXzJobUNvRklvRkt0S0pfYkZ0UWRXaWRDc09MR1pBUkVDRXN2Y2FINkVmUDBlRkZHNGhzZkNyNk5LUzZrM2VUV1pVOV9N?oc=5" target="_blank">📄 Gold (XAU/USD) Price Forecast for Today, Tomorrow, Next Week, and the Next 30 Days - LiteFinance</a>
+                </li>
+                <li class="news-item">
+                    <a href="https://news.google.com/rss/articles/CBMirAFBVV95cUxOUUh6SU01TDhvOEh2THJfSThyaUg4MVpiVS1CZG92QXVVRm16MUJlYW9TNDRRQ2VfclBwdm9EOGV5eElhdkdyZU9jWURCRUM4YjhDd1NYOTdCUzJVaW5MalBsMnl4NVZtTU9vZWx4ZEpvcTVOSmJfNmZxUFVzSE85VFNUcDV3OW9HOU9keW9wWjZPN2VKd09KNGFfMWdPMng0TEI0cGFtUmpyYWxB?oc=5" target="_blank">📄 Gold stabilises as inflation shock and geopolitical risk begin to realign - KITCO</a>
+                </li>
+                <li class="news-item">
+                    <a href="https://news.google.com/rss/articles/CBMiR0FVX3lxTFBXMGJKQmZ3bWlJUzNLUXhlUml4LVo4NGtlbTlHY3FITDRBMkFtVXR0MU5hZm5HQlVyUXQta1ptdmY3RGtLbFBR?oc=5" target="_blank">📄 Gold Price Retreats from Intraday Highs as Hawkish Central Banks Clash with Weaker Dollar - MEXC</a>
+                </li>
+                <li class="news-item">
+                    <a href="https://news.google.com/rss/articles/CBMiY0FVX3lxTE1NVlJtYVBlU2J2c2UteXlCdHE4a1F6RE1ab3M3akVMQnN3X2J6RGp6bHY5blpleHVMLW5lUndlc3FydDZkdGcxaHk5eWpUbWoybFVlYzNXV0NKQ1BIWXRHUVJ5QdIBY0FVX3lxTE1NVlJtYVBlU2J2c2UteXlCdHE4a1F6RE1ab3M3akVMQnN3X2J6RGp6bHY5blpleHVMLW5lUndlc3FydDZkdGcxaHk5eWpUbWoybFVlYzNXV0NKQ1BIWXRHUVJ5QQ?oc=5" target="_blank">📄 Goldman’s $5,400 projection depends on continued strong central bank purchases and a more accommodative stance from the Fed - Bitget</a>
+                </li>
+                <li class="news-item">
+                    <a href="https://news.google.com/rss/articles/CBMitAFBVV95cUxOa29IVExNRk5TQVpjU2ZRTG9ad2k1czFfc212c19lTlJjVXpYazhzeE5WY2xJeDRsZ2JUTUVVOEdaMi1KYjkxQ2x6WV90X3d6YXFtRkJENmhlblIwNERkQzY4amZvaWVCMDN5S0pXOXN0UUtxV1dINzVObVVQOUYxRlJLaUM3bVkydHRTRWhKeEI2TkVfZnpsTXZnTW1jSkloaU1Lbmp0TkFpS1BzRWJnSE1pTVjSAbQBQVVfeXFMTmtvSFRMTUZOU0FaY1NmUUxvWndpNXMxX3NtdnNfZU5SY1V6WGs4c3hOVmNsSXg0bGdiVE1FVThHWjItSmI5MUNsellfdF93emFxbUZCRDZoZW5SMDREZEM2OGpmb2llQjAzeUtKVzlzdFFLcVdXSDc1Tm1VUDlGMUZSS2lDN21ZMnR0U0VoSnhCNk5FX2Z6bE12Z01tY0pJaGlNS25qdE5BaUtQc0ViZ0hNaU1Y?oc=5" target="_blank">📄 Gold set for worst month in more than 17 years as US rate-cut hopes fade - The Business Standard</a>
+                </li>
+                <li class="news-item">
+                    <a href="https://news.google.com/rss/articles/CBMiggFBVV95cUxQdzAtaUtrSFNyMEJXY19RSnlURmJmeWZIZWVJSFdfS1dfNWJOUklzTjdXMzJqTHcxeFZDOWt4SnJCQmNNdllYMzdTRG9hVDUtbzJna0tWTUxUUWhRTUxlX1h2d3dCN3ZqRkNhVUk5djkzZWtjcjRmYlZyTkYtSUJDMkdR?oc=5" target="_blank">📄 Gold Price Analysis: Why Hesitant Bulls Face Global Rate Hike Pressure in 2025 - CryptoRank</a>
+                </li>
+                <li class="news-item">
+                    <a href="https://news.google.com/rss/articles/CBMi8gFBVV95cUxOeko2THNVaGFPUnpISU9sTHZVYXh2NHBEQ3Fua3VCNy1kcmdZdzF0RmJ2MnNkdjdUWW9vZWVGNkRrUzVIYWlNUEdTYk5wVFNZSlpNVGo5UUxfaFFjRzFZQ0tQUndfbFA4WkV6Y0RTemJubEdtR3F5cF9XSkREeEpvZUVIUGVJUW5CR0hFNG1fNnJfaWl4QmVBU2xxZ1N3SHUtX09QekZYQU8tX284ak9uRDd1Z2tkMFdoNGZnQldRQmRvRDZ4bGMtMDJKZnlodHRfcjlEWmRmNnI4QmlCRXdoOENuN1N0b1Y2WkdOYmNQR0Y4QdIB8gFBVV95cUxOeko2THNVaGFPUnpISU9sTHZVYXh2NHBEQ3Fua3VCNy1kcmdZdzF0RmJ2MnNkdjdUWW9vZWVGNkRrUzVIYWlNUEdTYk5wVFNZSlpNVGo5UUxfaFFjRzFZQ0tQUndfbFA4WkV6Y0RTemJubEdtR3F5cF9XSkREeEpvZUVIUGVJUW5CR0hFNG1fNnJfaWl4QmVBU2xxZ1N3SHUtX09QekZYQU8tX284ak9uRDd1Z2tkMFdoNGZnQldRQmRvRDZ4bGMtMDJKZnlodHRfcjlEWmRmNnI4QmlCRXdoOENuN1N0b1Y2WkdOYmNQR0Y4QQ?oc=5" target="_blank">📄 Gold, silver prices rise 1% but analysts cautious after 15% March drop; here's why - The Economic Times</a>
+                </li>
+                <li class="news-item">
+                    <a href="https://news.google.com/rss/articles/CBMiigFBVV95cUxQeElueWM4b01fQWpUbVpoOHdMYkw3SkQ5QldoaHBvSVh0QUhDeF9iTWZVM0NqZFV1cXg5QzRCU3NpM05kMkgtaEJUa2hvWTBrWTVSaEY1R2wyM1BkMnFXdHF6TnhqVF8tRXozYXBhMW16WnVWelhwOXBWT3ZnbnlTaDctU2RqYmlfVXc?oc=5" target="_blank">📄 Gold Price Forecast & Predictions for 2026, 2027, 2028–2030, 2040 and Beyond - LiteFinance</a>
+                </li>
+                <li class="news-item">
+                    <a href="https://news.google.com/rss/articles/CBMi3gFBVV95cUxQVkZZbzdqNUlQaGJzZW01cW1WdnFoMThjdXVRZlBMcGRScC05aXp5bmltMS1wWWpCeXNOTFFxclBTM1pVTWJMNzFvMzFqUlFSOVF5STUyUVM2YzRtM25JY1FET3gyZ2RMUGZfcTAxXzl1RVdkOXRtS1NpOUN6a3ptQjZPYXRMUjlwX3FPaFNtdzJoemVvQUsxaGVJUGRqb2pHMXVRQjR5Y3hpb2xCWVlnMEhrZnRwMUJwMkxkdEx3eUw3MUEtdXFJTkU3TEIyT3lIZ0N2ejA2Y1FWVVhGZkHSAd4BQVVfeXFMUFZGWW83ajVJUGhic2VtNXFtVnZxaDE4Y3V1UWZQTHBkUnAtOWl6eW5pbTEtcFlqQnlzTkxRcXJQUzNaVU1iTDcxbzMxalJRUjlReUk1MlFTNmM0bTNuSWNRRE94MmdkTFBmX3EwMV85dUVXZDl0bUtTaTlDemt6bUI2T2F0TFI5cF9xT2hTbXcyaHplb0FLMWhlSVBkam9qRzF1UUI0eWN4aW9sQllZZzBIa2Z0cDFCcDJMZHRMd3lMNzFBLXVxSU5FN0xCMk95SGdDdnowNmNRVlVYRmZB?oc=5" target="_blank">📄 Gold set for worst month in over 17 years as US rate-cut hopes fade - Business Standard</a>
+                </li>
+                <li class="news-item">
+                    <a href="https://news.google.com/rss/articles/CBMiY0FVX3lxTE9TUTFNaDZMaGhyMXF4WWNhY05WaGFRY0lLWVQ0VWdYMXdFUUtBOXY0eHVPTEN6U2YxNHNqTXlBQXQ3RjRQcUwxS1B2N2VPZ296ZHMzaUxCWWQyNS1zUk41QVhwTdIBY0FVX3lxTE9TUTFNaDZMaGhyMXF4WWNhY05WaGFRY0lLWVQ0VWdYMXdFUUtBOXY0eHVPTEN6U2YxNHNqTXlBQXQ3RjRQcUwxS1B2N2VPZ296ZHMzaUxCWWQyNS1zUk41QVhwTQ?oc=5" target="_blank">📄 Santana Minerals' Komatsu Bet Underscores Dedication to Gold Cycle Despite Implementation Challenges - Bitget</a>
+                </li>
+                <li class="news-item">
+                    <a href="https://news.google.com/rss/articles/CBMiTkFVX3lxTFBsUHNHQjJjTHo1Nkp3bjhqenk1YjF0YkdyOE1jdFRjbUF5MWh2SnNBUUtHSDFlb1lFWGVObzhTenA0OUxHWXI4SXBqOWlUdw?oc=5" target="_blank">📄 Gold Prices Hold Steady Amid Easing Yields, But Dollar’s Grip Limits Critical Gains - mexc.co</a>
+                </li>
+                <li class="news-item">
+                    <a href="https://news.google.com/rss/articles/CBMiY0FVX3lxTE54ZjBPSU0yLVFMMUNnOWNLUEtCOXdjV1VmT0dHckZUMDJZY2tSNDUtQW5UQVR6Z2oxY3BidG92Y0tKMlp1VlFGSC1vTUZnZlZ6SnY4bFVCcWFWMGlobGdNTTkzVdIBY0FVX3lxTE54ZjBPSU0yLVFMMUNnOWNLUEtCOXdjV1VmT0dHckZUMDJZY2tSNDUtQW5UQVR6Z2oxY3BidG92Y0tKMlp1VlFGSC1vTUZnZlZ6SnY4bFVCcWFWMGlobGdNTTkzVQ?oc=5" target="_blank">📄 Regulatory Inconsistencies Highlight Risks in Commodity Cycles—Dollar Fluctuations and Fed Uncertainty Lead to Complex Trade-Offs - Bitget</a>
+                </li>
+                <li class="news-item">
+                    <a href="https://news.google.com/rss/articles/CBMiY0FVX3lxTE5TZWQ1d0hLQWp4Nl9CaVhBWldUbnRIU0FoOTFTUm5QS2VSeU5lekVJMWt4VjZiZ1A4UFhnX1NkMEVNc3Y2VWNtbzdzOG9nbUZVNGxiRDFRWkVfUU56VFBMNWQ1RdIBY0FVX3lxTE5TZWQ1d0hLQWp4Nl9CaVhBWldUbnRIU0FoOTFTUm5QS2VSeU5lekVJMWt4VjZiZ1A4UFhnX1NkMEVNc3Y2VWNtbzdzOG9nbUZVNGxiRDFRWkVfUU56VFBMNWQ1RQ?oc=5" target="_blank">📄 Gold, Bitcoin, or Oil? AI Forecasts the Biggest Winner for End of 2026 - Bitget</a>
+                </li>
+                <li class="news-item">
+                    <a href="https://news.google.com/rss/articles/CBMiZEFVX3lxTE5RMWRuM0FZWGZVeV9YRjlPTXNlVXJRdmkwWkhyejZ5eEhEUkUtOTRpUEZQS2lWV2M3SUFNdU5jcERDZFpUZHhrWVc3WFdJenVTbnF5MzViQ2JreHRuOXpyS1dIa0Q?oc=5" target="_blank">📄 Has the Global Economic Recession Quietly Begun? - Binance</a>
+                </li>
+            </ul>
+        </details>
+    </div>
+</body>
+</html>
