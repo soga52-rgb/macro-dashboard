@@ -2,11 +2,12 @@ import os
 import json
 import urllib.request
 import xml.etree.ElementTree as ET
+from datetime import datetime
 
 # ==============================================================================
 # 系統設定區
 # ==============================================================================
-# 安全宣告區 (不寫死金鑰，而是透過環境變數從 GitHub 金庫中讀取)
+# 安全宣告區：優先從系統環境變數讀取
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 # 檔案路徑設定 (改用支援雲端主機的跨平台相對路徑)
@@ -15,19 +16,20 @@ CSV_PATH = os.path.join(WORKSPACE_DIR, "macro_analysis.csv")
 HTML_PATH = os.path.join(WORKSPACE_DIR, "index.html")
 
 # ==============================================================================
-# 1. 抓取免費新聞 (Google News RSS)
+# 1. 抓取週度新聞 (Google News RSS - 滾動 7 天視窗)
 # ==============================================================================
-def fetch_daily_news():
-    print("正在抓取今日全球總經新聞...")
-    # 加上 when:1d 參數，強迫 Google 新聞只回傳過去 24 小時內發生的最新消息 (今日重點)
-    url = "https://news.google.com/rss/search?q=global+economy+macro+interest+rates+dollar+gold+when:1d&hl=en-US&gl=US&ceid=US:en"
+def fetch_weekly_news():
+    print("正在抓取過去七天全球總經深度新聞 (滾動週度視窗)...")
+    # 加上 when:7d 參數，搜集過去一週的深度頭條，確保週報有足夠廣度的背景
+    url = "https://news.google.com/rss/search?q=global+economy+macro+interest+rates+dollar+gold+fed+central+banks+when:7d&hl=en-US&gl=US&ceid=US:en"
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
     try:
         response = urllib.request.urlopen(req)
         xml_data = response.read()
         root = ET.fromstring(xml_data)
         headlines = []
-        for item in root.findall('.//item')[:15]:
+        # 增加新聞抓取數量到 30 則，提供更多上下文給 AI
+        for item in root.findall('.//item')[:30]:
             title_node = item.find('title')
             link_node = item.find('link')
             title = title_node.text if title_node is not None else "新聞標題"
@@ -39,83 +41,107 @@ def fetch_daily_news():
         return []
 
 # ==============================================================================
-# 2. 呼叫 Gemini REST API 進行總經分析 (零安裝套件版本)
+# 2. 呼叫 Gemini REST API 進行總經分析 (具備自動修復功能的版本)
 # ==============================================================================
-def analyze_with_gemini(news_data):
-    print("正在呼叫 Gemini API 進行智能推論...")
-    
-    # 根據您的專屬金鑰，使用最新的 Gemini 3.1 Flash Lite 預覽版
-    model_name = "gemini-3.1-flash-lite-preview"
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={GEMINI_API_KEY}"
+def analyze_with_gemini(news_data, today_str):
+    print(f"正在呼叫 Gemini API 進行智能推論 (今日日期: {today_str})...")
     
     if isinstance(news_data, list) and len(news_data) > 0:
         news_text = "\n".join([item['title'] for item in news_data])
     else:
         news_text = "未能抓取新聞，請基於目前全球總體經濟狀況直接進行推論。"
 
-    prompt = f"""你現在是一位華爾街資深總體經濟分析師。
-以下是今天最新的全球財經新聞頭條：
+    prompt = f"""你現在是一位華爾街最頂尖的總體經濟分析師與資深週報主筆。
+以下是過去七天以來，全球最重要的財經新聞頭條 (今天的日期是 {today_str})：
 {news_text}
 
-請根據新聞與總經知識，分析目前全球三個核心變數的狀態：
-1. 物價預期 
-2. 美債殖利率 (10年期)
-3. 美元指數 (DXY)
+請基於上述頭條與你的專業知識，撰寫一份內容紮實、具備「投資分析機構實力」的「總經深度週報 (Weekly Deep Report)」。
+請依照以下五大維度深度產出 JSON 報告 (所有欄位都是必須的)：
+1. weekly_narrative: (約 200 字) 定調本週市場情緒。
+2. focus_items: (清單) 關鍵的 3 個大事標題與深度解釋。
+3. fx_rates_linkage: (150 字長文) 拆解美債與美元對亞幣、黃金的傳導邏輯。
+4. outlook_risks: (清單) 2 個關鍵風險。
+5. analysis: (清單) 通膨、美債、美元的核心數據 (保留 trend_class, trend_text 等欄位)。
 
-請嚴格輸出為 JSON 格式，必須且僅包含以下結構，不要輸出 ```json 等 Markdown 標記，只要輸出純淨的 JSON：
+
+嚴格輸出 JSON (不要 Markdown)：
 {{
-  "summary": "撰寫『當前核心三變數外溢效應』。長度務必保持在100字以內非常精煉，精準說明「物價、美債、美元」目前的交互作用，並具體指出這三個核心的擾動是如何外溢/傳導至其他變數(如原油、黃金或亞幣)的。字字珠璣，不要講廢話。",
+  "weekly_narrative": "...",
+  "focus_items": [ {{ "title": "...", "content": "..." }}, ... ],
+  "fx_rates_linkage": "...",
+  "outlook_risks": [ {{ "title": "...", "content": "..." }}, ... ],
   "analysis": [
-    {{
-      "variable_name": "🔥 物價預期",
-      "badge_bg": "rgba(239, 68, 68, 0.15)",
-      "badge_color": "#dc2626",
-      "badge_text": "例如: 高風險 或 逐漸降溫",
-      "status": "例如: 陡升 或 趨穩",
-      "status_detail": "例如: (CPI超預期)",
-      "trend_class": "trend-up", 
-      "trend_icon": "icon-up",
-      "trend_text": "例如: 急劇走高",
-      "drivers": "一句話描述主要驅動因素",
-      "impact": "一句話描述對全球經濟的交互影響"
-    }},
-    ... (美債請用 📉，trend_class 可用 trend-down/icon-down。美元請用 🦅，trend_class 可用 trend-strong/icon-rocket)
+    {{ "variable_name": "🔥 通膨預期", "badge_text": "...", "status": "...", "status_detail": "...", "trend_class": "trend-up", "trend_text": "...", "drivers": "...", "impact": "..." }},
+    ... (美債用 📉, 美元用 🦅)
   ]
 }}
-所有描述請使用繁體中文，語氣專業精煉。
 """
     
-    data = {"contents": [{"parts": [{"text": prompt}]}]}
-    req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers={'Content-Type': 'application/json'})
+    # 嘗試策略：針對 2026 年最新的型號進行自動輪詢
+    strategies = [
+        ("v1beta", "gemini-3-flash-preview"), # 剛才測試有通，設為首選
+        ("v1beta", "gemini-3.1-flash"),
+        ("v1", "gemini-1.5-flash"),
+        ("v1beta", "gemini-2.0-flash"),
+    ]
     
-    try:
-        response = urllib.request.urlopen(req)
-        result = json.loads(response.read().decode('utf-8'))
-        text = result['candidates'][0]['content']['parts'][0]['text'].strip()
-        
-        if text.startswith("```json"): text = text[7:]
-        if text.startswith("```"): text = text[3:]
-        if text.endswith("```"): text = text[:-3]
-        
-        return json.loads(text.strip())
-    except Exception as e:
-        print(f"[ERROR] API 請求失敗或 JSON 解析錯誤: {e}")
-        return None
+    import time
+    for version, model in strategies:
+        # 內層重試機制 (針對 503/429)
+        max_retries = 2
+        for attempt in range(max_retries):
+            try:
+                print(f"-> 嘗試連線方案: {version} / {model} (第 {attempt+1} 次)...")
+                url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent?key={GEMINI_API_KEY}"
+                data = {"contents": [{"parts": [{"text": prompt}]}]}
+                req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers={'Content-Type': 'application/json'})
+                
+                try:
+                    response = urllib.request.urlopen(req)
+                    result = json.loads(response.read().decode('utf-8'))
+                    text = result['candidates'][0]['content']['parts'][0]['text'].strip()
+                    
+                    if text.startswith("```json"): text = text[7:]
+                    if text.startswith("```"): text = text[3:]
+                    if text.endswith("```"): text = text[:-3]
+                    
+                    print(f"[SUCCESS] {model} 回應成功！")
+                    return json.loads(text.strip())
+                except urllib.error.HTTPError as e:
+                    error_data = e.read().decode('utf-8')
+                    # 如果是 503 (系統忙碌) 或 429 (配額滿)，我們稍微休息一下再試
+                    if e.code in [429, 503] and attempt < max_retries - 1:
+                        wait_time = 7
+                        print(f"   [WAIT] 伺服器忙碌或配額限制，等待 {wait_time} 秒後重試...")
+                        time.sleep(wait_time)
+                        continue
+                    else:
+                        print(f"   [FAIL] {model} 錯誤 ({e.code}): {error_data}")
+                        break # 跳出重試，換下一個型號
+            except Exception as e:
+                print(f"   [FAIL] {model} 發生其他錯誤: {e}")
+                break
+            
+    print("\n[CRITICAL ERROR] 所有連線方案均告失敗。")
+    return None
 
 # ==============================================================================
 # 3. 渲染並覆寫 HTML 網頁與 CSV 資料表
 # ==============================================================================
-def update_dashboard(ai_response, news_list):
-    if not ai_response or 'analysis' not in ai_response:
-        print("沒有最新的分析資料可供更新。")
+def update_dashboard(ai_response, news_list, today_str):
+    if not ai_response or not isinstance(ai_response, dict) or 'analysis' not in ai_response:
+        print("[ERROR] 戰情分析資料格式不正確，無法更新儀表板。")
         return
         
-    print("正在將分析結果寫入儀表板與 CSV 檔案...")
+    print("正在將深度週報結果寫入儀表板與 CSV 檔案...")
     
     analysis_data = ai_response['analysis']
-    summary_text = ai_response.get('summary', '今日尚無綜合摘要。')
+    weekly_narrative = ai_response.get('weekly_narrative', '本週尚無綜合摘要。')
+    focus_items = ai_response.get('focus_items', [])
+    fx_rates_linkage = ai_response.get('fx_rates_linkage', '尚無傳導分析。')
+    outlook_risks = ai_response.get('outlook_risks', [])
     
-    #更新 CSV
+    # 更新 CSV (維持基本數據結構)
     csv_content = "變數與項目,當前狀態,短期趨勢,主要驅動因素,全球經濟交互影響\n"
     for item in analysis_data:
         drivers = str(item['drivers']).replace(',', '，')
@@ -125,7 +151,28 @@ def update_dashboard(ai_response, news_list):
     with open(CSV_PATH, "w", encoding="utf-8") as f:
         f.write(csv_content)
 
-    # 準備新聞 HTML (取消單行省略，設定更寬鬆的行距)
+    # 準備焦點事件 HTML
+    focus_html = ""
+    for idx, item in enumerate(focus_items):
+        focus_html += f"""
+        <div class="focus-card">
+            <div class="focus-idx">0{idx+1}</div>
+            <div class="focus-content">
+                <h4>{item['title']}</h4>
+                <p>{item['content']}</p>
+            </div>
+        </div>"""
+
+    # 準備風險預警 HTML
+    risk_html = ""
+    for item in outlook_risks:
+        risk_html += f"""
+        <div class="risk-item">
+            <span class="risk-title">⚠️ {item.get('title', '未知風險')}</span>
+            <p class="risk-content">{item.get('content', '')}</p>
+        </div>"""
+
+    # 準備新聞 HTML
     news_html = ""
     if isinstance(news_list, list) and news_list:
         for news in news_list:
@@ -139,21 +186,16 @@ def update_dashboard(ai_response, news_list):
     # 準備分析表格 HTML
     tbody_html = ""
     for item in analysis_data:
-        # 特別修改針對淺色模式的顏色，讓 up/down 顏色更深一些以利閱讀
-        trend_class = item['trend_class']
-        badge_bg = item.get('badge_bg', '#f1f5f9')
-        badge_color = item.get('badge_color', '#334155')
-        
+        trend_class = item.get('trend_class', '')
         tbody_html += f"""
                 <tr>
-                    <td>
+                    <td data-label="核心變數">
                         <div class="var-name">{item['variable_name']}</div>
-                        <span class="badge" style="background: {badge_bg}; color: {badge_color};">{item['badge_text']}</span>
+                        <span class="badge">{item['badge_text']}</span>
                     </td>
-                    <td><div class="status {trend_class}">{item['status']} <span class="status-detail">{item['status_detail']}</span></div></td>
-                    <td><span class="{trend_class} {item['trend_icon']}">{item['trend_text']}</span></td>
-                    <td class="desc-text">{item['drivers']}</td>
-                    <td class="desc-text">{item['impact']}</td>
+                    <td data-label="當前狀態"><div class="status {trend_class}">{item['status']} <span class="status-detail">{item['status_detail']}</span></div></td>
+                    <td data-label="趨勢"><span class="{trend_class} {item.get('trend_icon', '')}">{item['trend_text']}</span></td>
+                    <td data-label="驅動因素" class="desc-text">{item['drivers']}</td>
                 </tr>"""
 
     html_template = f"""<!DOCTYPE html>
@@ -161,301 +203,225 @@ def update_dashboard(ai_response, news_list):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>全球總經局勢即時分析與市場面板</title>
-    <!-- 引入易讀的 Google Font -->
+    <title>【全球總經週報】宏觀趨勢與資產配置分析</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {{
-            /* 淺色明亮模式專用色彩 (彭博/華爾街日報白底風格) */
-            --bg-color: #f8fafc;
+            --bg-color: #f4f7f9;
             --surface-color: #ffffff;
             --border-color: #e2e8f0;
-            --text-primary: #0f172a;
-            --text-secondary: #475569;
-            --accent-color: #0284c7;
-            --accent-glow: rgba(2, 132, 199, 0.1);
-            --up-color: #dc2626;  /* 比較深的紅色提升對比 */
-            --down-color: #16a34a; /* 比較深的綠色提升對比 */
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --accent-color: #2563eb;
+            --up-color: #be123c;
+            --down-color: #15803d;
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05);
         }}
         
         * {{ box-sizing: border-box; margin: 0; padding: 0; }}
         
         body {{
-            /* Apple 官方字型設計 (-apple-system / PingFang TC) */
-            font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "SF Pro TC", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Helvetica Neue", sans-serif;
             background-color: var(--bg-color);
             color: var(--text-primary);
-            min-height: 100vh;
-            padding: 3rem 2rem;
+            line-height: 1.8;
+            padding: 4rem 1rem;
             display: flex;
             flex-direction: column;
             align-items: center;
-            line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }}
-        
-        .header {{ text-align: center; margin-bottom: 2.5rem; }}
-        .header h1 {{ 
-            font-size: 2.2rem; 
-            font-weight: 700; 
-            color: #0f172a; 
-            letter-spacing: -0.025em;
-        }}
-        .header p {{ 
-            color: var(--text-secondary); 
-            font-size: 1.15rem; 
-            margin-top: 0.5rem; 
-            font-weight: 500;
-        }}
-        
-        .dashboard-container {{ 
-            width: 100%; 
-            max-width: 1200px; 
-            background: var(--surface-color); 
-            border: 1px solid var(--border-color); 
-            border-radius: 16px; 
-            padding: 2.5rem; 
-            margin-bottom: 2rem; 
-            box-shadow: var(--shadow-md); 
-        }}
-        
-        .section-title {{ 
-            font-size: 1.35rem; 
-            margin-bottom: 1.5rem; 
-            padding-bottom: 0.8rem; 
-            border-bottom: 2px solid #f1f5f9; 
-            display: flex; 
-            align-items: center; 
-            gap: 10px; 
-            font-weight: 700;
-            color: var(--text-primary);
-        }}
-        
-        /* 早報與新聞樣式 */
-        .summary-box {{
-            background: #f0f9ff;
-            border-left: 5px solid var(--accent-color);
-            padding: 1.8rem;
-            border-radius: 8px;
-            margin-bottom: 2rem;
-            line-height: 1.8;
-            font-size: 1.1rem;
-            color: #0c4a6e;
-            box-shadow: var(--shadow-sm);
-        }}
-        .summary-box b {{ color: var(--accent-color); font-size: 1.15rem; }}
-        
-        .news-list {{
-            list-style: none;
-            display: grid;
-            /* 將寬欄改為更實用的兩欄文字佈局，或在手機上變為單欄 */
-            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-            gap: 1.2rem;
-        }}
-        
-        .news-item a {{
-            color: #334155;
-            text-decoration: none;
-            display: block;
-            padding: 1.2rem;
-            border-radius: 8px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            transition: all 0.2s ease;
-            font-size: 1.05rem;
-            font-weight: 500;
-            line-height: 1.5;
-            /* 解除 nowrap 的截斷，允許文字自然換行！ */
-            white-space: normal; 
-        }}
-        .news-item a:hover {{
-            background: #ffffff;
-            color: var(--accent-color);
-            border-color: #bae6fd;
-            box-shadow: var(--shadow-md);
-            transform: translateY(-2px);
         }}
 
-        /* 表格樣式優化 */
-        table {{ 
-            width: 100%; 
-            border-collapse: separate; 
-            border-spacing: 0; 
+        .newsletter-wrapper {{
+            width: 100%;
+            max-width: 850px;
+            background: var(--surface-color);
+            border-radius: 4px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            padding: 4rem;
+            border-top: 8px solid var(--accent-color);
         }}
-        th, td {{ 
-            padding: 1.5rem 1.2rem; /* 拉寬儲存格內部留白 */
-            text-align: left; 
-            border-bottom: 1px solid var(--border-color); 
-            vertical-align: top; /* 讓文字靠上對齊方便掃描 */
-        }}
-        th {{ 
-            font-weight: 600; 
-            color: var(--text-secondary); 
-            font-size: 0.95rem; 
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            background: #f8fafc; /* 表頭加一點淺底色分離區塊 */
-        }}
-        tbody tr:hover {{ 
-            background-color: #f8fafc; 
-        }}
-        tbody tr:last-child td {{ border-bottom: none; }}
-        
-        .var-name {{ 
-            font-weight: 700; 
-            font-size: 1.15rem; 
-            display: flex; 
-            align-items: center; 
-            gap: 10px; 
-            color: var(--text-primary);
-        }}
-        .status {{ font-size: 1.1rem; font-weight: 600; margin-top: 4px; }}
-        .status-detail {{ font-size: 0.95rem; color: var(--text-secondary); font-weight: 400; display: block; margin-top: 4px; }}
-        
-        .trend-up {{ color: var(--up-color); display: flex; align-items: center; gap: 4px; font-weight: 600; }}
-        .trend-down {{ color: var(--down-color); display: flex; align-items: center; gap: 4px; font-weight: 600; }}
-        .trend-strong {{ color: var(--accent-color); display: flex; align-items: center; gap: 4px; font-weight: 600; }}
-        
-        .badge {{ 
-            display: inline-block; 
-            padding: 0.35rem 0.8rem; 
-            border-radius: 9999px; 
-            font-size: 0.8rem; 
-            font-weight: 600; 
-            background: #f1f5f9;
-            margin-top: 0.8rem;
-            border: 1px solid rgba(0,0,0,0.05);
-        }}
-        
-        .desc-text {{ 
-            color: #334155; 
-            font-size: 1.05rem; 
-            line-height: 1.7; 
-            max-width: 320px; 
-        }}
-        
-        /* 圖表區塊 */
-        .charts-grid {{ 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
-            gap: 1.5rem; 
-            margin-top: 1rem; 
-        }}
-        .chart-widget {{ 
-            background: #ffffff; 
-            border: 1px solid var(--border-color); 
-            border-radius: 12px; 
-            height: 320px; 
-            overflow: hidden; 
-            box-shadow: var(--shadow-sm); 
-        }}
-        .icon-up::before {{ content: '▲'; }} .icon-down::before {{ content: '▼'; }} .icon-rocket::before {{ content: '🚀'; }}
 
-        /* --- 折疊選單 (Accordion) 樣式 --- */
+        .report-header {{ border-bottom: 2px solid #f1f5f9; padding-bottom: 2rem; margin-bottom: 3rem; text-align: center; }}
+        .report-header h1 {{ font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.5rem; }}
+        .report-header .date {{ color: var(--text-secondary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.9rem; }}
+
+        .section-h2 {{ 
+            font-size: 1.5rem; font-weight: 700; margin: 3rem 0 1.5rem 0; 
+            display: flex; align-items: center; gap: 0.8rem;
+            color: #0f172a;
+        }}
+        .section-h2::after {{ content: ""; height: 2px; flex: 1; background: #f1f5f9; }}
+
+        .narrative-box {{ font-size: 1.15rem; color: #334155; text-align: justify; margin-bottom: 2.5rem; }}
+        
+        .focus-grid {{ display: flex; flex-direction: column; gap: 1rem; margin-bottom: 3rem; }}
+        .focus-card {{ 
+            display: flex; gap: 1.5rem; padding: 1.5rem; background: #f8fafc; border-radius: 8px; border: 1px solid #edf2f7;
+        }}
+        .focus-idx {{ font-size: 2rem; font-weight: 800; color: #cbd5e1; line-height: 1; }}
+        .focus-content h4 {{ font-size: 1.15rem; margin-bottom: 0.5rem; color: var(--accent-color); }}
+        .focus-content p {{ font-size: 1.05rem; color: #475569; }}
+
+        .deep-dive-box {{ 
+            background: #fffcf0; border: 1px solid #fef3c7; padding: 2rem; border-radius: 12px; margin-bottom: 3rem;
+            line-height: 1.9; font-size: 1.1rem; color: #92400e;
+        }}
+        .deep-dive-box h3 {{ margin-bottom: 1rem; color: #78350f; font-weight: 700; }}
+
+        .risk-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 3rem; }}
+        .risk-item {{ padding: 1.2rem; background: #fff5f5; border-radius: 8px; border-left: 4px solid #f87171; }}
+        .risk-title {{ font-weight: 700; color: #991b1b; display: block; margin-bottom: 0.5rem; }}
+        .risk-content {{ font-size: 0.95rem; color: #b91c1c; }}
+
+        .table-container {{ overflow-x: auto; margin-bottom: 3rem; }}
+        table {{ width: 100%; border-collapse: collapse; font-size: 0.95rem; }}
+        th {{ padding: 1rem; text-align: left; border-bottom: 2px solid #f1f5f9; color: var(--text-secondary); }}
+        td {{ padding: 1.2rem 1rem; border-bottom: 1px solid #f1f5f9; }}
+        .var-name {{ font-weight: 700; color: var(--text-primary); }}
+        .badge {{ font-size: 0.75rem; background: #f1f5f9; padding: 2px 8px; border-radius: 4px; color: #64748b; }}
+        .trend-up {{ color: var(--up-color); font-weight: 600; }}
+        .trend-down {{ color: var(--down-color); font-weight: 600; }}
+        
+        .visual-tools {{ display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }}
+        .widget-box {{ 
+            background: #fff; border: 1px solid var(--border-color); border-radius: 8px; 
+            padding: 1rem; box-shadow: var(--shadow-md); 
+        }}
+        .widget-title {{ font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: var(--text-secondary); }}
+
         .news-accordion summary {{
-            cursor: pointer; font-size: 1.05rem; font-weight: 600; color: var(--text-primary);
-            padding: 1rem 1.5rem; background: #f1f5f9; border-radius: 8px;
-            list-style: none; user-select: none; transition: background 0.2s ease;
+            cursor: pointer; padding: 1rem; background: #f8fafc; border-radius: 6px; font-weight: 600;
+            list-style: none; display: flex; justify-content: space-between; align-items: center;
         }}
-        .news-accordion summary::-webkit-details-marker {{ display: none; }}
-        .news-accordion summary:hover {{ background: #e2e8f0; }}
-        .news-accordion summary::after {{
-            content: "▼"; float: right; font-size: 0.9rem; color: var(--text-secondary); transition: transform 0.3s ease;
-        }}
-        .news-accordion[open] summary::after {{ transform: rotate(-180deg); }}
+        .news-accordion summary::after {{ content: "+"; font-size: 1.2rem; }}
+        .news-accordion[open] summary::after {{ content: "-"; }}
+        .news-list {{ list-style: none; padding: 1rem; }}
+        .news-item {{ margin-bottom: 0.8rem; border-bottom: 1px dashed #e2e8f0; padding-bottom: 0.5rem; }}
+        .news-item a {{ text-decoration: none; color: #475569; font-size: 0.95rem; }}
 
-        /* --- 手機版響應式設計 (Apple-like Mobile UI) --- */
         @media (max-width: 768px) {{
-            body {{ padding: 1.5rem 1rem; }}
-            .header h1 {{ font-size: 1.8rem; letter-spacing: -0.01em; }}
-            .dashboard-container {{ padding: 1.5rem; }}
-            
-            /* 將傳統 Table 轉換為流暢的手機讀取卡片 */
+            .newsletter-wrapper {{ padding: 2rem 1.5rem; }}
+            .risk-grid {{ grid-template-columns: 1fr; }}
             table, thead, tbody, th, td, tr {{ display: block; }}
-            thead tr {{ display: none; }}
-            tr {{ margin-bottom: 2rem; border: 1px solid var(--border-color); border-radius: 12px; background: #fff; box-shadow: var(--shadow-md); }}
-            td {{ padding: 1rem; padding-left: 35%; position: relative; border-bottom: 1px solid #f1f5f9; }}
-            td:last-child {{ border-bottom: none; }}
-            
-            td::before {{
-                position: absolute; left: 1rem; top: 1rem; width: 30%; white-space: nowrap;
-                font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);
-            }}
-            td:nth-of-type(1)::before {{ content: "核心變數"; }}
-            td:nth-of-type(2)::before {{ content: "當前狀態"; }}
-            td:nth-of-type(3)::before {{ content: "短期趨勢"; }}
-            td:nth-of-type(4)::before {{ content: "主要因素"; }}
-            td:nth-of-type(5)::before {{ content: "交互影響"; }}
-            
-            td:nth-of-type(1) {{ padding-left: 1rem; padding-top: 3rem; background: #f8fafc; border-top-left-radius: 12px; border-top-right-radius: 12px; }}
-            td:nth-of-type(1)::before {{ top: 1rem; color: var(--accent-color); }}
-            
-            .news-list {{ grid-template-columns: 1fr; }}
-            .charts-grid {{ grid-template-columns: 1fr; }}
-            .chart-widget {{ height: 280px; }}
+            thead {{ display: none; }}
+            tr {{ margin-bottom: 1.5rem; border: 1px solid #edf2f7; padding: 1rem; }}
+            td {{ padding: 0.5rem 0; border: none; }}
+            td::before {{ content: attr(data-label); font-weight: 600; color: #94a3b8; display: block; font-size: 0.8rem; }}
         }}
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>全球總經局勢 綜合戰情室</h1>
-        <p>結合 AI 趨勢早報與即時市場動態 (圖表自動更新)</p>
-    </div>
-    
-    <!-- AI 綜合精煉早報 -->
-    <div class="dashboard-container">
-        <h2 class="section-title">📰 AI 總經情勢早報</h2>
-        <div class="summary-box" style="margin-bottom: 0;">
-            <b>專家短評：</b><br>
-            {summary_text}
-        </div>
-    </div>
-    
-    <!-- 總經變數分析 -->
-    <div class="dashboard-container">
-        <h2 class="section-title">📊 總經變數深入分析 (由 Gemini 自動推論)</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>核心變數</th>
-                    <th>當前狀態</th>
-                    <th>短期趨勢</th>
-                    <th>主要驅動因素</th>
-                    <th>全球經濟交互影響</th>
-                </tr>
-            </thead>
-            <tbody>
-                {tbody_html}
-            </tbody>
-        </table>
-    </div>
+    <div class="newsletter-wrapper">
+        <header class="report-header">
+            <span class="date">GLOBAL MACRO WEEKLY INSIGHTS</span>
+            <h1>全球總經週報</h1>
+            <p style="color: #94a3b8;">由 AI 驅動的自動化全域分析 (Rolling 7-Day Window)</p>
+            <p style="font-size: 0.85rem; color: var(--accent-color); font-weight: 600; margin-top: 0.5rem;">🕒 最後更新時間：{today_str}</p>
+        </header>
 
-    <!-- 即時走勢圖 -->
-    <div class="dashboard-container">
-        <h2 class="section-title">💹 全球核心資產 即時走勢圖</h2>
-        <div class="charts-grid">
-            <div class="chart-widget"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{{"symbol": "FRED:DGS10","width": "100%","height": "100%","locale": "zh_TW","dateRange": "1M","colorTheme": "light","isTransparent": true,"autosize": true}}</script></div></div>
-            <div class="chart-widget"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{{"symbol": "CAPITALCOM:DXY","width": "100%","height": "100%","locale": "zh_TW","dateRange": "1M","colorTheme": "light","isTransparent": true,"autosize": true}}</script></div></div>
-            <div class="chart-widget"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{{"symbol": "OANDA:XAUUSD","width": "100%","height": "100%","locale": "zh_TW","dateRange": "1M","colorTheme": "light","isTransparent": true,"autosize": true}}</script></div></div>
-            <div class="chart-widget"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{{"symbol": "FX:USDJPY","width": "100%","height": "100%","locale": "zh_TW","dateRange": "1M","colorTheme": "light","isTransparent": true,"autosize": true}}</script></div></div>
-            <div class="chart-widget"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{{"symbol": "FX_IDC:USDTWD","width": "100%","height": "100%","locale": "zh_TW","dateRange": "1M","colorTheme": "light","isTransparent": true,"autosize": true}}</script></div></div>
-            <div class="chart-widget"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{{"symbol": "FX_IDC:USDKRW","width": "100%","height": "100%","locale": "zh_TW","dateRange": "1M","colorTheme": "light","isTransparent": true,"autosize": true}}</script></div></div>
-            <div class="chart-widget"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{{"symbol": "OANDA:WTICOUSD","width": "100%","height": "100%","locale": "zh_TW","dateRange": "1M","colorTheme": "light","isTransparent": true,"autosize": true}}</script></div></div>
-        </div>
-    </div>
+        <section>
+            <h2 class="section-h2">📻 本週市場主旋律 (Narrative)</h2>
+            <div class="narrative-box">
+                {weekly_narrative}
+            </div>
+        </section>
 
-    <!-- 原文新聞附錄區 (可折疊收納) -->
-    <div class="dashboard-container" style="padding: 1.5rem 2.5rem; margin-top: -1rem;">
-        <details class="news-accordion">
-            <summary>📌 點擊展開今日 15 則焦點新聞原文 (參考出處)</summary>
-            <ul class="news-list" style="margin-top: 1.5rem;">
-                {news_html}
-            </ul>
-        </details>
+        <section>
+            <h2 class="section-h2">📈 宏觀指標動態走勢 (4-Week Trend)</h2>
+            <div class="trend-grid">
+                <div class="trend-card">
+                    <h4>US 10Y Yield</h4>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{{"symbol": "TVC:US10Y", "width": "100%", "height": "100%", "locale": "zh_TW", "dateRange": "1M", "colorTheme": "light", "isTransparent": true}}</script></div>
+                </div>
+                <div class="trend-card">
+                    <h4>Dollar Index</h4>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{{"symbol": "TVC:DXY", "width": "100%", "height": "100%", "locale": "zh_TW", "dateRange": "1M", "colorTheme": "light", "isTransparent": true}}</script></div>
+                </div>
+                <div class="trend-card">
+                    <h4>Gold Spot</h4>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{{"symbol": "TVC:GOLD", "width": "100%", "height": "100%", "locale": "zh_TW", "dateRange": "1M", "colorTheme": "light", "isTransparent": true}}</script></div>
+                </div>
+                <!-- 亞洲貨幣 -->
+                <div class="trend-card">
+                    <h4>USD / JPY</h4>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{{"symbol": "FX:USDJPY", "width": "100%", "height": "100%", "locale": "zh_TW", "dateRange": "1M", "colorTheme": "light", "isTransparent": true}}</script></div>
+                </div>
+                <div class="trend-card">
+                    <h4>USD / TWD</h4>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{{"symbol": "FX_IDC:USDTWD", "width": "100%", "height": "100%", "locale": "zh_TW", "dateRange": "1M", "colorTheme": "light", "isTransparent": true}}</script></div>
+                </div>
+                <div class="trend-card">
+                    <h4>USD / KRW</h4>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{{"symbol": "FX_IDC:USDKRW", "width": "100%", "height": "100%", "locale": "zh_TW", "dateRange": "1M", "colorTheme": "light", "isTransparent": true}}</script></div>
+                </div>
+            </div>
+        </section>
+
+
+        <section>
+            <h2 class="section-h2">🎯 關鍵事件深度剖析</h2>
+            <div class="focus-grid">
+                {focus_html}
+            </div>
+        </section>
+
+        <section>
+            <h2 class="section-h2">⛓️ 利率與匯率傳導矩陣</h2>
+            <div class="deep-dive-box">
+                <h3>Macro Linkage Analysis</h3>
+                {fx_rates_linkage}
+            </div>
+        </section>
+
+        <section>
+            <h2 class="section-h2">📊 核心變數數據監測</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>核心變數</th>
+                            <th>當前狀態</th>
+                            <th>趨勢</th>
+                            <th>驅動因素</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {tbody_html}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="section-h2">🧭 下週風險預警</h2>
+            <div class="risk-grid">
+                {risk_html}
+            </div>
+        </section>
+
+        <section>
+            <h2 class="section-h2">📅 財經日曆與動態熱圖</h2>
+            <div class="visual-tools">
+                <div class="widget-box">
+                    <div class="widget-title">重要經濟數據發布日曆 (Economic Calendar)</div>
+                    <div class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-events.js" async>{{"colorTheme": "light","isTransparent": true,"width": "100%","height": "400","locale": "zh_TW","importanceFilter": "-1,0,1","currencyFilter": "USD,EUR,JPY,GBP,AUD,CNY,TWD"}}</script></div>
+                </div>
+                <div class="widget-box">
+                    <div class="widget-title">主要貨幣對強弱熱力圖 (Forex Heat Map)</div>
+                    <div class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-forex-heat-map.js" async>{{"width": "100%","height": "400","currencies": ["EUR","USD","JPY","GBP","CHF","AUD","CAD","NZD","CNY"],"isTransparent": true,"colorTheme": "light","locale": "zh_TW"}}</script></div>
+                </div>
+            </div>
+        </section>
+
+        <footer style="margin-top: 5rem; border-top: 1px solid #f1f5f9; padding-top: 2rem;">
+            <details class="news-accordion">
+                <summary>查看本週參考新聞原文 (共 {len(news_list)} 則)</summary>
+                <ul class="news-list">
+                    {news_html}
+                </ul>
+            </details>
+            <p style="text-align: center; color: #cbd5e1; font-size: 0.8rem; margin-top: 2rem;">© 2026 Macro Strategy Lab. 最後更新：{today_str}</p>
+        </footer>
     </div>
 </body>
 </html>"""
@@ -469,14 +435,28 @@ def update_dashboard(ai_response, news_list):
 # 主程式執行區 (機器人自動呼叫進入點)
 # ==============================================================================
 if __name__ == "__main__":
-    if not GEMINI_API_KEY or GEMINI_API_KEY == "YOUR_GEMINI_API_KEY_HERE":
-        print("[ERROR] 嚴重安全性錯誤：找不到 GEMINI_API_KEY 環境變數。")
-        print("-> 如果您是在地端測試，請先用指令設定金鑰 (set GEMINI_API_KEY=YOUR_KEY)")
-        print("-> 如果您是在 GitHub 雲端執行，請確認您已經在專案的 Settings -> Secrets and variables 中加入了金鑰！")
-        exit(1)
-        
-    news_list = fetch_daily_news()
-    ai_response = analyze_with_gemini(news_list)
-    update_dashboard(ai_response, news_list)
+    try:
+        if not GEMINI_API_KEY or GEMINI_API_KEY == "YOUR_GEMINI_API_KEY_HERE":
+            print("[ERROR] 嚴重安全性錯誤：找不到 GEMINI_API_KEY 環境變數。")
+            print("-> 如果您是在地端測試，請先用指令設定金鑰 (set GEMINI_API_KEY=YOUR_KEY)")
+            print("-> 如果您是在 GitHub 雲端執行，請確認您已經在專案的 Settings -> Secrets and variables 中加入了金鑰！")
+        else:
+            # 取得今日日期字串
+            today_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+            
+            # 呼叫正確的週報抓取函式
+            news_list = fetch_weekly_news()
+            ai_response = analyze_with_gemini(news_list, today_str)
+            
+            # 安全性檢查：確保 AI 回傳內容正確
+            if ai_response and isinstance(ai_response, dict) and 'analysis' in ai_response:
+                update_dashboard(ai_response, news_list, today_str)
+                print(f"\n[OK] 雲端戰情室更新腳本執行完畢 (更新時間: {today_str})。")
+            else:
+                print("\n[ERROR] AI 回傳內容格式不全，已中斷更新。")
+            
+    except Exception as e:
+        print(f"\n[CRASH] 程式發生未預期錯誤: {e}")
     
-    print("\n[OK] 雲端戰情室更新腳本執行完畢。")
+    # 這是為了防止 Windows 執行時視窗秒縮 (閃退)，讓您能看清錯誤訊息
+    input("\n請按 Enter 鍵結束程式...")
