@@ -20,8 +20,8 @@ HTML_PATH = os.path.join(WORKSPACE_DIR, "index.html")
 # ==============================================================================
 def fetch_weekly_news():
     print("正在抓取過去七天全球總經深度新聞 (滾動週度視窗)...")
-    # 加上 when:7d 參數，搜集過去一週的深度頭條，確保週報有足夠廣度的背景
-    url = "https://news.google.com/rss/search?q=global+economy+macro+interest+rates+dollar+gold+fed+central+banks+when:7d&hl=en-US&gl=US&ceid=US:en"
+    # 加上 when:7d 參數並使用更精確的「週報專用」關鍵字，避免抓到過時的研究報告
+    url = "https://news.google.com/rss/search?q=latest+global+macro+weekly+outlook+OR+fed+interest+rate+DXY+trend+when:7d&hl=en-US&gl=US&ceid=US:en"
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
     try:
         response = urllib.request.urlopen(req)
