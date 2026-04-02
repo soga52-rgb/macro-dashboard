@@ -1,0 +1,47 @@
+name: 全球總經戰情室 - 每日晨間自動更新 (Daily Update)
+
+on:
+  schedule:
+    # 台灣時間早上 7:00 等於 UTC 的前一天晚上 23:00
+    - cron: '0 23 * * *'
+  # 允許我們在 GitHub 網頁上按鈕「手動觸發」測試
+  workflow_dispatch:
+
+# 授權設定：確保機器人有推送程式碼與發布 GitHub Pages 的權限
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  run-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 下載最新版程式碼 (Checkout Repo)
+        uses: actions/checkout@v4
+        
+      - name: 🐍 準備 Python 環境 (Setup Python)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          
+      - name: 📦 安裝必要套件 (Install dependencies)
+        run: |
+          pip install google-generativeai pandas
+          
+      - name: 🧠 呼叫 AI 生成今日戰情報告 (Run AI Dashboard Generation)
+        env:
+          # 最高機密！從 GitHub 保險箱中拿出 Gemini API Key
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python update_dashboard.py
+          
+      - name: 📤 儲存並提交今天的新版網頁 (Commit generated files)
+        run: |
+          git config --global user.name "AI Dashboard Bot"
+          git config --global user.email "bot@macrodashboard.local"
+          git add index.html macro_analysis.csv
+          # 使用 || exit 0 確保當沒有內容更新時，Workflow 不會報錯 (紅叉叉)
+          git commit -m "🤖 自動發布：更新今日最新戰情儀表板 [skip ci]" || exit 0
+          git push

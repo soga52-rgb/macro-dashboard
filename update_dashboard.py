@@ -2,7 +2,8 @@ import os
 import json
 import urllib.request
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, timedelta
+import pandas as pd
 
 # ==============================================================================
 # 系統設定區
@@ -51,30 +52,50 @@ def analyze_with_gemini(news_data, today_str):
     else:
         news_text = "未能抓取新聞，請基於目前全球總體經濟狀況直接進行推論。"
 
-    prompt = f"""你現在是一位華爾街最頂尖的總體經濟分析師與資深週報主筆。
-以下是過去七天以來，全球最重要的財經新聞頭條 (今天的日期是 {today_str})：
+    # 嘗試讀取現有的 CSV 數據提供給 AI 作為參考 (Context)
+    macro_history = "尚無歷史數據"
+    try:
+        if os.path.exists(CSV_PATH):
+            df_history = pd.read_csv(CSV_PATH)
+            macro_history = df_history.tail(5).to_string()
+    except Exception as e:
+        print(f"讀取歷史數據失敗: {e}")
+
+    prompt = f"""你現在是一位資深的全球總機策略分析師。請根據以下提供的最新數據與新聞，撰寫一份專業的「總經深度週報 (Weekly Deep Report)」。
+
+### 今日日期: {today_str}
+### 歷史數據參考:
+{macro_history}
+
+### 最新新聞頭條:
 {news_text}
 
-請基於上述頭條與你的專業知識，撰寫一份內容紮實、具備「投資分析機構實力」的「總經深度週報 (Weekly Deep Report)」。
-請依照以下五大維度深度產出 JSON 報告 (所有欄位都是必須的)：
-1. weekly_narrative: (約 200 字) 定調本週市場情緒。
-2. focus_items: (清單) 關鍵的 3 個大事標題與深度解釋。
-3. fx_rates_linkage: (150 字長文) 拆解美債與美元對亞幣、黃金的傳導邏輯。
-4. outlook_risks: (清單) 2 個關鍵風險。
-5. analysis: (清單) 通膨、美債、美元的核心數據 (保留 trend_class, trend_text 等欄位)。
+### 撰寫指令 (核心邏輯):
+1. **篩選單一關鍵因子 (Narrative)**: 從近期市場脈動（如：Fed 官員談話、就業報告、地緣政治、PMI 等）中，挑選「一個」最能解釋目前走勢的關鍵變數作為摘要開頭。
+2. **三變數鏈鎖反應 (Causal Chain)**:
+   - **通膨預期**: 該因子如何影響物價或能源價格。
+   - **利率預期**: 市場如何修正對 Fed 利率路徑（美債殖利率）的看法。
+   - **美元指數 (DXY)**: 最終如何影響美元強度。
+3. **資產連帶影響 (Ripple Effect)**: 說明邏輯如何傳導至「亞洲貨幣 (TWD, JPY, KRW)」與「黃金」。
 
-
-嚴格輸出 JSON (不要 Markdown)：
+### 輸出格式 (JSON):
+請輸出以下 JSON 格式：
 {{
-  "weekly_narrative": "...",
+  "weekly_narrative": "(約 200 字) 基於上述邏輯撰寫的本週摘要。",
   "focus_items": [ {{ "title": "...", "content": "..." }}, ... ],
-  "fx_rates_linkage": "...",
+  "fx_rates_linkage": "(150 字) 拆解利率與匯率的傳導。",
   "outlook_risks": [ {{ "title": "...", "content": "..." }}, ... ],
   "analysis": [
     {{ "variable_name": "🔥 通膨預期", "badge_text": "...", "status": "...", "status_detail": "...", "trend_class": "trend-up", "trend_text": "...", "drivers": "...", "impact": "..." }},
     ... (美債用 📉, 美元用 🦅)
-  ]
+  ],
+  "next_week_forecast_html": "<details class='analysis-container'><summary>📢 下週預測：[填入關鍵主旋律]</summary><div class='analysis-content'>... (分點化 HTML 內容) ...</div></details>"
 }}
+
+### 嚴格規範:
+- **數據準確性**: 嚴禁虛構數值。若數據顯示 DXY < 100，絕不可使用「突破 100」字眼。
+- **簡潔專業**: 每個分點不超過兩句話，字數控制在 200-300 字。
+- **HTML 格式**: 在 next_week_forecast_html 中使用 <ul>, <li>, <strong> 標籤。
 """
     
     # 嘗試策略：針對 2026 年最新的型號進行自動輪詢
@@ -140,6 +161,7 @@ def update_dashboard(ai_response, news_list, today_str):
     focus_items = ai_response.get('focus_items', [])
     fx_rates_linkage = ai_response.get('fx_rates_linkage', '尚無傳導分析。')
     outlook_risks = ai_response.get('outlook_risks', [])
+    next_week_forecast_html = ai_response.get('next_week_forecast_html', '')
     
     # 更新 CSV (維持基本數據結構)
     csv_content = "變數與項目,當前狀態,短期趨勢,主要驅動因素,全球經濟交互影響\n"
@@ -308,6 +330,48 @@ def update_dashboard(ai_response, news_list, today_str):
             td {{ padding: 0.5rem 0; border: none; }}
             td::before {{ content: attr(data-label); font-weight: 600; color: #94a3b8; display: block; font-size: 0.8rem; }}
         }}
+
+        /* 專業分析收合方塊樣式 */
+        .analysis-container {{
+            margin: 20px 0;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #ffffff;
+            overflow: hidden;
+        }}
+
+        .analysis-container summary {{
+            padding: 15px;
+            background: #f8f9fa;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.1rem;
+            list-style: none; /* 隱藏原生箭頭 */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }}
+
+        /* 自定義小箭頭 */
+        .analysis-container summary::after {{
+            content: "▼";
+            font-size: 0.8rem;
+            color: #666;
+            transition: transform 0.3s;
+        }}
+
+        .analysis-container[open] summary::after {{
+            transform: rotate(180deg);
+        }}
+
+        .analysis-content {{
+            padding: 20px;
+            line-height: 1.6;
+            border-top: 1px solid #eee;
+            color: #444;
+        }}
+        .analysis-content ul {{ padding-left: 20px; }}
+        .analysis-content li {{ margin-bottom: 8px; }}
     </style>
 </head>
 <body>
@@ -325,6 +389,7 @@ def update_dashboard(ai_response, news_list, today_str):
             <div class="narrative-box">
                 {weekly_narrative}
             </div>
+            {next_week_forecast_html}
         </section>
 
         <section>
@@ -427,6 +492,7 @@ def update_dashboard(ai_response, news_list, today_str):
 </body>
 </html>"""
 
+
     with open(HTML_PATH, "w", encoding="utf-8") as f:
         f.write(html_template)
     
@@ -442,8 +508,8 @@ if __name__ == "__main__":
             print("-> 如果您是在地端測試，請先用指令設定金鑰 (set GEMINI_API_KEY=YOUR_KEY)")
             print("-> 如果您是在 GitHub 雲端執行，請確認您已經在專案的 Settings -> Secrets and variables 中加入了金鑰！")
         else:
-            # 取得今日日期字串
-            today_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+            # 取得今日日期字串 (調整為台灣時間 UTC+8)
+            today_str = (datetime.utcnow() + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M")
             
             # 呼叫正確的週報抓取函式
             news_list = fetch_weekly_news()
@@ -459,5 +525,4 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n[CRASH] 程式發生未預期錯誤: {e}")
     
-    # 這是為了防止 Windows 執行時視窗秒縮 (閃退)，讓您能看清錯誤訊息
     # input("\n請按 Enter 鍵結束程式...")
