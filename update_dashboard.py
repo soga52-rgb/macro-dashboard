@@ -460,4 +460,4 @@ if __name__ == "__main__":
         print(f"\n[CRASH] 程式發生未預期錯誤: {e}")
     
     # 這是為了防止 Windows 執行時視窗秒縮 (閃退)，讓您能看清錯誤訊息
-    input("\n請按 Enter 鍵結束程式...")
+    # input("\n請按 Enter 鍵結束程式...")
