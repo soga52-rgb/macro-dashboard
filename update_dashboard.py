@@ -61,7 +61,7 @@ def analyze_with_gemini(news_data, today_str):
     except Exception as e:
         print(f"讀取歷史數據失敗: {e}")
 
-    prompt = f"""你現在是一位資深的全球總機策略分析師。請根據以下提供的最新數據與新聞，撰寫一份專業的「總經深度週報 (Weekly Deep Report)」。
+prompt = f"""你現在是一位資深的全球總經策略分析師。請根據以下數據進行邏輯推演。
 
 ### 今日日期: {today_str}
 ### 歷史數據參考:
@@ -71,26 +71,19 @@ def analyze_with_gemini(news_data, today_str):
 {news_text}
 
 ### 撰寫指令 (核心邏輯):
-1. **篩選單一關鍵因子 (Narrative)**: 從近期市場脈動（如：Fed 官員談話、就業報告、地緣政治、PMI 等）中，挑選「一個」最能解釋目前走勢的關鍵變數作為摘要開頭。
-2. **三變數鏈鎖反應 (Causal Chain)**:
-   - **通膨預期**: 該因子如何影響物價或能源價格。
-   - **利率預期**: 市場如何修正對 Fed 利率路徑（美債殖利率）的看法。
-   - **美元指數 (DXY)**: 最終如何影響美元強度。
-3. **資產連帶影響 (Ripple Effect)**: 說明邏輯如何傳導至「亞洲貨幣 (TWD, JPY, KRW)」與「黃金」。
+1. **定位關鍵因子**: 從新聞或數據中找出目前對市場影響最大的單一事件。
+2. **三變數傳導鏈**: 靈活建構因果邏輯（例如：Fed 談話 ➔ 利率預期 ➔ 美元走勢）。嚴禁編造數據，DXY < 100 嚴禁說突破。
+3. **收合式結構**: 在 "weekly_narrative" 欄位中，請務必使用 <details> 與 <summary> 標籤。
 
 ### 輸出格式 (JSON):
-請輸出以下 JSON 格式：
+請嚴格輸出以下 JSON 格式，不要有任何多餘文字：
 {{
-  "weekly_narrative": "(約 200 字) 基於上述邏輯撰寫的本週摘要。",
-  "focus_items": [ {{ "title": "...", "content": "..." }}, ... ],
-  "fx_rates_linkage": "(150 字) 拆解利率與匯率的傳導。",
-  "outlook_risks": [ {{ "title": "...", "content": "..." }}, ... ],
-  "analysis": [
-    {{ "variable_name": "🔥 通膨預期", "badge_text": "...", "status": "...", "status_detail": "...", "trend_class": "trend-up", "trend_text": "...", "drivers": "...", "impact": "..." }},
-    ... (美債用 📉, 美元用 🦅)
-  ],
-  "next_week_forecast_html": "<details class='analysis-container'><summary>📢 下週預測：[填入關鍵主旋律]</summary><div class='analysis-content'>... (分點化 HTML 內容) ...</div></details>"
+  "weekly_narrative": "<details class='analysis-container'><summary>📢 下週預測：[一句話主旋律]</summary><div class='analysis-content'><strong>⛓️ 市場邏輯傳導：</strong><p>[關鍵因子] ➔ 影響<strong>通膨/利率預期</strong> ➔ 最終定價<strong>美元走勢</strong>。</p><hr><strong>📉 資產動態預測：</strong><ul><li><strong>匯率市場：</strong>[TWD/JPY/KRW 預測]</li><li><strong>避險成本：</strong>[黃金走勢與製造業成本預測]</li></ul></div></details>",
+  "focus_items": [ {{ "title": "...", "content": "..." }} ],
+  "fx_rates_linkage": "...",
+  "analysis": [ {{ "variable_name": "...", "badge_text": "..." }} ]
 }}
+"""
 
 ### 嚴格規範:
 - **數據準確性**: 嚴禁虛構數值。若數據顯示 DXY < 100，絕不可使用「突破 100」字眼。
