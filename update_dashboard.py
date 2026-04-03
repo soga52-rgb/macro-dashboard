@@ -119,9 +119,9 @@ def analyze_with_gemini(news_data, today_str):
 }}
 """
     
-    # 嘗試策略：針對 2026 年最新的型號進行自動輪詢
+    # 恢復原本使用的 2026 最新型號
     strategies = [
-        ("v1beta", "gemini-3-flash-preview"), # 剛才測試有通，設為首選
+        ("v1beta", "gemini-3-flash-preview"), 
         ("v1beta", "gemini-3.1-flash"),
         ("v1", "gemini-1.5-flash"),
         ("v1beta", "gemini-2.0-flash"),
@@ -565,6 +565,9 @@ def update_dashboard(ai_response, news_list, today_str):
 </body>
 </html>"""
 
+
+    # 加入強制更新標記 (避免 Git 因內容重複而跳過 Commit)
+    html_template += f"\n<!-- Build Trace: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} -->"
 
     with open(HTML_PATH, "w", encoding="utf-8") as f:
         f.write(html_template)
