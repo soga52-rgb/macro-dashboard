@@ -597,6 +597,8 @@ if __name__ == "__main__":
                 print(f"\n[OK] 雲端戰情室更新腳本執行完畢 (更新時間: {today_str})。")
             else:
                 print("\n[ERROR] AI 回傳內容格式不全，已中斷更新。")
+                import sys
+                sys.exit(1)
             
     except Exception as e:
         print(f"\n[CRASH] 程式發生未預期錯誤: {e}")
