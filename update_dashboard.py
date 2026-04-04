@@ -356,16 +356,16 @@ def update_dashboard(ai_response, news_list, today_str):
         .trend-down {{ color: var(--down-color); font-weight: 600; }}
         
         /* 專業分析收合方塊樣式 */
-        .analysis-container {
+        .analysis-container {{
             margin: 20px 0;
             border: 1px solid #e0e0e0;
             border-radius: 8px;
             background: #ffffff;
             overflow: hidden;
             box-shadow: var(--shadow-md);
-        }
+        }}
 
-        .analysis-container summary {
+        .analysis-container summary {{
             padding: 1.2rem;
             background: #f8fafc;
             cursor: pointer;
@@ -377,35 +377,35 @@ def update_dashboard(ai_response, news_list, today_str):
             align-items: center;
             border-bottom: 1px solid transparent;
             transition: all 0.3s ease;
-        }
+        }}
 
-        .analysis-container[open] summary {
+        .analysis-container[open] summary {{
             border-bottom: 1px solid #edf2f7;
             background: #ffffff;
-        }
+        }}
 
         /* 自定義小箭頭 */
-        .analysis-container summary::after {
+        .analysis-container summary::after {{
             content: "▼";
             font-size: 0.8rem;
             color: var(--text-secondary);
             transition: transform 0.3s ease;
-        }
+        }}
 
-        .analysis-container[open] summary::after {
+        .analysis-container[open] summary::after {{
             transform: rotate(180deg);
-        }
+        }}
 
-        .analysis-content {
+        .analysis-content {{
             padding: 1.5rem 2rem;
             line-height: 1.8;
             color: #334155;
             background: #ffffff;
-        }
-        .analysis-content hr { border: 0; border-top: 1px solid #f1f5f9; margin: 1.5rem 0; }
-        .analysis-content ul { padding-left: 20px; }
-        .analysis-content li { margin-bottom: 10px; }
-        .analysis-content strong { color: var(--accent-color); }
+        }}
+        .analysis-content hr {{ border: 0; border-top: 1px solid #f1f5f9; margin: 1.5rem 0; }}
+        .analysis-content ul {{ padding-left: 20px; }}
+        .analysis-content li {{ margin-bottom: 10px; }}
+        .analysis-content strong {{ color: var(--accent-color); }}
 
         .visual-tools {{ display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }}
         .widget-box {{ 
