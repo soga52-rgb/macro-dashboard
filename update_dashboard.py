@@ -135,20 +135,38 @@ def analyze_with_gemini(news_data, today_str):
             try:
                 print(f"-> 嘗試連線方案: {version} / {model} (第 {attempt+1} 次)...")
                 url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent?key={GEMINI_API_KEY}"
-                data = {"contents": [{"parts": [{"text": prompt}]}]}
+                # 加入安全設定，避免因地緣政治關鍵字（如伊朗、衝突）被 AI 安全過濾器誤攔
+                data = {
+                    "contents": [{"parts": [{"text": prompt}]}],
+                    "safetySettings": [
+                        {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                        {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                        {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                        {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
+                    ]
+                }
                 req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers={'Content-Type': 'application/json'})
                 
                 try:
                     response = urllib.request.urlopen(req)
                     result = json.loads(response.read().decode('utf-8'))
+                    
+                    # 💡 關鍵修正：增加 API 回傳結構的安全檢查
+                    if 'candidates' not in result or not result['candidates']:
+                        prompt_feedback = result.get('promptFeedback', {})
+                        print(f"   [FAIL] {model} 未產生有效回應 (可能被安全過濾器攔截)。Feedback: {prompt_feedback}")
+                        break
+
                     text = result['candidates'][0]['content']['parts'][0]['text'].strip()
                     
-                    if text.startswith("```json"): text = text[7:]
-                    if text.startswith("```"): text = text[3:]
-                    if text.endswith("```"): text = text[:-3]
+                    # 💡 關鍵修正：更強健的 JSON 提取 (支持包含前言或後記的 AI 輸出)
+                    start_idx = text.find('{')
+                    end_idx = text.rfind('}')
+                    if start_idx != -1 and end_idx != -1:
+                        text = text[start_idx:end_idx+1]
                     
                     print(f"[SUCCESS] {model} 回應成功！")
-                    return json.loads(text.strip())
+                    return json.loads(text)
                 except urllib.error.HTTPError as e:
                     error_data = e.read().decode('utf-8')
                     # 如果是 503 (系統忙碌) 或 429 (配額滿)，我們稍微休息一下再試
@@ -404,47 +422,6 @@ def update_dashboard(ai_response, news_list, today_str):
             td::before {{ content: attr(data-label); font-weight: 600; color: #94a3b8; display: block; font-size: 0.8rem; }}
         }}
 
-        /* 專業分析收合方塊樣式 */
-        .analysis-container {{
-            margin: 20px 0;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            background: #ffffff;
-            overflow: hidden;
-        }}
-
-        .analysis-container summary {{
-            padding: 15px;
-            background: #f8f9fa;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 1.1rem;
-            list-style: none; /* 隱藏原生箭頭 */
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }}
-
-        /* 自定義小箭頭 */
-        .analysis-container summary::after {{
-            content: "▼";
-            font-size: 0.8rem;
-            color: #666;
-            transition: transform 0.3s;
-        }}
-
-        .analysis-container[open] summary::after {{
-            transform: rotate(180deg);
-        }}
-
-        .analysis-content {{
-            padding: 20px;
-            line-height: 1.6;
-            border-top: 1px solid #eee;
-            color: #444;
-        }}
-        .analysis-content ul {{ padding-left: 20px; }}
-        .analysis-content li {{ margin-bottom: 8px; }}
     </style>
 </head>
 <body>
