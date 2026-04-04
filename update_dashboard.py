@@ -428,9 +428,9 @@ def update_dashboard(ai_response, news_list, today_str):
     <div class="newsletter-wrapper">
         <header class="report-header">
             <span class="date">GLOBAL MACRO WEEKLY INSIGHTS</span>
-            <h1>全球總經週報</h1>
+            <h1>全球總經週報 <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 400;">[PRO-ENGINE V3.0]</span></h1>
             <p style="color: #94a3b8;">由 AI 驅動的自動化全域分析 (Rolling 7-Day Window)</p>
-            <p style="font-size: 0.85rem; color: var(--accent-color); font-weight: 600; margin-top: 0.5rem;">🕒 最後更新時間：{today_str}</p>
+            <p style="font-size: 1rem; color: #ef4444; font-weight: 800; margin-top: 0.5rem; text-decoration: underline;">🕒 最後更新時間：{today_str}</p>
             <div style="margin-top: 1.5rem;" class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>{{"symbols": [ {{"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}}, {{"proName": "FOREXCOM:NSXUSD", "title": "Nasdaq 100"}}, {{"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}}, {{"proName": "BITSTAMP:BTCUSD", "title": "BTC/USD"}}, {{"proName": "BITSTAMP:ETHUSD", "title": "ETH/USD"}} ], "showSymbolLogo": true, "colorTheme": "light", "isTransparent": true, "displayMode": "adaptive", "locale": "zh_TW"}}</script></div>
         </header>
 
@@ -543,8 +543,8 @@ def update_dashboard(ai_response, news_list, today_str):
 </html>"""
 
 
-    # 加入強制更新標記 (避免 Git 因內容重複而跳過 Commit)
-    html_template += f"\n<!-- Build Trace: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} -->"
+    # 加入全台統一時區標記 (方便在原始碼檢查是否更新)
+    html_template += f"\n<!-- Build Trace (TPE): {today_str} -->"
 
     with open(HTML_PATH, "w", encoding="utf-8") as f:
         f.write(html_template)
