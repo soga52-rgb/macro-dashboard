@@ -195,19 +195,23 @@ def update_dashboard(ai_response, news_list, today_str):
         
     print("正在將深度週報結果寫入儀表板與 CSV 檔案...")
     
-    analysis_data = ai_response['analysis']
-    weekly_narrative = ai_response.get('weekly_narrative', '本週尚無綜合摘要。')
-    focus_items = ai_response.get('focus_items', [])
-    fx_rates_linkage = ai_response.get('fx_rates_linkage', '尚無傳導分析。')
-    outlook_risks = ai_response.get('outlook_risks', [])
-    next_week_forecast_html = ai_response.get('next_week_forecast_html', '')
+    analysis_data = ai_response.get('analysis') or []
+    weekly_narrative = ai_response.get('weekly_narrative') or '本週尚無綜合摘要。'
+    focus_items = ai_response.get('focus_items') or []
+    fx_rates_linkage = ai_response.get('fx_rates_linkage') or '尚無傳導分析。'
+    outlook_risks = ai_response.get('outlook_risks') or []
+    next_week_forecast_html = ai_response.get('next_week_forecast_html') or ''
     
     # 更新 CSV (維持基本數據結構)
     csv_content = "變數與項目,當前狀態,短期趨勢,主要驅動因素,全球經濟交互影響\n"
     for item in analysis_data:
-        drivers = str(item['drivers']).replace(',', '，')
-        impact = str(item['impact']).replace(',', '，')
-        csv_content += f"{item['variable_name']},{item['status']} {item['status_detail']},{item['trend_text']},{drivers},{impact}\n"
+        drivers = str(item.get('drivers', '')).replace(',', '，')
+        impact = str(item.get('impact', '')).replace(',', '，')
+        var_name = item.get('variable_name', '')
+        status = item.get('status', '')
+        status_detail = item.get('status_detail', '')
+        trend_text = item.get('trend_text', '')
+        csv_content += f"{var_name},{status} {status_detail},{trend_text},{drivers},{impact}\n"
     
     with open(CSV_PATH, "w", encoding="utf-8") as f:
         f.write(csv_content)
@@ -219,8 +223,8 @@ def update_dashboard(ai_response, news_list, today_str):
         <div class="focus-card">
             <div class="focus-idx">0{idx+1}</div>
             <div class="focus-content">
-                <h4>{item['title']}</h4>
-                <p>{item['content']}</p>
+                <h4>{item.get('title', '')}</h4>
+                <p>{item.get('content', '')}</p>
             </div>
         </div>"""
 
@@ -248,15 +252,23 @@ def update_dashboard(ai_response, news_list, today_str):
     tbody_html = ""
     for item in analysis_data:
         trend_class = item.get('trend_class', '')
+        var_name = item.get('variable_name', '')
+        badge = item.get('badge_text', '')
+        status = item.get('status', '')
+        status_det = item.get('status_detail', '')
+        trend = item.get('trend_text', '')
+        trend_icon = item.get('trend_icon', '')
+        drivers = item.get('drivers', '')
+        
         tbody_html += f"""
                 <tr>
                     <td data-label="核心變數">
-                        <div class="var-name">{item['variable_name']}</div>
-                        <span class="badge">{item['badge_text']}</span>
+                        <div class="var-name">{var_name}</div>
+                        <span class="badge">{badge}</span>
                     </td>
-                    <td data-label="當前狀態"><div class="status {trend_class}">{item['status']} <span class="status-detail">{item['status_detail']}</span></div></td>
-                    <td data-label="趨勢"><span class="{trend_class} {item.get('trend_icon', '')}">{item['trend_text']}</span></td>
-                    <td data-label="驅動因素" class="desc-text">{item['drivers']}</td>
+                    <td data-label="當前狀態"><div class="status {trend_class}">{status} <span class="status-detail">{status_det}</span></div></td>
+                    <td data-label="趨勢"><span class="{trend_class} {trend_icon}">{trend}</span></td>
+                    <td data-label="驅動因素" class="desc-text">{drivers}</td>
                 </tr>"""
 
     html_template = f"""<!DOCTYPE html>
@@ -578,6 +590,8 @@ if __name__ == "__main__":
                 sys.exit(1)
             
     except Exception as e:
+        import traceback
         print(f"\n[CRASH] 程式發生未預期錯誤: {e}")
-    
-    # input("\n請按 Enter 鍵結束程式...")
+        traceback.print_exc()
+        import sys
+        sys.exit(1)
