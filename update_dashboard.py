@@ -21,8 +21,23 @@ HTML_PATH = os.path.join(WORKSPACE_DIR, "index.html")
 # ==============================================================================
 def fetch_weekly_news():
     print("正在抓取過去七天全球總經深度新聞 (滾動週度視窗)...")
-    # 加上 when:7d 參數並使用更精確的「週報專用」關鍵字，避免抓到過時的研究報告
-    url = "https://news.google.com/rss/search?q=latest+global+macro+weekly+outlook+OR+fed+interest+rate+DXY+trend+when:7d&hl=en-US&gl=US&ceid=US:en"
+    # 核心追蹤事件區 (由資深總經框架精煉，涵蓋全球股匯債波動事件)
+    macro_keywords = [
+        # 1. 央行與流動性 (Central Banks & Liquidity)
+        "FOMC", "Federal Reserve", "ECB", "BOJ", "interest rate", "rate cut",
+        # 2. 通膨與物價 (Inflation & Prices)
+        "CPI", "PCE", "PPI", "inflation",
+        # 3. 就業市場 (Labor Market)
+        "NFP", "nonfarm payrolls", "jobless claims", "unemployment",
+        # 4. 經濟基本面 (Economic Growth)
+        "GDP", "Retail Sales", "PMI", "soft landing", "macroeconomic",
+        # 5. 匯率與公債 (FX & Treasuries)
+        "DXY", "Treasury yields"
+    ]
+    
+    # 自動將關鍵字組合成 URL 編碼的 OR 條件語法
+    query_str = "+OR+".join([f"%22{k.replace(' ', '+')}%22" if ' ' in k else k for k in macro_keywords])
+    url = f"https://news.google.com/rss/search?q=({query_str})+when:7d&hl=en-US&gl=US&ceid=US:en"
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
     try:
         response = urllib.request.urlopen(req)
@@ -73,7 +88,9 @@ def analyze_with_gemini(news_data, today_str):
 ### 撰寫指令 (核心邏輯):
 1. **定位發動點 (Trigger Point)**: 從本週數據或新聞中，找出最具影響力的因子（如：Fed 談話、公債震盪或地緣政治）。
 2. **彈性傳導鏈 (Elastic Chain)**: 靈活建構因果邏輯（例如：[因子] ➔ 影響通膨/利率預期 ➔ 最終定價美元走勢）。若無顯著新聞請跳過通膨環節。
-3. **數據準確性**: 嚴禁虛構數值。若 DXY < 100，嚴禁說「突破 100」。
+3. **嚴控數值幻想與虛構事件 (Zero Hallucination)**: 
+   - 絕對禁止憑空捏造具體點位或價格（如：金價觸及 $4800、美元站上 100 等錯誤數據）。若新聞未提確切數字，請一律使用「趨勢詞彙」描述（如：再創新高、大幅拉落、區間震盪等）。
+   - 絕對忠於上方提供的【新聞頭條】，嚴禁自行腦補未發生的國際地緣衝突或事件。
 4. **HTML 格式限制**: 在 next_week_forecast_html 欄位中使用 <details> 標籤與分點結構。
 
 ### 輸出格式 (JSON):
