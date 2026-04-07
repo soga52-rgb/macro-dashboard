@@ -77,10 +77,11 @@
         table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
         th { padding: 1rem; text-align: left; border-bottom: 2px solid #f1f5f9; color: var(--text-secondary); }
         td { padding: 1.2rem 1rem; border-bottom: 1px solid #f1f5f9; }
-        .var-name { font-weight: 700; color: var(--text-primary); }
-        .badge { font-size: 0.75rem; background: #f1f5f9; padding: 2px 8px; border-radius: 4px; color: #64748b; }
+        .var-name { font-weight: 700; color: var(--text-primary); margin-bottom: 0.2rem; }
+        .badge { font-size: 0.75rem; background: #f1f5f9; padding: 3px 8px; border-radius: 4px; color: #64748b; display: inline-block; white-space: nowrap; }
         .trend-up { color: var(--up-color); font-weight: 600; }
         .trend-down { color: var(--down-color); font-weight: 600; }
+        .status-detail { display: block; font-size: 0.9rem; font-weight: 400; color: #475569; margin-top: 0.4rem; line-height: 1.5; }
         
         .visual-tools { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }
         .widget-box { 
@@ -108,48 +109,6 @@
             td { padding: 0.5rem 0; border: none; }
             td::before { content: attr(data-label); font-weight: 600; color: #94a3b8; display: block; font-size: 0.8rem; }
         }
-
-        /* 專業分析收合方塊樣式 */
-        .analysis-container {
-            margin: 20px 0;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            background: #ffffff;
-            overflow: hidden;
-        }
-
-        .analysis-container summary {
-            padding: 15px;
-            background: #f8f9fa;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 1.1rem;
-            list-style: none; /* 隱藏原生箭頭 */
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        /* 自定義小箭頭 */
-        .analysis-container summary::after {
-            content: "▼";
-            font-size: 0.8rem;
-            color: #666;
-            transition: transform 0.3s;
-        }
-
-        .analysis-container[open] summary::after {
-            transform: rotate(180deg);
-        }
-
-        .analysis-content {
-            padding: 20px;
-            line-height: 1.6;
-            border-top: 1px solid #eee;
-            color: #444;
-        }
-        .analysis-content ul { padding-left: 20px; }
-        .analysis-content li { margin-bottom: 8px; }
     </style>
 </head>
 <body>
@@ -158,16 +117,15 @@
             <span class="date">GLOBAL MACRO WEEKLY INSIGHTS</span>
             <h1>全球總經週報</h1>
             <p style="color: #94a3b8;">由 AI 驅動的自動化全域分析 (Rolling 7-Day Window)</p>
-            <p style="font-size: 0.85rem; color: var(--accent-color); font-weight: 600; margin-top: 0.5rem;">🕒 最後更新時間：2026-04-02 20:34</p>
-            <div style="margin-top: 1.5rem;" class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>{"symbols": [ {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FOREXCOM:NSXUSD", "title": "Nasdaq 100"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "BITSTAMP:BTCUSD", "title": "BTC/USD"}, {"proName": "BITSTAMP:ETHUSD", "title": "ETH/USD"} ], "showSymbolLogo": true, "colorTheme": "light", "isTransparent": true, "displayMode": "adaptive", "locale": "zh_TW"}</script></div>
+            <p style="font-size: 0.85rem; color: var(--accent-color); font-weight: 600; margin-top: 0.5rem;">🕒 最後更新時間：2026-04-01 18:03</p>
+            <div style="margin-top: 1.5rem;" class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>{ "symbols": [ { "proName": "FOREXCOM:SPXUSD", "title": "S&P 500" }, { "proName": "FOREXCOM:NSXUSD", "title": "Nasdaq 100" }, { "proName": "FX_IDC:EURUSD", "title": "EUR/USD" }, { "proName": "BITSTAMP:BTCUSD", "title": "BTC/USD" }, { "proName": "BITSTAMP:ETHUSD", "title": "ETH/USD" } ], "showSymbolLogo": true, "colorTheme": "light", "isTransparent": true, "displayMode": "adaptive", "locale": "zh_TW" }</script></div>
         </header>
 
         <section>
             <h2 class="section-h2">📻 本週市場主旋律 (Narrative)</h2>
             <div class="narrative-box">
-                本週全球市場的核心敘事圍繞著「地緣政治動盪與聯準會鷹派立場的共振」。隨著中東局勢（特別是伊朗衝突風險）再度升溫，原油價格大幅波動，直接推升了通膨預期，並觸發強烈的避險資金流入。與此同時，美國經濟數據展現韌性，使市場修正對聯準會降息的過度樂觀，推動 10 年期美債殖利率攀升。這股力量將美元指數 (DXY) 成功推升至 100.50 的關鍵整數關卡，創下 10 個月來新高，並對黃金與非美貨幣造成沉重下行壓力。
+                本週全球金融市場陷入「七零年代式滯脹」的集體焦慮。儘管美元在全球儲備貨幣的佔比降至 31% 的歷史低點，反映了結構性的去美元化趨勢，但在聯準會（Fed）極度鷹派的立場下，實質利率的飆升使美元化身為市場的「破壞球（Wrecking Ball）」。黃金市場正經歷劇烈陣痛，短期內因避險資金流向比特幣及受困於高殖利率環境，金價自高點重挫逾 14%，回測 4,500 美元整數關卡。市場情緒已從單純的通膨對沖轉向對「長期高利率（Higher for Longer）」環境的恐懼，投資人正重新評估在經濟衰退陰影與地緣政治緊張交織下的資產定價模型，市場波動性已達到 2025 年以來的新高。
             </div>
-            <details class='analysis-container'><summary>📢 下週預測：[美元霸權回歸與利率敏感資產重定價]</summary><div class='analysis-content'><ul><li><strong>美元指數關鍵點位：</strong> 下週將測試 101.00 阻力位，若中東局勢無緩解跡象，DXY 將維持強勢。</li><li><strong>黃金支撐位分析：</strong> 金價短期內在 4,550 - 4,600 美元區間震盪，需關注美債殖利率是否出現觸頂回落。</li><li><strong>非美貨幣壓力：</strong> 日圓（JPY）可能下探更高關卡，需警惕日本央行（BoJ）的口頭或實際干預。</li><li><strong>核心數據觀測：</strong> 市場將聚焦非農就業報告，若數據持續強於預期，將確立「終端利率更久」的市場定價。</li></ul></div></details>
         </section>
 
         <section>
@@ -175,28 +133,28 @@
             <div class="trend-grid">
                 <div class="trend-card">
                     <h4>US 10Y Yield</h4>
-                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{"symbol": "FRED:DGS10", "width": "100%", "height": "100%", "locale": "zh_TW", "dateRange": "1M", "colorTheme": "light", "isTransparent": true}</script></div>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{ "symbol": "FRED:DGS10", "width": "100%", "height": "100%", "locale": "zh_TW", "dateRange": "1M", "colorTheme": "light", "isTransparent": true }</script></div>
                 </div>
                 <div class="trend-card">
                     <h4>Dollar Index</h4>
-                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{"symbol": "CAPITALCOM:DXY", "width": "100%", "height": "100%", "locale": "zh_TW", "dateRange": "1M", "colorTheme": "light", "isTransparent": true}</script></div>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{ "symbol": "CAPITALCOM:DXY", "width": "100%", "height": "100%", "locale": "zh_TW", "dateRange": "1M", "colorTheme": "light", "isTransparent": true }</script></div>
                 </div>
                 <div class="trend-card">
                     <h4>Gold Spot</h4>
-                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{"symbol": "TVC:GOLD", "width": "100%", "height": "100%", "locale": "zh_TW", "dateRange": "1M", "colorTheme": "light", "isTransparent": true}</script></div>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{ "symbol": "TVC:GOLD", "width": "100%", "height": "100%", "locale": "zh_TW", "dateRange": "1M", "colorTheme": "light", "isTransparent": true }</script></div>
                 </div>
                 <!-- 亞洲貨幣 -->
                 <div class="trend-card">
                     <h4>USD / JPY</h4>
-                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{"symbol": "FX:USDJPY", "width": "100%", "height": "100%", "locale": "zh_TW", "dateRange": "1M", "colorTheme": "light", "isTransparent": true}</script></div>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{ "symbol": "FX:USDJPY", "width": "100%", "height": "100%", "locale": "zh_TW", "dateRange": "1M", "colorTheme": "light", "isTransparent": true }</script></div>
                 </div>
                 <div class="trend-card">
                     <h4>USD / TWD</h4>
-                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{"symbol": "FX_IDC:USDTWD", "width": "100%", "height": "100%", "locale": "zh_TW", "dateRange": "1M", "colorTheme": "light", "isTransparent": true}</script></div>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{ "symbol": "FX_IDC:USDTWD", "width": "100%", "height": "100%", "locale": "zh_TW", "dateRange": "1M", "colorTheme": "light", "isTransparent": true }</script></div>
                 </div>
                 <div class="trend-card">
                     <h4>USD / KRW</h4>
-                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{"symbol": "FX_IDC:USDKRW", "width": "100%", "height": "100%", "locale": "zh_TW", "dateRange": "1M", "colorTheme": "light", "isTransparent": true}</script></div>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{ "symbol": "FX_IDC:USDKRW", "width": "100%", "height": "100%", "locale": "zh_TW", "dateRange": "1M", "colorTheme": "light", "isTransparent": true }</script></div>
                 </div>
             </div>
         </section>
@@ -209,22 +167,22 @@
         <div class="focus-card">
             <div class="focus-idx">01</div>
             <div class="focus-content">
-                <h4>美元指數突破 100 心理關卡</h4>
-                <p>美元強勢站穩 100.50，反映市場對「更高、更久」利率政策的共識，並受中東避險情緒強力支撐。</p>
+                <h4>美元儲備地位降至 31 年新低與週期性強勢的矛盾</h4>
+                <p>根據最新數據，美元在全球央行外匯儲備中的佔比已降至 31 年來的新低，各國央行顯著增加黃金與其他貨幣的配置。然而，這種結構性的減持並未削弱美元在當前循環中的購買力。受惠於美債殖利率的強勁利差優勢，美元指數維持高位，這反映出「去美元化」是一個長期戰略過程，而短期內「資本回流美國」的套利交易仍是主導市場的核心力量。</p>
             </div>
         </div>
         <div class="focus-card">
             <div class="focus-idx">02</div>
             <div class="focus-content">
-                <h4>地緣政治引發能源通膨隱憂</h4>
-                <p>伊朗局勢不穩導致油價劇烈震盪，抵銷供應鏈修復帶來的降溫，成為 Fed 轉向的最大絆腳石。</p>
+                <h4>黃金與比特幣的避險替代效應：資產配置的典範轉移</h4>
+                <p>本週市場出現顯著的資金流向背離。儘管中東局勢動盪，黃金 ETF 卻出現大量流出，資金轉向表現亮眼的比特幣。這種現象表明，在數位資產監管框架逐漸成熟後，黃金作為「終極避險資產」的壟斷地位正受到挑戰。若金價短期內無法守住 4,400 美元關鍵支撐，可能引發更大規模的槓桿清理，即便高盛與富國銀行仍看好長期金價將達 5,400 至 6,300 美元。</p>
             </div>
         </div>
         <div class="focus-card">
             <div class="focus-idx">03</div>
             <div class="focus-content">
-                <h4>黃金市場的劇烈修正</h4>
-                <p>儘管具備避險屬性，但在美元與美債殖利率雙升的重壓下，金價從歷史高位大幅修正至 4,600 美元附近。</p>
+                <h4>聯準會鷹派立場下的全球衰退風險：滯脹陰影重現</h4>
+                <p>市場正高度關注即將發布的勞動力數據與 Fed 官員講話。由於核心通膨仍具黏性，聯準會被迫維持緊縮週期，這導致殖利率曲線極度倒掛。目前市場定價已反映出對 2026 年底前經濟硬著陸的恐懼，特別是在新興市場面臨資本外逃與本幣貶值的雙重壓力下，全球經濟「無聲衰退」的可能性正顯著上升。</p>
             </div>
         </div>
             </div>
@@ -234,7 +192,7 @@
             <h2 class="section-h2">⛓️ 利率與匯率傳導矩陣</h2>
             <div class="deep-dive-box">
                 <h3>Macro Linkage Analysis</h3>
-                高企的美債殖利率擴大了美國與亞洲（尤其是台日韓）的利差，導致 TWD、JPY、KRW 面臨強大貶值壓力。美元強勢突破 100 後，亞洲央行可能被迫啟動「貨幣保衛戰」以抑制輸入性通膨。目前亞洲貨幣的走勢已非單純反映基本面，更多是受到利差吸引力與地緣避險流出的雙重擠壓。
+                當前貨幣市場的傳導機制高度依賴「美債實質殖利率」這一核心驅動力。隨著美債 10 年期殖利率因鷹派預期再度攀升，美日間的利差擴大持續對亞幣造成毀滅性打擊，導致日圓與人民幣被迫陷入防守位。對於黃金而言，強勢美元與高機會成本形成「雙重打擊」。傳統上黃金與美元的負相關性因去美元化需求一度淡化，但在流動性收緊階段，市場仍回歸「現金為王」邏輯。美元作為全球清算的最終抵押品，其匯率波動直接擠壓了以美元計價的大宗商品利潤空間，造成金價與亞幣同步受壓的連鎖反應。
             </div>
         </section>
 
@@ -255,29 +213,29 @@
                 <tr>
                     <td data-label="核心變數">
                         <div class="var-name">🔥 通膨預期</div>
-                        <span class="badge">高位震盪</span>
+                        <span class="badge">滯脹風險</span>
                     </td>
-                    <td data-label="當前狀態"><div class="status trend-up">看漲 <span class="status-detail">能源價格波動與就業數據抵銷了通縮效果。</span></div></td>
+                    <td data-label="當前狀態"><div class="status trend-up">高位震盪 <span class="status-detail">核心通膨率維持在 4% 以上，能源與薪資成長形成螺旋壓力。</span></div></td>
                     <td data-label="趨勢"><span class="trend-up ">持續攀升</span></td>
-                    <td data-label="驅動因素" class="desc-text">地緣政治緊張、原油供給風險、服務業成本韌性。</td>
+                    <td data-label="驅動因素" class="desc-text">供應鏈碎片化、能源價格墊高、地緣政治溢價。</td>
                 </tr>
                 <tr>
                     <td data-label="核心變數">
                         <div class="var-name">📉 美債殖利率</div>
-                        <span class="badge">持續攀升</span>
+                        <span class="badge">實質利率飆升</span>
                     </td>
-                    <td data-label="當前狀態"><div class="status trend-up">看漲 <span class="status-detail">10 年期與 2 年期美債利差倒掛收窄，反映政策共識。</span></div></td>
-                    <td data-label="趨勢"><span class="trend-up ">強勁上揚</span></td>
-                    <td data-label="驅動因素" class="desc-text">Fed 官員鷹派發言、財政部發債壓力、通膨溢價補償。</td>
+                    <td data-label="當前狀態"><div class="status trend-up">極度鷹派 <span class="status-detail">10年期美債殖利率突破關鍵心理點位，殖利率曲線深度倒掛。</span></div></td>
+                    <td data-label="趨勢"><span class="trend-up ">高位橫盤</span></td>
+                    <td data-label="驅動因素" class="desc-text">聯準會縮表進度、抗通膨預期、政府債務供應壓力。</td>
                 </tr>
                 <tr>
                     <td data-label="核心變數">
-                        <div class="var-name">🦅 美元指數 (DXY)</div>
-                        <span class="badge">強勢突破</span>
+                        <div class="var-name">🦅 美元指數</div>
+                        <span class="badge">避險霸權</span>
                     </td>
-                    <td data-label="當前狀態"><div class="status trend-up">看漲 <span class="status-detail">站穩 100 點，創 10 個月以來最強勁走勢。</span></div></td>
-                    <td data-label="趨勢"><span class="trend-up ">突破 100.50</span></td>
-                    <td data-label="驅動因素" class="desc-text">全球避險資金流入、相對於歐英央行的利差優勢。</td>
+                    <td data-label="當前狀態"><div class="status trend-up">強勢擴張 <span class="status-detail">美元指數（DXY）站穩 106 關卡，全球流動性收縮。</span></div></td>
+                    <td data-label="趨勢"><span class="trend-up ">短期偏強</span></td>
+                    <td data-label="驅動因素" class="desc-text">利差優勢、避險資金回流、非美貨幣疲軟。</td>
                 </tr>
                     </tbody>
                 </table>
@@ -289,12 +247,12 @@
             <div class="risk-grid">
                 
         <div class="risk-item">
-            <span class="risk-title">⚠️ 中東衝突擴大化</span>
-            <p class="risk-content">若伊朗衝突演變為全面封鎖或直接打擊，油價飆升將引發二次通膨風險。</p>
+            <span class="risk-title">⚠️ 中東地緣衝突超預期升級</span>
+            <p class="risk-content">若伊朗衝突演變為全面區域戰爭，原油供應中斷將導致油價飆升，進一步推高通膨預期，迫使央行採取更激進的加息，屆時市場將進入「通膨失控」與「利率暴漲」的至暗時刻。</p>
         </div>
         <div class="risk-item">
-            <span class="risk-title">⚠️ Fed 政策路徑意外</span>
-            <p class="risk-content">近期強勁的就業數據若持續，市場將全面排除上半年降息的可能性，進一步推升美元。</p>
+            <span class="risk-title">⚠️ 流動性黑天鵝與信用風險觸發</span>
+            <p class="risk-content">持續的高利率環境正侵蝕企業債務承受能力。若黃金價格跌破關鍵技術水位，可能觸發商品交易商的保證金追繳壓力，引發跨市場的流動性危機，拋售資產以獲取現金。</p>
         </div>
             </div>
         </section>
@@ -308,88 +266,31 @@
                 </div>
                 <div class="widget-box">
                     <div class="widget-title">主要貨幣對強弱熱力圖 (Forex Heat Map)</div>
-                    <div class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-forex-heat-map.js" async>{"width": "100%","height": "400","currencies": ["EUR","USD","JPY","GBP","CHF","AUD","CAD","NZD","CNY"],"isTransparent": true,"colorTheme": "light","locale": "zh_TW"}</script></div>
+                    <div class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-forex-heat-map.js" async>{ "width": "100%", "height": "400", "currencies": [ "EUR", "USD", "JPY", "GBP", "CHF", "AUD", "CAD", "NZD", "CNY" ], "isTransparent": true, "colorTheme": "light", "locale": "zh_TW" }</script></div>
                 </div>
             </div>
         </section>
 
         <footer style="margin-top: 5rem; border-top: 1px solid #f1f5f9; padding-top: 2rem;">
             <details class="news-accordion">
-                <summary>查看本週參考新聞原文 (共 23 則)</summary>
+                <summary>查看本週參考新聞原文 (共 4 則)</summary>
                 <ul class="news-list">
                     
                 <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMingFBVV95cUxQLWJDTjBBalYwVHVpc0VxV1BwRE1xeUt1RWlLQ1VJdnJQRXNnb3p6MnFNbjRBV0s0TnlldW4wSVIycFRQeVNISWJ3VV9wMWdjX1ZndE1Tc24tNzc0anNYWjl0SVBsRDhSa0dVTWlyVVYxX0w5b2JhTFB0Tm9Vb2FwYVZubTU1SVJlcy0zMEpXOEM4ZlhiSU1QazdVQVlldw?oc=5" target="_blank">📄 Weekly market commentary - blackrock.com</a>
+                    <a href="https://news.google.com/rss/articles/CBMihAFBVV95cUxPR0pBUjBEbmFpeDNkT3B4T1BIQTBlUk9qQVRKVWczYU1hY3V4ZTZFTUtMc0VFU1p1dzFieHFJZ0FyUTg0akxhOFBSM1RuZVVQOENtNkJndVhWdmhVLU03Z2xQQ1ZrQ0xjZnlka21OWHh1VEMybDFMRVZuVUowWTAzQ09KTWQ?oc=5" target="_blank">📄 Gold Prices Recover Briefly as Hawkish Central Banks and a Resilient Dollar Fuel Bearish Pressure - CryptoRank</a>
                 </li>
                 <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMixAFBVV95cUxNX2dSaE5yX0xGT0xXOWRpX3ozdkVsdjVqWlFtUjM3YU1WSkRDd28xMDR3VUUzd3RCUnk2MndEQnJYMmx3QU9nUl9lUlZYaFd1X2c4SXZYQnNQNFI4MFVScEZzcVVsNGVnMExhSFVzeW5BdWI5VERYOUtvRFRyRHdlaEszN1h2WGh2Y3VKYXZyZ2Z4bDc5R1ZBZjdsd2Fya0JkNTdYWHNqZmpxNXdkZWlQZWZGSmpsQVdvVjV6XzdKdmJwOVds?oc=5" target="_blank">📄 As US Dollar Index Breaks the 100 Mark, the Global Economy Faces a New Stress Test - Investing.com</a>
+                    <a href="https://news.google.com/rss/articles/CBMi1AFBVV95cUxQbVlzR1NlMUFxUVc2cm1OS1ZlN3dCRVNmeWd0SEk5WlppT0lWRkxsbjR0TzRndWVERkpPM2phNm1qMDlDNkh1ZXRTcS13WU1tb0xGNlJPQmM5SmNLSmgwT1MwMzU2ZnRFeTNZSmxWXzFmWHBjZWs1YjF5UW12N3BQTVpqWTV4UUlyNjh1eGw2RVhhNHpMSi1wV3dtRHN4aUd6eVZaZjV1dlFZYk1VdjZfNlpjLV9scVBxUldMYnYyNG0ySUhYODJqZldsdVdubzNvdTZZRQ?oc=5" target="_blank">📄 Gold plunges despite global turmoil - MSN</a>
                 </li>
                 <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMiggFBVV95cUxPZ1V0M0U2NjUwcVZpbERaUVZ0LXA4bnI3VXlMX3lwc1ROTWtpM3RiRThOZU9JaHp6dFdhNkhoOEt6MFBCVzJSSXh1My1HR0RFU3dULVVtd19CR1ZNNDBDYmJIZ1hra2JmOFBxV3RNYXVubW5vQk1NTGtCM1ZrTnNvUWZ3?oc=5" target="_blank">📄 US Dollar Index (DXY) Price Forecast: Critical Test at 100.00 as Hawkish Fed Bets Offer Vital Support - CryptoRank</a>
+                    <a href="https://news.google.com/rss/articles/CBMi-gFBVV95cUxNSUdsb2kzbjVwRGd1UVpXbHpXMXlGbXptY2VtcHV6NW9sRzlZOVJ6eThLTTNqX3d5bjNhZ1ZMZEdrQTBMcHhJR2kxVjZlUV85eTNGYW5vOEQtUlRDeW94T0FIUlNHZldIM3Q4QVliT2ltaHdmRTJIUS1ZeTktd05mV3o5a3NhbENQSHJRZklqWExjaW1kLS0xTWsyaXRfTnQtTlVwN0UtX0MyVlh4cDluUkZOdV9OZEhVcUFMdjM4ZWLubzJpcm9SZnRpRjlCZkRxSDVsU2tpUmVlcDRDbV9Xak9aMmdYOUc5Umtaa21YU2pWRWlLTUNTUGdB?oc=5" target="_blank">📄 Status of US Dollar as Global Reserve Currency: USD Share Drops to 31-Year Low as Central Banks Diversify into Other Currencies & Gold - Wolf Street</a>
                 </li>
                 <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMiZEFVX3lxTE5pMG1zMl9YdFdITjRoTGNFbzRCSHJIekdTNXVfVjZDMXkyM0ZXWkVBQUxCNHJkWnpxc3l6Y0tXTWpMdGFnblRjY1c1QVBIR0s1b3g0a0p6TEpFcENjN3A2RF8yNFg?oc=5" target="_blank">📄 US Dollar Index Soars: DXY Holds Firm Above 100.00 As Iran Conflict Fears Intensify - Binance</a>
-                </li>
-                <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMi5gFBVV95cUxOM1Jjcm8xeE9PR2Z2TTFOWWxWb2hPV0Ixd3ZNLW1uLXhuZDRBNTMwc3FJckdyaXNHYWV1eUtQRUlLVVA4LXV2QVp5SVJ3SjE3MzJ2WE1fdWU2UTl4NGpFbjl6VlNKaTZneTNLRUZ4SkhQRHgyT2UtOTJLOFVnREU3Z21ld21NTW1qVVZ1UkhQLUk1MjJIZUZ4ZlNSWU93Z2hWRDZXcjJhWVROV2tkVXBKTVl4UmhBdzBqODVWZEJRTHkyb0dCVzFDWll3RXBoNFd5WUxBaUQxdDQxZ3RaMmJxejd5elk0QQ?oc=5" target="_blank">📄 Gold’s Massive 22% Correction: From $5,603 Record to Hawkish Fed Reality - The Chronicle-Journal</a>
-                </li>
-                <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMiRkFVX3lxTE02RnlSNjZnRVJDSW5PdFpSSkhtRGNXLTFsRWhtdWdiN3F5QkZFN1pfbkJiLTdLVFNYbzFPWDF0RFR0RkVQM1E?oc=5" target="_blank">📄 Gold Price Holds Below $4,600 as Traders Weigh Critical Middle East and Interest Rate Signals - MEXC Exchange</a>
-                </li>
-                <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMikgFBVV95cUxPcnR2YnRFdHhrcGZUTmZVOURVZFZiT2tvRlJMMWlyaHJPR1ZHVUV3VGJPdGh6UmhXRTRMaS1pWkFPWXBKQnJ4MTlHQkcyS0otZFprV3FQVEVRaXUzdTJLazVNd0ZpcW1SX2lkYjJlV21oSDdMbHhVWG5VNmxNN2cyMlBYbUxMZGpjY0NkZVZTbGJudw?oc=5" target="_blank">📄 DXY Surges Amid Iran Tensions, Oil Spike & Fed Policy - equiti.com</a>
-                </li>
-                <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMie0FVX3lxTE4yOEZKSFJtZmxoR1JvOUlzTFZwQ2hwc195VFhoZVhyWDlKS05WcGRRN19mSzEybWhROGV3Mks0eVRUQ0lSd0FrZDVHS0xNc3JTTkluRTloTmVIcmdXNDZZQW1qQUM3OTVYb0FSSGJacVU0VTZvMndGNEpXcw?oc=5" target="_blank">📄 US Dollar Index Soars for Third Day as Fears Trigger Intense Safe-Haven Rush - CryptoRank</a>
-                </li>
-                <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMiT0FVX3lxTE1SVTFXejc5NzZhZGtOaWxVRTFwZy1UWEpzOGVPd2RsbmhYdWJXakx4TnBXb2dUcnBoQlVKZl84cXRuVkh3alhtdDFPRUF0Zms?oc=5" target="_blank">📄 US Dollar Index Soars: Geopolitical Fears and Steady Fed Propel Safe-Haven Rally - MEXC</a>
-                </li>
-                <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMiR0FVX3lxTE52TmJGVmNqSkxSdDlUNnVPV21aWUpKc2dySWg3eHZUbjdDN3VLd3Rtcm85WTdrTFFmNWFTcnV2QzBvdm1KYmFv?oc=5" target="_blank">📄 Gold Price Soars Toward $4,800 Milestone as Dollar Weakness Fuels Fourth-Day Rally - MEXC</a>
-                </li>
-                <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMiggFBVV95cUxPYzNlNUdDeFNNMXB5QWNCS0RTajBFWV85UnRiaWhqYnhyWW1QMkJsWDBIR3gtMGotLS0zdlVUZGJnUVc2ZHdGUHVnd1MxNXFJRHM1UlV4ZFE4c0xfMVRPT2RQTnFUUGJwN2p4b3VGUzdvQlhZN29DSjJQbzVmS1VsYmp3?oc=5" target="_blank">📄 DXY Analysis: How Soaring Conflict Risk and Robust Data Fuel USD Support – ING Perspective - CryptoRank</a>
-                </li>
-                <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMiR0FVX3lxTE5IRE5zZ3dycUs2RXV2OXk0U2hvbENWNTlyZEhjUlNnXy1KQVVvdkRMUmFERUNBZlU1QUhsQkY0SlhabUtFZklv?oc=5" target="_blank">📄 Gold Price Stalls: Critical Momentum Loss Amid Surging Yields and a Resilient Dollar - MEXC</a>
-                </li>
-                <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMiekFVX3lxTE1YVUJ3UWNsTnp3QXhpLWxqMlpvZ0xwcnRHY1pnaFpITjNLR2Q3MDNCV051S2JVdjdlQ01qOEdzYVNWRDlLVTlkeEo1dzhuNVJGVE50YS1mNndrbHc4dW9Nc1ByTU82cFlQTGpzYVd3MW12WFJWVG9tbEdB?oc=5" target="_blank">📄 Gold Price Plummets: US Dollar Surges and Oil Rises in Dramatic Market Shift - CryptoRank</a>
-                </li>
-                <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMid0FVX3lxTE41SnhzLUZfMnZGbGN3VzRuZi1oX0d3QnFCZS1pbHoyeHVSeW1ObTd6OHFVM0FhZ0JxUnhkMWlVN2F1Qkx4dS0wdFBzX2VDVFVfWlV1dzRibFZMdk1Oc1lITkxSN09VRkg0RGE5YlR4aGRIWlF5TjNz?oc=5" target="_blank">📄 Gold Price Analysis: Extends Gains but Remains Vulnerable – ING Charts Critical Levels - CryptoRank</a>
-                </li>
-                <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMifEFVX3lxTFBzVmdXVnBVdXFpM2hjV1ZiYkszWjM5SDVRdlN4Z0tOMzFHbFB0MU9ieGFJMjdHaFhxTTMtVWNYdFZXbkZNZ3pjSEFNQXI4YTc1RThtQVhvbHRBSG8xXzhaUXpnSlVSclhkaldKSFVXLUE5MlBsbUVYbmo5bHg?oc=5" target="_blank">📄 US Dollar Index Plummets as Iran Ceasefire Talks Shatter March’s Geopolitical Rally - CryptoRank</a>
-                </li>
-                <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMiR0FVX3lxTE9lRTJTcUo5NzBkX1Baa25jRGs0YVp1RHBya0pUdWZlM2p4RlFiZERMOEhYMGZaanpKV2hJOHlNVW9KNzhlRlhj?oc=5" target="_blank">📄 Gold Price Defies Gravity on Weak Dollar, Yet Hawkish Fed Threatens Critical Rally - MEXC</a>
-                </li>
-                <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMiR0FVX3lxTFBFZFp4Z1IwSWFrSnhrNTlGeEliQUZxcXhGMnVwbjhYTzl0VGo3TWtUQkVOd0xhT0RrOWx1Nk5xTkRndi1zcE5r?oc=5" target="_blank">📄 Silver Price Plummets: Strong Dollar and Soaring Yields Crush Geopolitical Safe-Haven Demand - MEXC</a>
-                </li>
-                <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMiuAFBVV95cUxNTExNcjhrLW54bHR0YXgxczVaLTBnWS02dXRGU0dubGZFdDZ4R09ndk45Z1haLWVQLXlFNnAwdndnaHp3LXhOWGI4a0tRLVRkbGh6R0NuaEFNbHRVOVlDMlc5WkI4eHI0Ul9PUEhSbjczOS1HNnhoMEp3eDdxTnBQcGJSOGx2TmJYSkN5MEVmX1FMb05ZX29tYjFNd3dqdHNtTnZQeEdKZWRwcTV6aTljREJtMy1oZ0Na?oc=5" target="_blank">📄 DXY strengthens on a potential hawkish Fed stance and risk-off mood - equiti.com</a>
-                </li>
-                <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMivwFBVV95cUxPVmJNRlE1UC1yeUJBR3F3M0lDYm0wZTY3QWJMdWlNQTNTV0hIb0lBZUVwVWtRa2lWSFpVcWwzampqcjhrYjZ3SDZ3dmZXcFlWcmpJSTU0S0tiN1VXdFhmQk9WZ0Zfd2w0al9jMjVZWHZOQnRCODRncC1Hb2MxTFRHa1FWUWp0dC1QbHBwSUt0WWFQZ3dxRW9vanI1YjAzaDhrcnhJQjQwMmpKSVpjcE9KQ3Q3cnVCYWVWRnFETk9ucw?oc=5" target="_blank">📄 Morning Brief: Global Markets Rally on Iran Signals, BIST 100 Eyes 13,000 Threshold - PA Turkey</a>
-                </li>
-                <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMi0wFBVV95cUxQNjZLNFpjTkNxMjBMMWhzZWdPdWgtYkExelBoM1BpS2hQNDU1Q2kxOFc5MlhrWGlSbGR2SjZTRXdKbjllblU3VDBNYkJIRmlXRnlEMUdvanVWb3V6Y2lvd3ROTHdwNkxMRlM2RW9jTWxGNV9lLWFHTkVsTWJKYXNQdzdLbExESW9yci1DeVVsSFpxTkhEV1p3OE1GTERlbXVtamUzMkpJblBXUUhDT09xbTdKTGtyZnV4eXFlZEhyTjgwRzhXTGI1SmJVTndyRERPNnRz0gHYAUFVX3lxTFBha0FYQjZpQTlzRVpOWGNLWVYwRkZFSGJpMGN0dnlSRXh4UTZtMzZ3QVpNWmJwV3dNV29IbWowZHBDS0I4Ynk3Nno5SlpsOF90Qk9SeVptWWp1b0NTUlpzZzdxcnV6RTg4M3owWm5yYmFkeGVWTWZISjVUVjVoR1VZZnFBNkpVcUk0VDhXSkN2MDA3S0dhTUZ2ZTBlakZ3djlQbmtnaWhhdjlDWUZEVzJVbnlaYjJjWGR0WnEtZE9SbU5jcHo5R1pEWjg0aVpLS3psQk1LUG5lNw?oc=5" target="_blank">📄 Market swings ahead, fundamentals provide anchor: Analysts map FY27 path - Business Standard</a>
-                </li>
-                <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMiZkFVX3lxTE5Zc2V3UGRTMG5Wd1J1akduRWFuVnpqUE8xSUdxekp5ZmRGbV9zNFJvUkZOaUlIWmtNLTlTVDZVQ0NLMEg5X0VBUjR5dFpiUDQ3bEtFTDBkY2NWdjNtd0NrdkFZRTJYUQ?oc=5" target="_blank">📄 US Dollar Index Soars: DXY Holds Firm At 100.50, Marking A Critical 10-Month Peak - Bitcoin World</a>
-                </li>
-                <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMiakFVX3lxTE5sWTJobjc5anhiU0ppaVFhTTNnOVBOaUg4Qk13UXBSYXRjRVVjT2ZiT0dkMjNSMnpiaDhPdEU3YV9uOXhGVkFCLXVOVnYzUzJEdG1zVHNwam5vdFAzNUVxZkRIcnBHdVZ2c3c?oc=5" target="_blank">📄 Gold Price Plummets from Two-Week Peak as Soaring Fed Rate Hike Bets Fuel Dollar Surge - Bitcoin World</a>
-                </li>
-                <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMiZEFVX3lxTE56UGJ3a01wNEEtcWQtS1JTaVdxTDV4Z2doekxpZTlGb2hWbWlCaFpULWRpRXNaTkFtemZlNU80em9NNHdDVUo0ZXNYb2xsSy1ralRBVS0yWVUxNUg0WDducjJBSHE?oc=5" target="_blank">📄 US Dollar Index Jumps to 99.8440 on April 2, Strengthens 0.30% - fakta.co</a>
+                    <a href="https://news.google.com/rss/articles/CBMivAFBVV95cUxPZzExbFlSblFQdmlxQ25hUEM3TXlRUFZzNzF3SUtVRUhFbDVHWFVlMmZoTVpRaTZOSy1TeDl2LTdyQUV1aUFXU2hmR3lJRlZJNmx1VzRDOWNMazdQWVozRHJKb3lhb0dPQUVHTHF1aDVTUXpybDM4OEk3cEJXUlJEMEstanZ1OF95MWZqOWxvQUFvcE5HS2tQa1duSmIwVEtDSnFlNkJ4b0dqMWlVXzNpS1hFLU42c1gwdkZkVw?oc=5" target="_blank">📄 Wells Fargo sees gold at $6,300 by end-2026 despite recent slump - tradingview.com</a>
                 </li>
                 </ul>
             </details>
-            <p style="text-align: center; color: #cbd5e1; font-size: 0.8rem; margin-top: 2rem;">© 2026 Macro Strategy Lab. 最後更新：2026-04-02 20:34</p>
+            <p style="text-align: center; color: #cbd5e1; font-size: 0.8rem; margin-top: 2rem;">© 2026 Macro Strategy Lab. 最後更新：2026-04-01 18:03</p>
         </footer>
     </div>
 </body>
