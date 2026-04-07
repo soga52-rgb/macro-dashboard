@@ -57,9 +57,42 @@ def fetch_weekly_news():
         return []
 
 # ==============================================================================
+# 1.5 抓取即時金融數據 (Yahoo Finance API)
+# ==============================================================================
+def fetch_realtime_data():
+    print("正在抓取最新市場報價...")
+    symbols = {
+        "DXY (美元指數)": "DX-Y.NYB",
+        "US10Y (美國十年期公債殖利率, %)": "^TNX",
+        "Gold (黃金, USD/oz)": "GC=F",
+        "S&P 500 (標普500)": "^GSPC",
+        "BTC (比特幣, USD)": "BTC-USD"
+    }
+    market_data = {}
+    for name, symbol in symbols.items():
+        try:
+            url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d"
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            response = urllib.request.urlopen(req)
+            data = json.loads(response.read())
+            price = data['chart']['result'][0]['meta']['regularMarketPrice']
+            if symbol == "^TNX":
+                market_data[name] = f"{price:.3f}%"
+            else:
+                market_data[name] = str(price)
+        except Exception as e:
+            market_data[name] = "Data Unavailable"
+    
+    # 格式化輸出
+    output = ""
+    for k, v in market_data.items():
+        output += f"- {k}: {v}\n"
+    return output
+
+# ==============================================================================
 # 2. 呼叫 Gemini REST API 進行總經分析 (具備自動修復功能的版本)
 # ==============================================================================
-def analyze_with_gemini(news_data, today_str):
+def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"):
     print(f"正在呼叫 Gemini API 進行智能推論 (今日日期: {today_str})...")
     
     if isinstance(news_data, list) and len(news_data) > 0:
@@ -79,6 +112,10 @@ def analyze_with_gemini(news_data, today_str):
     prompt = f"""你現在是一位資深的全球總經策略分析師。請根據以下數據進行邏輯推演。
 
 ### 今日日期: {today_str}
+
+### 📊 最新市場即時報價 (絕對精確，請務必參考):
+{realtime_data}
+
 ### 歷史數據參考:
 {macro_history}
 
@@ -88,9 +125,10 @@ def analyze_with_gemini(news_data, today_str):
 ### 撰寫指令 (核心邏輯):
 1. **定位發動點 (Trigger Point)**: 從本週數據或新聞中，找出最具影響力的因子（如：Fed 談話、公債震盪或地緣政治）。
 2. **彈性傳導鏈 (Elastic Chain)**: 靈活建構因果邏輯（例如：[因子] ➔ 影響通膨/利率預期 ➔ 最終定價美元走勢）。若無顯著新聞請跳過通膨環節。
-3. **嚴控數值幻想與虛構事件 (Zero Hallucination)**: 
-   - 絕對禁止憑空捏造具體點位或價格（如：金價觸及 $4800、美元站上 100 等錯誤數據）。若新聞未提確切數字，請一律使用「趨勢詞彙」描述（如：再創新高、大幅拉落、區間震盪等）。
-   - 絕對忠於上方提供的【新聞頭條】，嚴禁自行腦補未發生的國際地緣衝突或事件。
+3. **精確報價與防範幻覺 (Data Accuracy)**: 
+   - 🚨 當你在分析中提及具體價格、點位或殖利率時，**必須且只能使用上方【最新市場即時報價】中的數據**。
+   - 結合新聞頭條的利多/利空事件進行推演，說明為何當前報價（例如美元指數來到 {realtime_data.split('DXY')[1].split('-')[0].strip() if 'DXY' in realtime_data else '該水位'}）會呈現該水準。
+   - 絕對禁止憑空捏造上方未提供的數字。對於未提供報價的標的，一律使用「純定性趨勢詞彙」描述（例如：高位震盪、跌破支撐）。
 4. **HTML 格式限制**: 在 next_week_forecast_html 欄位中使用 <details> 標籤與分點結構。
 
 ### 輸出格式 (JSON):
@@ -367,10 +405,11 @@ def update_dashboard(ai_response, news_list, today_str):
         table {{ width: 100%; border-collapse: collapse; font-size: 0.95rem; }}
         th {{ padding: 1rem; text-align: left; border-bottom: 2px solid #f1f5f9; color: var(--text-secondary); }}
         td {{ padding: 1.2rem 1rem; border-bottom: 1px solid #f1f5f9; }}
-        .var-name {{ font-weight: 700; color: var(--text-primary); }}
-        .badge {{ font-size: 0.75rem; background: #f1f5f9; padding: 2px 8px; border-radius: 4px; color: #64748b; }}
+        .var-name {{ font-weight: 700; color: var(--text-primary); margin-bottom: 0.2rem; }}
+        .badge {{ font-size: 0.75rem; background: #f1f5f9; padding: 3px 8px; border-radius: 4px; color: #64748b; display: inline-block; white-space: nowrap; }}
         .trend-up {{ color: var(--up-color); font-weight: 600; }}
         .trend-down {{ color: var(--down-color); font-weight: 600; }}
+        .status-detail {{ display: block; font-size: 0.9rem; font-weight: 400; color: #475569; margin-top: 0.4rem; line-height: 1.5; }}
         
         /* 專業分析收合方塊樣式 */
         .analysis-container {{
@@ -595,7 +634,8 @@ if __name__ == "__main__":
             
             # 呼叫正確的週報抓取函式
             news_list = fetch_weekly_news()
-            ai_response = analyze_with_gemini(news_list, today_str)
+            realtime_data = fetch_realtime_data()
+            ai_response = analyze_with_gemini(news_list, today_str, realtime_data)
             
             # 安全性檢查：確保 AI 回傳內容正確
             if ai_response and isinstance(ai_response, dict) and 'analysis' in ai_response:
