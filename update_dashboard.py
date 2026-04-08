@@ -1,9 +1,23 @@
 import os
-import json
-import urllib.request
-import xml.etree.ElementTree as ET
-from datetime import datetime, timedelta
-import pandas as pd
+import sys
+
+try:
+    import json
+    import urllib.request
+    import xml.etree.ElementTree as ET
+    from datetime import datetime, timedelta
+    import pandas as pd
+except Exception as e:
+    import traceback
+    print("=============================================================")
+    print("[啟動失敗] 本機端缺少執行需要的 Python 模組！")
+    print(f"詳細錯誤訊息: {e}")
+    print("=============================================================")
+    print("這通常是因為您尚未在本機安裝 pandas 套件。")
+    print("👉 請關閉此視窗，開啟命令提示字元 (cmd) 並輸入以下指令：")
+    print("pip install pandas")
+    print("=============================================================")
+    sys.exit(1)
 
 # ==============================================================================
 # 系統設定區
