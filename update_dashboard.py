@@ -54,7 +54,7 @@ def fetch_weekly_news():
     url = f"https://news.google.com/rss/search?q=({query_str})+when:7d&hl=en-US&gl=US&ceid=US:en"
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
     try:
-        response = urllib.request.urlopen(req)
+        response = urllib.request.urlopen(req, timeout=15)
         xml_data = response.read()
         root = ET.fromstring(xml_data)
         headlines = []
@@ -87,7 +87,7 @@ def fetch_realtime_data():
         try:
             url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d"
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            response = urllib.request.urlopen(req)
+            response = urllib.request.urlopen(req, timeout=15)
             data = json.loads(response.read())
             price = data['chart']['result'][0]['meta']['regularMarketPrice']
             if symbol == "^TNX":
@@ -127,6 +127,7 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
         print(f"讀取歷史數據失敗: {e}")
         
     # 定義輸出的 JSON Schema 確保 AI 回傳的結構百分之百合法
+    # 🚨 關鍵修正：警告 AI 絕不可在 HTML 內使用雙引號
     prompt = f"""你現在是一位資深的全球總經策略分析師。請根據以下數據進行邏輯推演。
 
 ### 今日日期: {today_str}
@@ -147,7 +148,9 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
    - 🚨 當你在分析中提及具體價格、點位或殖利率時，**必須且只能使用上方【最新市場即時報價】中的數據**。
    - 結合新聞頭條的利多/利空事件進行推演，說明為何當前報價（例如美元指數來到 {realtime_data.split('DXY')[1].split('-')[0].strip() if 'DXY' in realtime_data else '該水位'}）會呈現該水準。
    - 絕對禁止憑空捏造上方未提供的數字。對於未提供報價的標的，一律使用「純定性趨勢詞彙」描述（例如：高位震盪、跌破支撐）。
-4. **HTML 格式限制**: 在 next_week_forecast_html 欄位中使用 <details> 標籤與分點結構。
+4. **HTML 格式限制**: 
+   - 在 next_week_forecast_html 欄位中使用 <details> 標籤與分點結構。
+   - 🚨 絕對禁止在 HTML 中使用雙引號 (")，所有 class 或 href 屬性必須使用單引號 (')，否則 JSON 會崩潰！
 
 ### 輸出格式 (JSON):
 請嚴格輸出以下 JSON 格式，不要有任何多餘文字：
@@ -224,7 +227,7 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
                 req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers={'Content-Type': 'application/json'})
                 
                 try:
-                    response = urllib.request.urlopen(req)
+                    response = urllib.request.urlopen(req, timeout=30)
                     result = json.loads(response.read().decode('utf-8'))
                     
                     # 💡 關鍵修正：增加 API 回傳結構的安全檢查
