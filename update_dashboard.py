@@ -6,16 +6,16 @@ try:
     import urllib.request
     import xml.etree.ElementTree as ET
     from datetime import datetime, timedelta
-    import pandas as pd
+    import csv
 except Exception as e:
     import traceback
     print("=============================================================")
     print("[啟動失敗] 本機端缺少執行需要的 Python 模組！")
     print(f"詳細錯誤訊息: {e}")
     print("=============================================================")
-    print("這通常是因為您尚未在本機安裝 pandas 套件。")
-    print("👉 請關閉此視窗，開啟命令提示字元 (cmd) 並輸入以下指令：")
-    print("pip install pandas")
+    print("這通常是因為您尚未在本機安裝必要的套件。")
+    print("請關閉此視窗，開啟命令提示字元 (cmd) 並輸入以下指令：")
+    print("pip install google-generativeai")
     print("=============================================================")
     sys.exit(1)
 
@@ -118,11 +118,15 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
     macro_history = "尚無歷史數據"
     try:
         if os.path.exists(CSV_PATH):
-            df_history = pd.read_csv(CSV_PATH)
-            macro_history = df_history.tail(5).to_string()
+            with open(CSV_PATH, 'r', encoding='utf-8') as f:
+                reader = csv.reader(f)
+                rows = list(reader)
+                if len(rows) > 1:
+                    macro_history = "\\n".join([",".join(row) for row in rows[-5:]])
     except Exception as e:
         print(f"讀取歷史數據失敗: {e}")
-
+        
+    # 定義輸出的 JSON Schema 確保 AI 回傳的結構百分之百合法
     prompt = f"""你現在是一位資深的全球總經策略分析師。請根據以下數據進行邏輯推演。
 
 ### 今日日期: {today_str}
@@ -207,6 +211,9 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
                 # 加入安全設定，避免因地緣政治關鍵字（如伊朗、衝突）被 AI 安全過濾器誤攔
                 data = {
                     "contents": [{"parts": [{"text": prompt}]}],
+                    "generationConfig": {
+                        "responseMimeType": "application/json"
+                    },
                     "safetySettings": [
                         {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
                         {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
@@ -234,8 +241,11 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
                     if start_idx != -1 and end_idx != -1:
                         text = text[start_idx:end_idx+1]
                     
+                    # 取代可能在 JSON 內引發解析錯誤的控制字元
+                    text = text.replace('\\n', ' ').replace('\\r', '')
+                    
                     print(f"[SUCCESS] {model} 回應成功！")
-                    return json.loads(text)
+                    return json.loads(text, strict=False)
                 except urllib.error.HTTPError as e:
                     error_data = e.read().decode('utf-8')
                     # 如果是 503 (系統忙碌) 或 429 (配額滿)，我們稍微休息一下再試
