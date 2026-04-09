@@ -539,7 +539,7 @@ def update_dashboard(ai_response, news_list, today_str):
             <div class="trend-grid">
                 <div class="trend-card">
                     <h4>US 10Y Yield</h4>
-                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{{"symbol": "FRED:DGS10", "width": "100%", "height": "100%", "locale": "zh_TW", "dateRange": "1M", "colorTheme": "light", "isTransparent": true}}</script></div>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{{"symbol": "TVC:US10Y", "width": "100%", "height": "100%", "locale": "zh_TW", "dateRange": "1M", "colorTheme": "light", "isTransparent": true}}</script></div>
                 </div>
                 <div class="trend-card">
                     <h4>Dollar Index</h4>
