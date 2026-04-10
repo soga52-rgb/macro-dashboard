@@ -253,7 +253,7 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
                     error_data = e.read().decode('utf-8')
                     # 如果是 503 (系統忙碌) 或 429 (配額滿)，我們稍微休息一下再試
                     if e.code in [429, 503] and attempt < max_retries - 1:
-                        wait_time = 7
+                        wait_time = 40 # 💡 將原本的 7 改成 40，配合 API 要求的 35s 等待時間
                         print(f"   [WAIT] 伺服器忙碌或配額限制，等待 {wait_time} 秒後重試...")
                         time.sleep(wait_time)
                         continue
