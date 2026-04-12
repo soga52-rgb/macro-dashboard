@@ -2,8 +2,8 @@ name: 全球總經戰情室 - 每日晨間自動更新 (Daily Update)
 
 on:
   schedule:
-    # 台灣時間早上 7:00 等於 UTC 的前一天晚上 23:00
-    - cron: '0 23 * * *'
+    # 為了避免 GitHub 整點大塞車導致遲遲未執行，提早至 UTC 的 22:45 (台灣時間 6:45 進入排隊)
+    - cron: '45 22 * * *'
   # 允許我們在 GitHub 網頁上按鈕「手動觸發」測試
   workflow_dispatch:
 
