@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>【全球總經週報】宏觀趨勢與資產配置分析</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f4f7f9;
+            --surface-color: #ffffff;
+            --border-color: #e2e8f0;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --accent-color: #2563eb;
+            --up-color: #be123c;
+            --down-color: #15803d;
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Helvetica Neue", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.8;
+            padding: 4rem 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .newsletter-wrapper {
+            width: 100%;
+            max-width: 850px;
+            background: var(--surface-color);
+            border-radius: 4px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            padding: 4rem;
+            border-top: 8px solid var(--accent-color);
+        }
+
+        .report-header { border-bottom: 2px solid #f1f5f9; padding-bottom: 2rem; margin-bottom: 3rem; text-align: center; }
+        .report-header h1 { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
+        .report-header .date { color: var(--text-secondary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.9rem; }
+
+        .section-h2 { 
+            font-size: 1.5rem; font-weight: 700; margin: 3rem 0 1.5rem 0; 
+            display: flex; align-items: center; gap: 0.8rem;
+            color: #0f172a;
+        }
+        .section-h2::after { content: ""; height: 2px; flex: 1; background: #f1f5f9; }
+
+        .narrative-box { font-size: 1.15rem; color: #334155; text-align: justify; margin-bottom: 2.5rem; }
+        
+        .focus-grid { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 3rem; }
+        .focus-card { 
+            display: flex; gap: 1.5rem; padding: 1.5rem; background: #f8fafc; border-radius: 8px; border: 1px solid #edf2f7;
+        }
+        .focus-idx { font-size: 2rem; font-weight: 800; color: #cbd5e1; line-height: 1; }
+        .focus-content h4 { font-size: 1.15rem; margin-bottom: 0.5rem; color: var(--accent-color); }
+        .focus-content p { font-size: 1.05rem; color: #475569; }
+
+        .deep-dive-box { 
+            background: #fffcf0; border: 1px solid #fef3c7; padding: 2rem; border-radius: 12px; margin-bottom: 3rem;
+            line-height: 1.9; font-size: 1.1rem; color: #92400e;
+        }
+        .deep-dive-box h3 { margin-bottom: 1rem; color: #78350f; font-weight: 700; }
+
+        .risk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 3rem; }
+        .risk-item { padding: 1.2rem; background: #fff5f5; border-radius: 8px; border-left: 4px solid #f87171; }
+        .risk-title { font-weight: 700; color: #991b1b; display: block; margin-bottom: 0.5rem; }
+        .risk-content { font-size: 0.95rem; color: #b91c1c; }
+
+        .table-container { overflow-x: auto; margin-bottom: 3rem; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+        th { padding: 1rem; text-align: left; border-bottom: 2px solid #f1f5f9; color: var(--text-secondary); }
+        td { padding: 1.2rem 1rem; border-bottom: 1px solid #f1f5f9; }
+        .var-name { font-weight: 700; color: var(--text-primary); margin-bottom: 0.2rem; }
+        .badge { font-size: 0.75rem; background: #f1f5f9; padding: 3px 8px; border-radius: 4px; color: #64748b; display: inline-block; white-space: nowrap; }
+        .trend-up { color: var(--up-color); font-weight: 600; }
+        .trend-down { color: var(--down-color); font-weight: 600; }
+        .status-detail { display: block; font-size: 0.9rem; font-weight: 400; color: #475569; margin-top: 0.4rem; line-height: 1.5; }
+        
+        .visual-tools { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }
+        .widget-box { 
+            background: #fff; border: 1px solid var(--border-color); border-radius: 8px; 
+            padding: 1rem; box-shadow: var(--shadow-md); 
+        }
+        .widget-title { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: var(--text-secondary); }
+
+        .news-accordion summary {
+            cursor: pointer; padding: 1rem; background: #f8fafc; border-radius: 6px; font-weight: 600;
+            list-style: none; display: flex; justify-content: space-between; align-items: center;
+        }
+        .news-accordion summary::after { content: "+"; font-size: 1.2rem; }
+        .news-accordion[open] summary::after { content: "-"; }
+        .news-list { list-style: none; padding: 1rem; }
+        .news-item { margin-bottom: 0.8rem; border-bottom: 1px dashed #e2e8f0; padding-bottom: 0.5rem; }
+        .news-item a { text-decoration: none; color: #475569; font-size: 0.95rem; }
+
+        @media (max-width: 768px) {
+            .newsletter-wrapper { padding: 2rem 1.5rem; }
+            .risk-grid { grid-template-columns: 1fr; }
+            table, thead, tbody, th, td, tr { display: block; }
+            thead { display: none; }
+            tr { margin-bottom: 1.5rem; border: 1px solid #edf2f7; padding: 1rem; }
+            td { padding: 0.5rem 0; border: none; }
+            td::before { content: attr(data-label); font-weight: 600; color: #94a3b8; display: block; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="newsletter-wrapper">
+        <header class="report-header">
+            <span class="date">GLOBAL MACRO WEEKLY INSIGHTS</span>
+            <h1>全球總經週報</h1>
+            <p style="color: #94a3b8;">由 AI 驅動的自動化全域分析 (Rolling 7-Day Window)</p>
+            <p style="font-size: 0.85rem; color: var(--accent-color); font-weight: 600; margin-top: 0.5rem;">🕒 最後更新時間：2026-04-01 18:03</p>
+            <div style="margin-top: 1.5rem;" class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>{ "symbols": [ { "proName": "FOREXCOM:SPXUSD", "title": "S&P 500" }, { "proName": "FOREXCOM:NSXUSD", "title": "Nasdaq 100" }, { "proName": "FX_IDC:EURUSD", "title": "EUR/USD" }, { "proName": "BITSTAMP:BTCUSD", "title": "BTC/USD" }, { "proName": "BITSTAMP:ETHUSD", "title": "ETH/USD" } ], "showSymbolLogo": true, "colorTheme": "light", "isTransparent": true, "displayMode": "adaptive", "locale": "zh_TW" }</script></div>
+        </header>
+
+        <section>
+            <h2 class="section-h2">📻 本週市場主旋律 (Narrative)</h2>
+            <div class="narrative-box">
+                本週全球金融市場陷入「七零年代式滯脹」的集體焦慮。儘管美元在全球儲備貨幣的佔比降至 31% 的歷史低點，反映了結構性的去美元化趨勢，但在聯準會（Fed）極度鷹派的立場下，實質利率的飆升使美元化身為市場的「破壞球（Wrecking Ball）」。黃金市場正經歷劇烈陣痛，短期內因避險資金流向比特幣及受困於高殖利率環境，金價自高點重挫逾 14%，回測 4,500 美元整數關卡。市場情緒已從單純的通膨對沖轉向對「長期高利率（Higher for Longer）」環境的恐懼，投資人正重新評估在經濟衰退陰影與地緣政治緊張交織下的資產定價模型，市場波動性已達到 2025 年以來的新高。
+            </div>
+        </section>
+
+        <section>
+            <h2 class="section-h2">📈 宏觀指標動態走勢 (4-Week Trend)</h2>
+            <div class="trend-grid">
+                <div class="trend-card">
+                    <h4>US 10Y Yield</h4>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{ "symbol": "FRED:DGS10", "width": "100%", "height": "100%", "locale": "zh_TW", "dateRange": "1M", "colorTheme": "light", "isTransparent": true }</script></div>
+                </div>
+                <div class="trend-card">
+                    <h4>Dollar Index</h4>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{ "symbol": "CAPITALCOM:DXY", "width": "100%", "height": "100%", "locale": "zh_TW", "dateRange": "1M", "colorTheme": "light", "isTransparent": true }</script></div>
+                </div>
+                <div class="trend-card">
+                    <h4>Gold Spot</h4>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{ "symbol": "TVC:GOLD", "width": "100%", "height": "100%", "locale": "zh_TW", "dateRange": "1M", "colorTheme": "light", "isTransparent": true }</script></div>
+                </div>
+                <!-- 亞洲貨幣 -->
+                <div class="trend-card">
+                    <h4>USD / JPY</h4>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{ "symbol": "FX:USDJPY", "width": "100%", "height": "100%", "locale": "zh_TW", "dateRange": "1M", "colorTheme": "light", "isTransparent": true }</script></div>
+                </div>
+                <div class="trend-card">
+                    <h4>USD / TWD</h4>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{ "symbol": "FX_IDC:USDTWD", "width": "100%", "height": "100%", "locale": "zh_TW", "dateRange": "1M", "colorTheme": "light", "isTransparent": true }</script></div>
+                </div>
+                <div class="trend-card">
+                    <h4>USD / KRW</h4>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>{ "symbol": "FX_IDC:USDKRW", "width": "100%", "height": "100%", "locale": "zh_TW", "dateRange": "1M", "colorTheme": "light", "isTransparent": true }</script></div>
+                </div>
+            </div>
+        </section>
+
+
+        <section>
+            <h2 class="section-h2">🎯 關鍵事件深度剖析</h2>
+            <div class="focus-grid">
+                
+        <div class="focus-card">
+            <div class="focus-idx">01</div>
+            <div class="focus-content">
+                <h4>美元儲備地位降至 31 年新低與週期性強勢的矛盾</h4>
+                <p>根據最新數據，美元在全球央行外匯儲備中的佔比已降至 31 年來的新低，各國央行顯著增加黃金與其他貨幣的配置。然而，這種結構性的減持並未削弱美元在當前循環中的購買力。受惠於美債殖利率的強勁利差優勢，美元指數維持高位，這反映出「去美元化」是一個長期戰略過程，而短期內「資本回流美國」的套利交易仍是主導市場的核心力量。</p>
+            </div>
+        </div>
+        <div class="focus-card">
+            <div class="focus-idx">02</div>
+            <div class="focus-content">
+                <h4>黃金與比特幣的避險替代效應：資產配置的典範轉移</h4>
+                <p>本週市場出現顯著的資金流向背離。儘管中東局勢動盪，黃金 ETF 卻出現大量流出，資金轉向表現亮眼的比特幣。這種現象表明，在數位資產監管框架逐漸成熟後，黃金作為「終極避險資產」的壟斷地位正受到挑戰。若金價短期內無法守住 4,400 美元關鍵支撐，可能引發更大規模的槓桿清理，即便高盛與富國銀行仍看好長期金價將達 5,400 至 6,300 美元。</p>
+            </div>
+        </div>
+        <div class="focus-card">
+            <div class="focus-idx">03</div>
+            <div class="focus-content">
+                <h4>聯準會鷹派立場下的全球衰退風險：滯脹陰影重現</h4>
+                <p>市場正高度關注即將發布的勞動力數據與 Fed 官員講話。由於核心通膨仍具黏性，聯準會被迫維持緊縮週期，這導致殖利率曲線極度倒掛。目前市場定價已反映出對 2026 年底前經濟硬著陸的恐懼，特別是在新興市場面臨資本外逃與本幣貶值的雙重壓力下，全球經濟「無聲衰退」的可能性正顯著上升。</p>
+            </div>
+        </div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="section-h2">⛓️ 利率與匯率傳導矩陣</h2>
+            <div class="deep-dive-box">
+                <h3>Macro Linkage Analysis</h3>
+                當前貨幣市場的傳導機制高度依賴「美債實質殖利率」這一核心驅動力。隨著美債 10 年期殖利率因鷹派預期再度攀升，美日間的利差擴大持續對亞幣造成毀滅性打擊，導致日圓與人民幣被迫陷入防守位。對於黃金而言，強勢美元與高機會成本形成「雙重打擊」。傳統上黃金與美元的負相關性因去美元化需求一度淡化，但在流動性收緊階段，市場仍回歸「現金為王」邏輯。美元作為全球清算的最終抵押品，其匯率波動直接擠壓了以美元計價的大宗商品利潤空間，造成金價與亞幣同步受壓的連鎖反應。
+            </div>
+        </section>
+
+        <section>
+            <h2 class="section-h2">📊 核心變數數據監測</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>核心變數</th>
+                            <th>當前狀態</th>
+                            <th>趨勢</th>
+                            <th>驅動因素</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                <tr>
+                    <td data-label="核心變數">
+                        <div class="var-name">🔥 通膨預期</div>
+                        <span class="badge">滯脹風險</span>
+                    </td>
+                    <td data-label="當前狀態"><div class="status trend-up">高位震盪 <span class="status-detail">核心通膨率維持在 4% 以上，能源與薪資成長形成螺旋壓力。</span></div></td>
+                    <td data-label="趨勢"><span class="trend-up ">持續攀升</span></td>
+                    <td data-label="驅動因素" class="desc-text">供應鏈碎片化、能源價格墊高、地緣政治溢價。</td>
+                </tr>
+                <tr>
+                    <td data-label="核心變數">
+                        <div class="var-name">📉 美債殖利率</div>
+                        <span class="badge">實質利率飆升</span>
+                    </td>
+                    <td data-label="當前狀態"><div class="status trend-up">極度鷹派 <span class="status-detail">10年期美債殖利率突破關鍵心理點位，殖利率曲線深度倒掛。</span></div></td>
+                    <td data-label="趨勢"><span class="trend-up ">高位橫盤</span></td>
+                    <td data-label="驅動因素" class="desc-text">聯準會縮表進度、抗通膨預期、政府債務供應壓力。</td>
+                </tr>
+                <tr>
+                    <td data-label="核心變數">
+                        <div class="var-name">🦅 美元指數</div>
+                        <span class="badge">避險霸權</span>
+                    </td>
+                    <td data-label="當前狀態"><div class="status trend-up">強勢擴張 <span class="status-detail">美元指數（DXY）站穩 106 關卡，全球流動性收縮。</span></div></td>
+                    <td data-label="趨勢"><span class="trend-up ">短期偏強</span></td>
+                    <td data-label="驅動因素" class="desc-text">利差優勢、避險資金回流、非美貨幣疲軟。</td>
+                </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="section-h2">🧭 下週風險預警</h2>
+            <div class="risk-grid">
+                
+        <div class="risk-item">
+            <span class="risk-title">⚠️ 中東地緣衝突超預期升級</span>
+            <p class="risk-content">若伊朗衝突演變為全面區域戰爭，原油供應中斷將導致油價飆升，進一步推高通膨預期，迫使央行採取更激進的加息，屆時市場將進入「通膨失控」與「利率暴漲」的至暗時刻。</p>
+        </div>
+        <div class="risk-item">
+            <span class="risk-title">⚠️ 流動性黑天鵝與信用風險觸發</span>
+            <p class="risk-content">持續的高利率環境正侵蝕企業債務承受能力。若黃金價格跌破關鍵技術水位，可能觸發商品交易商的保證金追繳壓力，引發跨市場的流動性危機，拋售資產以獲取現金。</p>
+        </div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="section-h2">📊 全球市場熱力圖</h2>
+            <div class="visual-tools">
+                <div class="widget-box">
+                    <div class="widget-title">美股 S&P 500 板塊熱圖</div>
+                    <div class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js" async>{ "exchanges": [], "dataSource": "S&P500", "grouping": "sector", "blockSize": "market_cap", "blockColor": "change", "locale": "zh_TW", "symbolUrl": "", "colorTheme": "light", "hasTopBar": false, "isTransparent": true, "hasSymbolTooltip": true, "width": "100%", "height": "450" }</script></div>
+                </div>
+                <div class="widget-box">
+                    <div class="widget-title">主要貨幣對強弱熱力圖 (Forex Heat Map)</div>
+                    <div class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-forex-heat-map.js" async>{ "width": "100%", "height": "400", "currencies": [ "EUR", "USD", "JPY", "GBP", "CHF", "AUD", "CAD", "NZD", "CNY" ], "isTransparent": true, "colorTheme": "light", "locale": "zh_TW" }</script></div>
+                </div>
+            </div>
+        </section>
+
+        <footer style="margin-top: 5rem; border-top: 1px solid #f1f5f9; padding-top: 2rem;">
+            <details class="news-accordion">
+                <summary>查看本週參考新聞原文 (共 4 則)</summary>
+                <ul class="news-list">
+                    
+                <li class="news-item">
+                    <a href="https://news.google.com/rss/articles/CBMihAFBVV95cUxPR0pBUjBEbmFpeDNkT3B4T1BIQTBlUk9qQVRKVWczYU1hY3V4ZTZFTUtMc0VFU1p1dzFieHFJZ0FyUTg0akxhOFBSM1RuZVVQOENtNkJndVhWdmhVLU03Z2xQQ1ZrQ0xjZnlka21OWHh1VEMybDFMRVZuVUowWTAzQ09KTWQ?oc=5" target="_blank">📄 Gold Prices Recover Briefly as Hawkish Central Banks and a Resilient Dollar Fuel Bearish Pressure - CryptoRank</a>
+                </li>
+                <li class="news-item">
+                    <a href="https://news.google.com/rss/articles/CBMi1AFBVV95cUxQbVlzR1NlMUFxUVc2cm1OS1ZlN3dCRVNmeWd0SEk5WlppT0lWRkxsbjR0TzRndWVERkpPM2phNm1qMDlDNkh1ZXRTcS13WU1tb0xGNlJPQmM5SmNLSmgwT1MwMzU2ZnRFeTNZSmxWXzFmWHBjZWs1YjF5UW12N3BQTVpqWTV4UUlyNjh1eGw2RVhhNHpMSi1wV3dtRHN4aUd6eVZaZjV1dlFZYk1VdjZfNlpjLV9scVBxUldMYnYyNG0ySUhYODJqZldsdVdubzNvdTZZRQ?oc=5" target="_blank">📄 Gold plunges despite global turmoil - MSN</a>
+                </li>
+                <li class="news-item">
+                    <a href="https://news.google.com/rss/articles/CBMi-gFBVV95cUxNSUdsb2kzbjVwRGd1UVpXbHpXMXlGbXptY2VtcHV6NW9sRzlZOVJ6eThLTTNqX3d5bjNhZ1ZMZEdrQTBMcHhJR2kxVjZlUV85eTNGYW5vOEQtUlRDeW94T0FIUlNHZldIM3Q4QVliT2ltaHdmRTJIUS1ZeTktd05mV3o5a3NhbENQSHJRZklqWExjaW1kLS0xTWsyaXRfTnQtTlVwN0UtX0MyVlh4cDluUkZOdV9OZEhVcUFMdjM4ZWLubzJpcm9SZnRpRjlCZkRxSDVsU2tpUmVlcDRDbV9Xak9aMmdYOUc5Umtaa21YU2pWRWlLTUNTUGdB?oc=5" target="_blank">📄 Status of US Dollar as Global Reserve Currency: USD Share Drops to 31-Year Low as Central Banks Diversify into Other Currencies & Gold - Wolf Street</a>
+                </li>
+                <li class="news-item">
+                    <a href="https://news.google.com/rss/articles/CBMivAFBVV95cUxPZzExbFlSblFQdmlxQ25hUEM3TXlRUFZzNzF3SUtVRUhFbDVHWFVlMmZoTVpRaTZOSy1TeDl2LTdyQUV1aUFXU2hmR3lJRlZJNmx1VzRDOWNMazdQWVozRHJKb3lhb0dPQUVHTHF1aDVTUXpybDM4OEk3cEJXUlJEMEstanZ1OF95MWZqOWxvQUFvcE5HS2tQa1duSmIwVEtDSnFlNkJ4b0dqMWlVXzNpS1hFLU42c1gwdkZkVw?oc=5" target="_blank">📄 Wells Fargo sees gold at $6,300 by end-2026 despite recent slump - tradingview.com</a>
+                </li>
+                </ul>
+            </details>
+            <p style="text-align: center; color: #cbd5e1; font-size: 0.8rem; margin-top: 2rem;">© 2026 Macro Strategy Lab. 最後更新：2026-04-01 18:03</p>
+        </footer>
+    </div>
+</body>
+</html>
