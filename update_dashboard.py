@@ -29,6 +29,7 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 WORKSPACE_DIR = os.path.dirname(os.path.abspath(__file__))
 CSV_PATH = os.path.join(WORKSPACE_DIR, "macro_analysis.csv")
 HTML_PATH = os.path.join(WORKSPACE_DIR, "index.html")
+HISTORY_FILE = os.path.join(WORKSPACE_DIR, "historical_data.json")
 
 # ==============================================================================
 # 1. 抓取週度新聞 (Google News RSS - 滾動 7 天視窗)
@@ -191,7 +192,8 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
       "impact": "..." 
     }}
   ],
-  "next_week_forecast_html": "<details class='analysis-container'><summary>📢 下週預測：[主旋律]</summary><div class='analysis-content'><strong>⛓️ 市場邏輯傳導：</strong><p>[因子] ➔ 影響<strong>通膨/利率預期</strong> ➔ 最終定價<strong>美元走勢</strong>。</p><hr><strong>📉 資產動態預測：</strong><ul><li><strong>亞洲貨幣 (TWD/JPY/KRW)：</strong>...</li><li><strong>避險成本與鋼鐵業：</strong>...</li></ul></div></details>"
+  "next_week_forecast_html": "<details class='analysis-container'><summary>📢 下週預測：[主旋律]</summary><div class='analysis-content'><strong>⛓️ 市場邏輯傳導：</strong><p>[因子] ➔ 影響<strong>通膨/利率預期</strong> ➔ 最終定價<strong>美元走勢</strong>。</p><hr><strong>📉 資產動態預測：</strong><ul><li><strong>亞洲貨幣 (TWD/JPY/KRW)：</strong>...</li><li><strong>避險成本與鋼鐵業：</strong>...</li></ul></div></details>",
+  "podcast_script": "(約 800 字) 以「各位聽眾大家好，歡迎回到全球總經戰情室...」開場，將今天的總經與報價轉化為專業且具臨場感的口語播報腳本。"
 }}
 """
     
@@ -283,6 +285,22 @@ def update_dashboard(ai_response, news_list, today_str):
     fx_rates_linkage = ai_response.get('fx_rates_linkage') or '尚無傳導分析。'
     outlook_risks = ai_response.get('outlook_risks') or []
     next_week_forecast_html = ai_response.get('next_week_forecast_html') or ''
+    podcast_script = ai_response.get('podcast_script') or '本日尚無語音戰情腳本。'
+    
+    # 產生 podcast mp3 (使用 edge-tts)
+    try:
+        import subprocess
+        podcast_path = os.path.join(WORKSPACE_DIR, "podcast.mp3")
+        temp_txt = os.path.join(WORKSPACE_DIR, "temp_podcast.txt")
+        with open(temp_txt, "w", encoding="utf-8") as f:
+            f.write(podcast_script)
+        print("正在生成 Podcast 語音檔 (edge-tts)...")
+        subprocess.run(['edge-tts', '-f', temp_txt, '--voice', 'zh-TW-HsiaoChenNeural', '--write-media', podcast_path], check=True)
+        print("🔈 Podcast 語音生成完畢！")
+        if os.path.exists(temp_txt):
+            os.remove(temp_txt)
+    except Exception as e:
+        print(f"⚠️ Podcast 語音生成失敗 (請確認是否安裝 edge-tts): {e}")
     
     # 更新 CSV (維持基本數據結構)
     csv_content = "變數與項目,當前狀態,短期趨勢,主要驅動因素,全球經濟交互影響\n"
@@ -348,10 +366,42 @@ def update_dashboard(ai_response, news_list, today_str):
                         <div class="var-name">{var_name}</div>
                         <span class="badge">{badge}</span>
                     </td>
-                    <td data-label="當前狀態"><div class="status {trend_class}">{status} <span class="status-detail">{status_det}</span></div></td>
+                    <td data-label="當前狀態"><div class="status {trend_class}">{status} <span class="status_detail">{status_det}</span></div></td>
                     <td data-label="趨勢"><span class="{trend_class} {trend_icon}">{trend}</span></td>
                     <td data-label="驅動因素" class="desc-text">{drivers}</td>
                 </tr>"""
+
+    # === 歷史資料存檔 (保留過去 7 天) ===
+    historical_data = []
+    if os.path.exists(HISTORY_FILE):
+        try:
+            with open(HISTORY_FILE, "r", encoding="utf-8") as f:
+                historical_data = json.load(f)
+        except:
+            pass
+            
+    today_pack = {{
+        "date": today_str,
+        "weekly_narrative": weekly_narrative,
+        "next_week_forecast_html": next_week_forecast_html,
+        "focus_html": focus_html,
+        "fx_rates_linkage": fx_rates_linkage,
+        "tbody_html": tbody_html,
+        "risk_html": risk_html,
+        "news_html": news_html
+    }}
+    
+    # 若當日(取日期前綴)已存在則更新，否則新增於最前面
+    existing_idx = next((i for i, v in enumerate(historical_data) if v["date"].split()[0] == today_str.split()[0]), None)
+    if existing_idx is not None:
+        historical_data[existing_idx] = today_pack
+    else:
+        historical_data.insert(0, today_pack)
+        
+    historical_data = historical_data[:7]
+    
+    with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+        json.dump(historical_data, f, ensure_ascii=False, indent=2)
 
     html_template = f"""<!DOCTYPE html>
 <html lang="zh-TW">
@@ -530,16 +580,38 @@ def update_dashboard(ai_response, news_list, today_str):
             <span class="date">GLOBAL MACRO WEEKLY INSIGHTS</span>
             <h1>全球總經週報 <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 400;">[PRO-ENGINE V3.0]</span></h1>
             <p style="color: #94a3b8;">由 AI 驅動的自動化全域分析 (Rolling 48-Hour Window)</p>
-            <p style="font-size: 1rem; color: #ef4444; font-weight: 800; margin-top: 0.5rem; text-decoration: underline;">🕒 最後更新時間：{today_str}</p>
+            <p style="font-size: 1rem; color: #ef4444; font-weight: 800; margin-top: 0.5rem; text-decoration: underline;" class="date-display">🕒 最後更新時間：{today_str}</p>
+            
+            <!-- 日期選單與狀態列 -->
+            <div style="margin-top: 1rem; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <label for="history-selector" style="font-weight: 600; color: #475569;">📅 歷史回顧：</label>
+                <select id="history-selector" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #cbd5e1; outline: none; font-family: inherit; font-size: 0.95rem; background: #fffcf0;">
+                    <option value="0">{today_str} (最新)</option>
+                </select>
+            </div>
+            
+            <!-- Podcast 播放器 -->
+            <div class="podcast-container" style="margin-top: 1.5rem; background: #f8fafc; padding: 1rem 1.5rem; border-radius: 50px; display: inline-flex; align-items: center; gap: 1rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+                <span style="font-size: 1.5rem;">🎙️</span>
+                <div style="text-align: left; line-height: 1.2;">
+                    <div style="font-weight: 700; font-size: 0.9rem; color: #1e293b;">全域總經戰情室廣播</div>
+                    <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.2rem;">AI 主播 | 每日精準解析</div>
+                </div>
+                <audio id="podcast-audio" controls style="height: 35px; outline: none; margin-left: 0.5rem;">
+                    <source src="podcast.mp3" type="audio/mpeg">
+                    您的瀏覽器不支援音訊元素。
+                </audio>
+            </div>
+
             <div style="margin-top: 1.5rem;" class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>{{"symbols": [ {{"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}}, {{"proName": "FOREXCOM:NSXUSD", "title": "Nasdaq 100"}}, {{"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}}, {{"proName": "BITSTAMP:BTCUSD", "title": "BTC/USD"}}, {{"proName": "BITSTAMP:ETHUSD", "title": "ETH/USD"}} ], "showSymbolLogo": true, "colorTheme": "light", "isTransparent": true, "displayMode": "adaptive", "locale": "zh_TW"}}</script></div>
         </header>
 
         <section>
             <h2 class="section-h2">📻 本週市場主旋律 (Narrative)</h2>
-            <div class="narrative-box">
+            <div class="narrative-box" id="narrative-box">
                 {weekly_narrative}
             </div>
-            {next_week_forecast_html}
+            <div id="forecast-box">{next_week_forecast_html}</div>
         </section>
 
         <section>
@@ -576,7 +648,7 @@ def update_dashboard(ai_response, news_list, today_str):
 
         <section>
             <h2 class="section-h2">🎯 關鍵事件深度剖析</h2>
-            <div class="focus-grid">
+            <div class="focus-grid" id="focus-grid">
                 {focus_html}
             </div>
         </section>
@@ -585,7 +657,7 @@ def update_dashboard(ai_response, news_list, today_str):
             <h2 class="section-h2">⛓️ 利率與匯率傳導矩陣</h2>
             <div class="deep-dive-box">
                 <h3>Macro Linkage Analysis</h3>
-                {fx_rates_linkage}
+                <div id="linkage-box">{fx_rates_linkage}</div>
             </div>
         </section>
 
@@ -601,7 +673,7 @@ def update_dashboard(ai_response, news_list, today_str):
                             <th>驅動因素</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="tbody-html">
                         {tbody_html}
                     </tbody>
                 </table>
@@ -610,7 +682,7 @@ def update_dashboard(ai_response, news_list, today_str):
 
         <section>
             <h2 class="section-h2">🧭 下週風險預警</h2>
-            <div class="risk-grid">
+            <div class="risk-grid" id="risk-grid">
                 {risk_html}
             </div>
         </section>
@@ -631,17 +703,57 @@ def update_dashboard(ai_response, news_list, today_str):
 
         <footer style="margin-top: 5rem; border-top: 1px solid #f1f5f9; padding-top: 2rem;">
             <details class="news-accordion">
-                <summary>查看本週參考新聞原文 (共 {len(news_list)} 則)</summary>
-                <ul class="news-list">
+                <summary>查看本週參考新聞原文 (動態更新)</summary>
+                <ul class="news-list" id="news-list">
                     {news_html}
                 </ul>
             </details>
-            <p style="text-align: center; color: #cbd5e1; font-size: 0.8rem; margin-top: 2rem;">© 2026 Macro Strategy Lab. 最後更新：{today_str}</p>
+            <p style="text-align: center; color: #cbd5e1; font-size: 0.8rem; margin-top: 2rem;">© 2026 Macro Strategy Lab. 最後更新：<span class="date-display">{today_str}</span></p>
         </footer>
     </div>
+    <script>
+    // 歷史資料切換邏輯
+    document.addEventListener('DOMContentLoaded', async () => {{
+        try {{
+            // 加上時間戳防止快取
+            const response = await fetch('historical_data.json?t=' + new Date().getTime());
+            if (!response.ok) return;
+            const data = await response.json();
+            const selector = document.getElementById('history-selector');
+            
+            // 重新填寫選項
+            selector.innerHTML = '';
+            data.forEach((item, idx) => {{
+                const option = document.createElement('option');
+                option.value = idx;
+                option.textContent = item.date + (idx === 0 ? ' (最新)' : '');
+                selector.appendChild(option);
+            }});
+
+            // 綁定選單事件
+            selector.addEventListener('change', (e) => {{
+                const selectedItem = data[e.target.value];
+                if (!selectedItem) return;
+                
+                // 動態替換各區塊內容
+                document.getElementById('narrative-box').innerHTML = selectedItem.weekly_narrative;
+                document.getElementById('forecast-box').innerHTML = selectedItem.next_week_forecast_html || '';
+                document.getElementById('focus-grid').innerHTML = selectedItem.focus_html;
+                document.getElementById('linkage-box').innerHTML = selectedItem.fx_rates_linkage;
+                document.getElementById('tbody-html').innerHTML = selectedItem.tbody_html;
+                document.getElementById('risk-grid').innerHTML = selectedItem.risk_html;
+                document.getElementById('news-list').innerHTML = selectedItem.news_html;
+                
+                // 更新時間戳記
+                document.querySelectorAll('.date-display').forEach(el => el.textContent = selectedItem.date);
+            }});
+        }} catch (error) {{
+            console.log('無法載入歷史資料:', error);
+        }}
+    }});
+    </script>
 </body>
 </html>"""
-
 
     # 加入全台統一時區標記 (方便在原始碼檢查是否更新)
     html_template += f"\n<!-- Build Trace (TPE): {today_str} -->"
