@@ -51,7 +51,8 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add index.html macro_analysis.csv historical_data.json podcast.mp3
+          git add index.html macro_analysis.csv
+          git add historical_data.json podcast.mp3 2>/dev/null || true
           git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update: Dashboard generated on $(date +'%Y-%m-%d %H:%M')" && git push)
           
   # 新的部署任務：直接發布到 GitHub Pages
