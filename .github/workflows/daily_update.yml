@@ -47,6 +47,13 @@ jobs:
           echo "當前目錄檔案列表："
           ls -a
           
+      - name: 💾 儲存並推送到 GitHub (Commit & Push)
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html macro_analysis.csv
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update: Dashboard generated on $(date +'%Y-%m-%d %H:%M')" && git push)
+          
   # 新的部署任務：直接發布到 GitHub Pages
   deploy:
     environment:
