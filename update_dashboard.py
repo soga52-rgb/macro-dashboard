@@ -209,7 +209,7 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
     import time
     for version, model in strategies:
         # 內層重試機制 (針對 503/429)
-        max_retries = 2
+        max_retries = 3
         for attempt in range(max_retries):
             try:
                 print(f"-> 嘗試連線方案: {version} / {model} (第 {attempt+1} 次)...")
@@ -256,7 +256,15 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
                     error_data = e.read().decode('utf-8')
                     # 如果是 503 (系統忙碌) 或 429 (配額滿)，我們稍微休息一下再試
                     if e.code in [429, 503] and attempt < max_retries - 1:
-                        wait_time = 40  # 配合 API 要求的 35s 等待時間
+                        wait_time = 65  # 預設至少等待超過一分鐘
+                        if "Please retry in" in error_data:
+                            try:
+                                import re
+                                match = re.search(r"Please retry in (\d+\.\d+)s", error_data)
+                                if match:
+                                    wait_time = int(float(match.group(1))) + 5
+                            except:
+                                pass
                         print(f"   [WAIT] 伺服器忙碌或配額限制，等待 {wait_time} 秒後重試...")
                         time.sleep(wait_time)
                         continue
