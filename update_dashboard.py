@@ -59,8 +59,8 @@ def fetch_weekly_news():
         xml_data = response.read()
         root = ET.fromstring(xml_data)
         headlines = []
-        # 減少新聞抓取數量到 15 則，以節省 API Token 消耗
-        for item in root.findall('.//item')[:15]:
+        # 減少新聞抓取數量到 8 則，以節省 API Token 消耗
+        for item in root.findall('.//item')[:8]:
             title_node = item.find('title')
             link_node = item.find('link')
             title = title_node.text if title_node is not None else "新聞標題"
