@@ -80,6 +80,7 @@ def fetch_realtime_data():
         "DXY (美元指數)": "DX-Y.NYB",
         "US10Y (美國十年期公債殖利率, %)": "^TNX",
         "Gold (黃金, USD/oz)": "GC=F",
+        "WTI Crude (原油, USD/bbl)": "CL=F",
         "S&P 500 (標普500)": "^GSPC",
         "BTC (比特幣, USD)": "BTC-USD"
     }
@@ -628,6 +629,10 @@ def update_dashboard(ai_response, news_list, today_str):
                 <div class="trend-card">
                     <h4>Gold Spot (黃金)</h4>
                     <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["TVC:GOLD|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
+                </div>
+                <div class="trend-card">
+                    <h4>WTI Crude (西德州原油)</h4>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["原油 (WTI)", "NYMEX:CL1!|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
                 </div>
                 <!-- 亞洲貨幣 -->
                 <div class="trend-card">
