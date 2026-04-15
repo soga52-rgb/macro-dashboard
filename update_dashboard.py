@@ -380,7 +380,7 @@ def update_dashboard(ai_response, news_list, today_str):
         except:
             pass
             
-    today_pack = {{
+    today_pack = {
         "date": today_str,
         "weekly_narrative": weekly_narrative,
         "next_week_forecast_html": next_week_forecast_html,
@@ -389,7 +389,7 @@ def update_dashboard(ai_response, news_list, today_str):
         "tbody_html": tbody_html,
         "risk_html": risk_html,
         "news_html": news_html
-    }}
+    }
     
     # 若當日(取日期前綴)已存在則更新，否則新增於最前面
     existing_idx = next((i for i, v in enumerate(historical_data) if v["date"].split()[0] == today_str.split()[0]), None)
