@@ -193,7 +193,7 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
     }}
   ],
   "next_week_forecast_html": "<details class='analysis-container'><summary>📢 下週預測：[主旋律]</summary><div class='analysis-content'><strong>⛓️ 市場邏輯傳導：</strong><p>[因子] ➔ 影響<strong>通膨/利率預期</strong> ➔ 最終定價<strong>美元走勢</strong>。</p><hr><strong>📉 資產動態預測：</strong><ul><li><strong>亞洲貨幣 (TWD/JPY/KRW)：</strong>...</li><li><strong>避險成本與鋼鐵業：</strong>...</li></ul></div></details>",
-  "podcast_script": "(約 800 字) 以「各位聽眾大家好，歡迎回到全球總經戰情室...」開場，將今天的總經與報價轉化為專業且具臨場感的口語播報腳本。"
+  "podcast_script": "(約 800 字) 以「各位聽眾大家好，歡迎回到全球總經戰情室...」開場。🚨 請注意：播報中『絕對不要』提及具體的價格或點位（以免與網頁即時圖表產生落差），請專注於「利用本週新聞帶來的經濟影響，來分析這些指標這週以來的整體走勢方向與市場情緒」。"
 }}
 """
     
