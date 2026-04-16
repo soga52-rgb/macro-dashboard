@@ -52,15 +52,16 @@ def fetch_weekly_news():
     
     # 自動將關鍵字組合成 URL 編碼的 OR 條件語法
     query_str = "+OR+".join([f"%22{k.replace(' ', '+')}%22" if ' ' in k else k for k in macro_keywords])
-    url = f"https://news.google.com/rss/search?q=({query_str})+when:2d&hl=en-US&gl=US&ceid=US:en"
+    source_str = "site:bloomberg.com+OR+site:cnbc.com+OR+site:investing.com+OR+site:benzinga.com+OR+site:cnyes.com"
+    url = f"https://news.google.com/rss/search?q=({query_str})+AND+({source_str})+when:2d&hl=en-US&gl=US&ceid=US:en"
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
     try:
         response = urllib.request.urlopen(req, timeout=15)
         xml_data = response.read()
         root = ET.fromstring(xml_data)
         headlines = []
-        # 減少新聞抓取數量到 8 則，以節省 API Token 消耗
-        for item in root.findall('.//item')[:8]:
+        # 改為嚴格挑選最新 5 則，並篩選指定媒體
+        for item in root.findall('.//item')[:5]:
             title_node = item.find('title')
             link_node = item.find('link')
             title = title_node.text if title_node is not None else "新聞標題"
@@ -194,7 +195,7 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
     }}
   ],
   "next_week_forecast_html": "<details class='analysis-container'><summary>📢 下週預測：[主旋律]</summary><div class='analysis-content'><strong>⛓️ 市場邏輯傳導：</strong><p>[因子] ➔ 影響<strong>通膨/利率預期</strong> ➔ 最終定價<strong>美元走勢</strong>。</p><hr><strong>📉 資產動態預測：</strong><ul><li><strong>亞洲貨幣 (TWD/JPY/KRW)：</strong>...</li><li><strong>避險成本與鋼鐵業：</strong>...</li></ul></div></details>",
-  "podcast_script": "(約 800 字) 以「各位聽眾大家好，歡迎回到全球總經戰情室...」開場。🚨 請注意：播報中『絕對不要』提及具體的價格或點位（以免與網頁即時圖表產生落差），請專注於「利用本週新聞帶來的經濟影響，來分析這些指標這週以來的整體走勢方向與市場情緒」。"
+  "podcast_script": "(約 800 字) 以「各位聽眾大家好，歡迎回到全球總經戰情室...」開場。🚨 請注意：【第一階段】請務必在播報的開頭，為主畫面上的這 5 則重點新聞進行要點摘要報導；【第二階段】接續分析市場的情緒與數據走勢。播報中『絕對不要』提及具體的價格或點位（以免與網頁即時圖表產生落差）。"
 }}
 """
     
@@ -297,17 +298,35 @@ def update_dashboard(ai_response, news_list, today_str):
     podcast_script = ai_response.get('podcast_script') or '本日尚無語音戰情腳本。'
     
     # 產生 podcast mp3 (使用 edge-tts)
+    podcast_filename = "podcast.mp3"
     try:
         import subprocess
-        podcast_path = os.path.join(WORKSPACE_DIR, "podcast.mp3")
+        from datetime import datetime
+        curr_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+        podcast_filename = f"podcast_{curr_time_str}.mp3"
+        podcast_path = os.path.join(WORKSPACE_DIR, podcast_filename)
         temp_txt = os.path.join(WORKSPACE_DIR, "temp_podcast.txt")
         with open(temp_txt, "w", encoding="utf-8") as f:
             f.write(podcast_script)
-        print("正在生成 Podcast 語音檔 (edge-tts)...")
+        print(f"正在生成 Podcast 語音檔 ({podcast_filename})...")
         subprocess.run(['edge-tts', '-f', temp_txt, '--voice', 'zh-TW-HsiaoChenNeural', '--write-media', podcast_path], check=True)
         print("🔈 Podcast 語音生成完畢！")
         if os.path.exists(temp_txt):
             os.remove(temp_txt)
+            
+        # 清理超過 7 天前產生的 podcast_{timestamp}.mp3 檔案
+        current_time = datetime.now()
+        for f_name in os.listdir(WORKSPACE_DIR):
+            if f_name.startswith("podcast_") and f_name.endswith(".mp3"):
+                file_path = os.path.join(WORKSPACE_DIR, f_name)
+                # 取得檔案最後修改時間
+                file_mtime = datetime.fromtimestamp(os.path.getmtime(file_path))
+                if (current_time - file_mtime).days > 7:
+                    try:
+                        os.remove(file_path)
+                        print(f"清理過期語音檔: {f_name}")
+                    except Exception as ex:
+                        print(f"清理過期語音檔失敗: {ex}")
     except Exception as e:
         print(f"⚠️ Podcast 語音生成失敗 (請確認是否安裝 edge-tts): {e}")
     
@@ -397,7 +416,8 @@ def update_dashboard(ai_response, news_list, today_str):
         "fx_rates_linkage": fx_rates_linkage,
         "tbody_html": tbody_html,
         "risk_html": risk_html,
-        "news_html": news_html
+        "news_html": news_html,
+        "podcast_file": podcast_filename
     }
     
     # 若當日(取日期前綴)已存在則更新，否則新增於最前面
@@ -607,7 +627,7 @@ def update_dashboard(ai_response, news_list, today_str):
                     <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.2rem;">AI 主播 | 每日精準解析</div>
                 </div>
                 <audio id="podcast-audio" controls style="height: 35px; outline: none; margin-left: 0.5rem;">
-                    <source src="podcast.mp3" type="audio/mpeg">
+                    <source src="{podcast_filename}" type="audio/mpeg">
                     您的瀏覽器不支援音訊元素。
                 </audio>
             </div>
@@ -760,6 +780,15 @@ def update_dashboard(ai_response, news_list, today_str):
                 document.getElementById('tbody-html').innerHTML = selectedItem.tbody_html;
                 document.getElementById('risk-grid').innerHTML = selectedItem.risk_html;
                 document.getElementById('news-list').innerHTML = selectedItem.news_html;
+                
+                // 動態更新 Podcast 音訊來源
+                const audioPlayer = document.getElementById('podcast-audio');
+                const audioSource = audioPlayer.querySelector('source');
+                const newSrc = selectedItem.podcast_file || 'podcast.mp3';
+                if (!audioSource.src.endsWith(newSrc)) {{
+                    audioSource.src = newSrc;
+                    audioPlayer.load();
+                }}
                 
                 // 更新時間戳記
                 document.querySelectorAll('.date-display').forEach(el => el.textContent = selectedItem.date);
