@@ -50,10 +50,14 @@ def fetch_weekly_news():
         "DXY", "Treasury yields"
     ]
     
-    # 自動將關鍵字組合成 URL 編碼的 OR 條件語法
-    query_str = "+OR+".join([f"%22{k.replace(' ', '+')}%22" if ' ' in k else k for k in macro_keywords])
-    source_str = "site:bloomberg.com+OR+site:cnbc.com+OR+site:investing.com+OR+site:benzinga.com+OR+site:cnyes.com"
-    url = f"https://news.google.com/rss/search?q=({query_str})+AND+({source_str})+when:2d&hl=en-US&gl=US&ceid=US:en"
+    import urllib.parse
+    # 自動將關鍵字組合成標準字串 (以空白與雙引號分隔)
+    query_str = " OR ".join([f'"{k}"' if ' ' in k else k for k in macro_keywords])
+    # 添加指定媒體
+    source_str = "site:bloomberg.com OR site:cnbc.com OR site:investing.com OR site:benzinga.com OR site:cnyes.com"
+    # 用標準的 urllib 進行編碼，確保 Google News 伺服器絕對不漏接 when:2d 指令
+    encoded_q = urllib.parse.quote(f"({query_str}) AND ({source_str}) when:2d")
+    url = f"https://news.google.com/rss/search?q={encoded_q}&hl=en-US&gl=US&ceid=US:en"
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
     try:
         response = urllib.request.urlopen(req, timeout=15)
