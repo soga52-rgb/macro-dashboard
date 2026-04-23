@@ -135,7 +135,10 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
         
     # 定義輸出的 JSON Schema 確保 AI 回傳的結構百分之百合法
     # 🚨 關鍵修正：警告 AI 絕不可在 HTML 內使用雙引號
-    prompt = f"""你現在是一位資深的全球總經策略分析師。請根據以下數據進行邏輯推演。
+    prompt = f"""你現在是一位資深的全球總經策略分析師。請根據以下數據與新聞連結進行邏輯推演。
+
+### 🌐 代理人搜尋指令 (Search Grounding):
+本次任務中，我們為你啟用了 Google Search Grounding。請務必優先使用該工具，點擊下方【最新新聞頭條】中的 URL，特別鎖定 CNBC, Reuters, 與 Bloomberg 等來源，去閱讀「新聞的全文內容」，而非只依賴標題。這將幫助你取得最新的 Fed 動向與就業/通膨細節。請不要自己寫程式爬網頁，直接利用內建的 Search Grounding 檢索內容。
 
 ### 今日日期: {today_str}
 
@@ -148,23 +151,26 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
 ### 最新新聞頭條:
 {news_text}
 
-### 撰寫指令 (核心邏輯):
-1. **定位發動點 (Trigger Point)**: 從本週數據或新聞中，找出最具影響力的因子（如：Fed 談話、公債震盪或地緣政治）。
-2. **彈性傳導鏈 (Elastic Chain)**: 靈活建構因果邏輯（例如：[因子] ➔ 影響通膨/利率預期 ➔ 最終定價美元走勢）。若無顯著新聞請跳過通膨環節。
-3. **精確報價與防範幻覺 (Data Accuracy)**: 
+### 撰寫指令 (三部曲核心邏輯):
+1. **Phase 1 新聞解析 (News Parsing)**: 解析 Fed 利率路徑、通膨 (CPI/PCE) 與就業數據。運用 Search Grounding 補充新聞背後的脈絡。
+2. **Phase 2 走勢研判 (Trend Analysis)**: 推論美債 10Y 殖利率與美元指數 (DXY) 的傳導鏈，並預測日圓 (JPY) 與台幣 (TWD) 等亞洲貨幣走勢。若無顯著新聞請跳過通膨環節。
+3. **Phase 3 圖表驗證 (Chart Verification)**: 產出結論以對照網頁下方的即時走勢圖。確保你的推論方向符合【最新市場即時報價】的水位。
+
+### 精確報價與防範幻覺 (Data Accuracy): 
    - 🚨 當你在分析中提及具體價格、點位或殖利率時，**必須且只能使用上方【最新市場即時報價】中的數據**。
-   - 結合新聞頭條的利多/利空事件進行推演，說明為何當前報價（例如美元指數來到 {realtime_data.split('DXY')[1].split('-')[0].strip() if 'DXY' in realtime_data else '該水位'}）會呈現該水準。
+   - 結合新聞頭條的利多/利空事件進行推演。
    - 絕對禁止憑空捏造上方未提供的數字。對於未提供報價的標的，一律使用「純定性趨勢詞彙」描述（例如：高位震盪、跌破支撐）。
-4. **HTML 格式限制**: 
+
+### HTML 格式限制: 
    - 在 next_week_forecast_html 欄位中使用 <details> 標籤與分點結構。
-   - 🚨 絕對禁止在 HTML 中使用雙引號 (")，所有 class 或 href 屬性必須使用單引號 (')，否則 JSON 會崩潰！
+   - 🚨 絕對禁止在 HTML 內容中使用雙引號 (")，所有 class、href 或 style 屬性「必須且只能」使用單引號 (')，否則 JSON 解析會崩潰！
 
 ### 輸出格式 (JSON):
 請嚴格輸出以下 JSON 格式，不要有任何多餘文字：
 {{
-  "weekly_narrative": "(約 150 字) 基於市場情緒撰寫的本週摘要。",
+  "weekly_narrative": "(約 150 字) 基於市場情緒與 Phase 1 解析撰寫的本週摘要。",
   "focus_items": [ {{ "title": "...", "content": "..." }}, {{ "title": "...", "content": "..." }} ],
-  "fx_rates_linkage": "(120 字) 拆解利率與匯率的實際傳導。",
+  "fx_rates_linkage": "(120 字) Phase 2 走勢研判，拆解利率與匯率的實際傳導。",
   "outlook_risks": [ {{ "title": "...", "content": "..." }}, {{ "title": "...", "content": "..." }} ],
   "analysis": [
     {{ 
@@ -199,16 +205,14 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
     }}
   ],
   "next_week_forecast_html": "<details class='analysis-container'><summary>📢 下週預測：[主旋律]</summary><div class='analysis-content'><strong>⛓️ 市場邏輯傳導：</strong><p>[因子] ➔ 影響<strong>通膨/利率預期</strong> ➔ 最終定價<strong>美元走勢</strong>。</p><hr><strong>📉 資產動態預測：</strong><ul><li><strong>亞洲貨幣 (TWD/JPY/KRW)：</strong>...</li><li><strong>避險成本與鋼鐵業：</strong>...</li></ul></div></details>",
-  "podcast_script": "(約 800 字) 以「各位聽眾大家好，歡迎回到全球總經戰情室...」開場。🚨 請注意：【第一階段】請務必在播報的開頭，為主畫面上的這 5 則重點新聞進行要點摘要報導；【第二階段】接續分析市場的情緒與數據走勢。播報中『絕對不要』提及具體的價格或點位（以免與網頁即時圖表產生落差）。"
+  "podcast_script": "(約 800 字) 以『各位聽眾大家好，歡迎回到全球總經戰情室...』開場。🚨【嚴格規定】1. 必須分為雙階段播報：第一階段「摘要 CNBC/Reuters 等全網新聞重點」，第二階段「解析市場情緒與走勢研判」。 2. 播報中『絕對不要』提及具體的價格或點位數值，以免與網頁產生落差。"
 }}
 """
     
-    # 恢復原本使用的 2026 最新型號
+    # 更新為 2026 Agentic 2.0 模型
     strategies = [
-        ("v1beta", "gemini-3-flash-preview"), 
-        ("v1beta", "gemini-3.1-flash"),
-        ("v1", "gemini-1.5-flash"),
-        ("v1beta", "gemini-2.0-flash"),
+        ("v1beta", "gemini-3.1-pro-preview"), 
+        ("v1beta", "gemini-2.0-pro-exp-0205")
     ]
     
     import time
@@ -219,9 +223,10 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
             try:
                 print(f"-> 嘗試連線方案: {version} / {model} (第 {attempt+1} 次)...")
                 url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent?key={GEMINI_API_KEY}"
-                # 加入安全設定，避免因地緣政治關鍵字（如伊朗、衝突）被 AI 安全過濾器誤攔
+                # 加入 tools 以啟動 Search Grounding
                 data = {
                     "contents": [{"parts": [{"text": prompt}]}],
+                    "tools": [{"googleSearch": {}}],
                     "generationConfig": {
                         "responseMimeType": "application/json"
                     },
@@ -493,9 +498,9 @@ def update_dashboard(ai_response, news_list, today_str):
         .narrative-box {{ font-size: 1.15rem; color: #334155; text-align: justify; margin-bottom: 2.5rem; }}
         
         .trend-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 3rem; }}
-        .trend-card {{ background: #fff; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; box-shadow: var(--shadow-md); height: 350px; display: flex; flex-direction: column; }}
+        .trend-card {{ background: #fff; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; box-shadow: var(--shadow-md); min-height: 550px; display: flex; flex-direction: column; }}
         .trend-card h4 {{ font-size: 1.05rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.8rem; text-align: center; }}
-        .trend-widget-container {{ flex-grow: 1; width: 100%; height: 100%; }}
+        .trend-widget-container {{ flex-grow: 1; width: 100%; height: 500px; }}
 
         .focus-grid {{ display: flex; flex-direction: column; gap: 1rem; margin-bottom: 3rem; }}
         .focus-card {{ 
@@ -652,36 +657,36 @@ def update_dashboard(ai_response, news_list, today_str):
             <div class="trend-grid">
                 <div class="trend-card">
                     <h4>US 10Y Yield (十年期公債)</h4>
-                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["美國十年期公債 (殖利率%)", "FRED:DGS10"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
+                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["美國十年期公債 (殖利率%)", "FRED:DGS10"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
                 </div>
                 <div class="trend-card">
                     <h4>Dollar Index (美元指數)</h4>
-                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["CAPITALCOM:DXY|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
+                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["TVC:DXY"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
                 </div>
                 <div class="trend-card">
                     <h4>Gold Spot (黃金)</h4>
-                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["TVC:GOLD|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
+                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["TVC:GOLD|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
                 </div>
                 <div class="trend-card">
                     <h4>WTI Crude (西德州原油)</h4>
-                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["原油期貨 (WTI)", "TVC:USOIL|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
+                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["原油期貨 (WTI)", "TVC:USOIL|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
                 </div>
                 <div class="trend-card">
                     <h4>Brent Crude (布蘭特原油)</h4>
-                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["布蘭特原油", "TVC:UKOIL|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
+                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["布蘭特原油", "TVC:UKOIL|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
                 </div>
                 <!-- 亞洲貨幣 -->
                 <div class="trend-card">
                     <h4>USD / JPY (美元/日圓)</h4>
-                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["FX:USDJPY|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
+                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["FX:USDJPY|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
                 </div>
                 <div class="trend-card">
                     <h4>USD / TWD (美元/台幣)</h4>
-                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["FX_IDC:USDTWD|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
+                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["FX_IDC:USDTWD|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
                 </div>
                 <div class="trend-card">
                     <h4>USD / KRW (美元/韓元)</h4>
-                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["FX_IDC:USDKRW|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
+                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["FX_IDC:USDKRW|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
                 </div>
             </div>
         </section>
