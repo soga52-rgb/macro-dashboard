@@ -212,7 +212,8 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
     # 更新為 2026 Agentic 2.0 模型
     strategies = [
         ("v1beta", "gemini-3.1-pro-preview"), 
-        ("v1beta", "gemini-2.0-pro-exp-0205")
+        ("v1", "gemini-1.5-pro"),
+        ("v1beta", "gemini-2.0-flash"),
     ]
     
     import time
@@ -240,7 +241,7 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
                 req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers={'Content-Type': 'application/json'})
                 
                 try:
-                    response = urllib.request.urlopen(req, timeout=30)
+                    response = urllib.request.urlopen(req, timeout=180)
                     result = json.loads(response.read().decode('utf-8'))
                     
                     # 💡 關鍵修正：增加 API 回傳結構的安全檢查
