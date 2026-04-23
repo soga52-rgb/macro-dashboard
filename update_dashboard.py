@@ -64,8 +64,8 @@ def fetch_weekly_news():
         xml_data = response.read()
         root = ET.fromstring(xml_data)
         headlines = []
-        # 改為嚴格挑選最新 5 則，並篩選指定媒體
-        for item in root.findall('.//item')[:5]:
+        # 改為嚴格挑選最新 3 則，並篩選指定媒體
+        for item in root.findall('.//item')[:3]:
             title_node = item.find('title')
             link_node = item.find('link')
             title = title_node.text if title_node is not None else "新聞標題"
@@ -231,9 +231,6 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
                             "googleSearch": {}
                         }
                     ],
-                    "generationConfig": {
-                        "responseMimeType": "application/json"
-                    },
                     "safetySettings": [
                         {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
                         {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
