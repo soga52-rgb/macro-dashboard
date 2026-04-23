@@ -212,7 +212,7 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
     # 更新為 2026 Agentic 2.0 模型
     strategies = [
         ("v1beta", "gemini-3.1-pro-preview"), 
-        ("v1beta", "gemini-3-flash")
+        ("v1beta", "gemini-2.5-pro")
     ]
     
     import time
@@ -228,12 +228,7 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
                     "contents": [{"parts": [{"text": prompt}]}],
                     "tools": [
                         {
-                            "google_search_retrieval": {
-                                "dynamic_retrieval_config": {
-                                    "mode": "MODE_DYNAMIC",
-                                    "dynamic_threshold": 0.3
-                                }
-                            }
+                            "googleSearch": {}
                         }
                     ],
                     "generationConfig": {
