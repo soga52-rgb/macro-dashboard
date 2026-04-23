@@ -212,8 +212,7 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
     # 更新為 2026 Agentic 2.0 模型
     strategies = [
         ("v1beta", "gemini-3.1-pro-preview"), 
-        ("v1", "gemini-1.5-pro"),
-        ("v1beta", "gemini-2.0-flash"),
+        ("v1beta", "gemini-3-flash")
     ]
     
     import time
@@ -227,7 +226,16 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
                 # 加入 tools 以啟動 Search Grounding
                 data = {
                     "contents": [{"parts": [{"text": prompt}]}],
-                    "tools": [{"googleSearch": {}}],
+                    "tools": [
+                        {
+                            "google_search_retrieval": {
+                                "dynamic_retrieval_config": {
+                                    "mode": "MODE_DYNAMIC",
+                                    "dynamic_threshold": 0.3
+                                }
+                            }
+                        }
+                    ],
                     "generationConfig": {
                         "responseMimeType": "application/json"
                     },
@@ -267,7 +275,7 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
                     error_data = e.read().decode('utf-8')
                     # 如果是 503 (系統忙碌) 或 429 (配額滿)，我們稍微休息一下再試
                     if e.code in [429, 503] and attempt < max_retries - 1:
-                        wait_time = 65  # 預設至少等待超過一分鐘
+                        wait_time = 90  # 預設至少等待超過一分鐘
                         if "Please retry in" in error_data:
                             try:
                                 import re
