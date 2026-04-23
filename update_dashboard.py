@@ -176,8 +176,8 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
     {{ 
       "variable_name": "🔥 通膨預期", 
       "badge_text": "CPI/PPI Outlook", 
-      "status": "...", 
-      "status_detail": "...", 
+      "status": "簡短摘要(例: 能源成本攀升)", 
+      "status_detail": "報價數據(例: WTI原油報94.0 USD/bbl)", 
       "trend_class": "trend-up", 
       "trend_text": "...", 
       "drivers": "...", 
@@ -186,8 +186,8 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
     {{ 
       "variable_name": "📉 利率預期", 
       "badge_text": "Fed Funds / US10Y", 
-      "status": "...", 
-      "status_detail": "...", 
+      "status": "簡短摘要(例: 殖利率創波段新高)", 
+      "status_detail": "報價數據(例: 4.292%)", 
       "trend_class": "trend-up", 
       "trend_text": "...", 
       "drivers": "...", 
@@ -196,8 +196,8 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
     {{ 
       "variable_name": "🦅 美元指數", 
       "badge_text": "DXY Strength", 
-      "status": "...", 
-      "status_detail": "...", 
+      "status": "簡短摘要(例: 避險情緒推升)", 
+      "status_detail": "報價數據(例: 逼近百元大關)", 
       "trend_class": "trend-up", 
       "trend_text": "...", 
       "drivers": "...", 
@@ -404,7 +404,7 @@ def update_dashboard(ai_response, news_list, today_str):
                         <div class="var-name">{var_name}</div>
                         <span class="badge">{badge}</span>
                     </td>
-                    <td data-label="當前狀態"><div class="status {trend_class}">{status} <span class="status_detail">{status_det}</span></div></td>
+                    <td data-label="當前狀態"><div class="status">{status} <span class="status-detail">{status_det}</span></div></td>
                     <td data-label="趨勢"><span class="{trend_class} {trend_icon}">{trend}</span></td>
                     <td data-label="驅動因素" class="desc-text">{drivers}</td>
                 </tr>"""
@@ -530,6 +530,7 @@ def update_dashboard(ai_response, news_list, today_str):
         .badge {{ font-size: 0.75rem; background: #f1f5f9; padding: 3px 8px; border-radius: 4px; color: #64748b; display: inline-block; white-space: nowrap; }}
         .trend-up {{ color: var(--up-color); font-weight: 600; }}
         .trend-down {{ color: var(--down-color); font-weight: 600; }}
+        .status {{ font-weight: 600; color: var(--text-primary); }}
         .status-detail {{ display: block; font-size: 0.9rem; font-weight: 400; color: #475569; margin-top: 0.4rem; line-height: 1.5; }}
         
         /* 專業分析收合方塊樣式 */
@@ -599,7 +600,8 @@ def update_dashboard(ai_response, news_list, today_str):
         .news-accordion[open] summary::after {{ content: "-"; }}
         .news-list {{ list-style: none; padding: 1rem; }}
         .news-item {{ margin-bottom: 0.8rem; border-bottom: 1px dashed #e2e8f0; padding-bottom: 0.5rem; }}
-        .news-item a {{ text-decoration: none; color: #475569; font-size: 0.95rem; }}
+        .news-item a {{ text-decoration: none; color: var(--accent-color); font-size: 0.95rem; font-weight: 500; transition: color 0.2s; }}
+        .news-item a:hover {{ text-decoration: underline; color: #1e3a8a; }}
 
         @media (max-width: 768px) {{
             .newsletter-wrapper {{ padding: 2rem 1.5rem; }}
@@ -658,11 +660,11 @@ def update_dashboard(ai_response, news_list, today_str):
             <div class="trend-grid">
                 <div class="trend-card">
                     <h4>US 10Y Yield (十年期公債)</h4>
-                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["美國十年期公債 (殖利率%)", "FRED:DGS10"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
+                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["美國十年期公債", "TVC:US10Y"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
                 </div>
                 <div class="trend-card">
                     <h4>Dollar Index (美元指數)</h4>
-                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["TVC:DXY"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
+                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["美元指數", "CAPITALCOM:DXY"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
                 </div>
                 <div class="trend-card">
                     <h4>Gold Spot (黃金)</h4>
