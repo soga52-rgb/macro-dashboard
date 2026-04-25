@@ -36,18 +36,11 @@ HISTORY_FILE = os.path.join(WORKSPACE_DIR, "historical_data.json")
 # ==============================================================================
 def fetch_weekly_news():
     print("正在抓取過去 48 小時全球總經深度新聞 (滾動日度視窗)...")
-    # 核心追蹤事件區 (由資深總經框架精煉，涵蓋全球股匯債波動事件)
+    # 核心追蹤事件區 (為避免 Google News 查詢過長導致忽略來源過濾，精簡關鍵字)
     macro_keywords = [
-        # 1. 央行與流動性 (Central Banks & Liquidity)
-        "FOMC", "Federal Reserve", "ECB", "BOJ", "interest rate", "rate cut",
-        # 2. 通膨與物價 (Inflation & Prices)
-        "CPI", "PCE", "PPI", "inflation",
-        # 3. 就業市場 (Labor Market)
-        "NFP", "nonfarm payrolls", "jobless claims", "unemployment",
-        # 4. 經濟基本面 (Economic Growth)
-        "GDP", "Retail Sales", "PMI", "soft landing", "macroeconomic",
-        # 5. 匯率與公債 (FX & Treasuries)
-        "DXY", "Treasury yields"
+        "Federal Reserve", "interest rate", "rate cut", 
+        "CPI", "inflation", "unemployment", 
+        "GDP", "macroeconomic", "Treasury yields"
     ]
     
     import urllib.parse
@@ -55,8 +48,8 @@ def fetch_weekly_news():
     query_str = " OR ".join([f'"{k}"' if ' ' in k else k for k in macro_keywords])
     # 添加指定媒體
     source_str = "site:bloomberg.com OR site:cnbc.com OR site:investing.com OR site:benzinga.com OR site:cnyes.com"
-    # 用標準的 urllib 進行編碼，確保 Google News 伺服器絕對不漏接 when:2d 指令
-    encoded_q = urllib.parse.quote(f"({query_str}) AND ({source_str}) when:2d")
+    # 用標準的 urllib 進行編碼，確保 Google News 伺服器絕對不漏接 when:2d 指令 (移除 AND 讓 site 條件生效)
+    encoded_q = urllib.parse.quote(f"({query_str}) ({source_str}) when:2d")
     url = f"https://news.google.com/rss/search?q={encoded_q}&hl=en-US&gl=US&ceid=US:en"
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
     try:
@@ -660,7 +653,7 @@ def update_dashboard(ai_response, news_list, today_str):
             <div class="trend-grid">
                 <div class="trend-card">
                     <h4>US 10Y Yield (十年期公債)</h4>
-                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["美國十年期公債", "TVC:US10Y"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
+                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["美國十年期公債", "CBOE:TNX"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
                 </div>
                 <div class="trend-card">
                     <h4>Dollar Index (美元指數)</h4>
