@@ -86,6 +86,7 @@
         .badge { font-size: 0.75rem; background: #f1f5f9; padding: 3px 8px; border-radius: 4px; color: #64748b; display: inline-block; white-space: nowrap; }
         .trend-up { color: var(--up-color); font-weight: 600; }
         .trend-down { color: var(--down-color); font-weight: 600; }
+        .status { font-weight: 600; color: var(--text-primary); }
         .status-detail { display: block; font-size: 0.9rem; font-weight: 400; color: #475569; margin-top: 0.4rem; line-height: 1.5; }
         
         /* 專業分析收合方塊樣式 */
@@ -155,7 +156,8 @@
         .news-accordion[open] summary::after { content: "-"; }
         .news-list { list-style: none; padding: 1rem; }
         .news-item { margin-bottom: 0.8rem; border-bottom: 1px dashed #e2e8f0; padding-bottom: 0.5rem; }
-        .news-item a { text-decoration: none; color: #475569; font-size: 0.95rem; }
+        .news-item a { text-decoration: none; color: var(--accent-color); font-size: 0.95rem; font-weight: 500; transition: color 0.2s; }
+        .news-item a:hover { text-decoration: underline; color: #1e3a8a; }
 
         @media (max-width: 768px) {
             .newsletter-wrapper { padding: 2rem 1.5rem; }
@@ -175,13 +177,13 @@
             <span class="date">GLOBAL MACRO WEEKLY INSIGHTS</span>
             <h1>全球總經週報 <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 400;">[PRO-ENGINE V3.0]</span></h1>
             <p style="color: #94a3b8;">由 AI 驅動的自動化全域分析 (Rolling 48-Hour Window)</p>
-            <p style="font-size: 1rem; color: #ef4444; font-weight: 800; margin-top: 0.5rem; text-decoration: underline;" class="date-display">🕒 最後更新時間：2026-04-23 23:52</p>
+            <p style="font-size: 1rem; color: #ef4444; font-weight: 800; margin-top: 0.5rem; text-decoration: underline;" class="date-display">🕒 最後更新時間：2026-04-25 08:08</p>
             
             <!-- 日期選單與狀態列 -->
             <div style="margin-top: 1rem; display: flex; align-items: center; justify-content: center; gap: 10px;">
                 <label for="history-selector" style="font-weight: 600; color: #475569;">📅 歷史回顧：</label>
                 <select id="history-selector" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #cbd5e1; outline: none; font-family: inherit; font-size: 0.95rem; background: #fffcf0;">
-                    <option value="0">2026-04-23 23:52 (最新)</option>
+                    <option value="0">2026-04-25 08:08 (最新)</option>
                 </select>
             </div>
             
@@ -193,7 +195,7 @@
                     <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.2rem;">AI 主播 | 每日精準解析</div>
                 </div>
                 <audio id="podcast-audio" controls style="height: 35px; outline: none; margin-left: 0.5rem;">
-                    <source src="podcast_20260423_155650.mp3" type="audio/mpeg">
+                    <source src="podcast_20260425_000914.mp3" type="audio/mpeg">
                     您的瀏覽器不支援音訊元素。
                 </audio>
             </div>
@@ -204,9 +206,9 @@
         <section>
             <h2 class="section-h2">📻 本週市場主旋律 (Narrative)</h2>
             <div class="narrative-box" id="narrative-box">
-                本週全球市場的核心敘事圍繞著「地緣政治風險」與「央行政策分歧」。因荷姆茲海峽衝突升溫，WTI 原油價格飆升至 94.0 美元，顯著推高了通膨預期，黃金作為避險與抗通膨資產，價格高達 4750.0 美元。 這迫使聯準會(Fed)對降息保持謹慎，使得美國十年期公債殖利率維持在 4.292% 的高檔。 與此同時，歐洲央行(ECB)卻因自身經濟狀況而釋放出更具耐心的信號，政策分歧加劇，進一步推升美元指數(DXY)至 98.595，對全球風險資產與亞洲貨幣構成壓力。
+                本週市場聚焦於強韌的美國勞動數據與農產通膨再起。蒙大拿州失業率持平於低檔，加上堪薩斯州追討疫情救濟金，顯示就業市場緊俏且流動性逐步收緊。同時，極端氣候推升小麥天氣溢價，結合高油價喚醒市場對通膨回溫的擔憂。在此背景下，美債殖利率與美元雙雙維持高位，限縮聯準會降息空間並對亞洲匯市施壓。
             </div>
-            <div id="forecast-box"><details class='analysis-container'><summary>📢 下週預測：地緣政治風險主導，美元續強格局</summary><div class='analysis-content'><strong>⛓️ 市場邏輯傳導：</strong><p>中東地緣衝突 ➔ 推升<strong>通膨/利率預期</strong> ➔ 最終定價<strong>美元走勢</strong>。</p><hr><strong>📉 資產動態預測：</strong><ul><li><strong>亞洲貨幣 (TWD/JPY/KRW)：</strong>在美元強勢與高美債殖利率的雙重壓力下，預計將持續承壓。日本央行若不改變寬鬆政策，日圓貶值趨勢難以扭轉；台灣與南韓等出口導向經濟體，則需應對強勢美元帶來的資金外流與匯兌壓力。</li><li><strong>避險成本與鋼鐵業：</strong>全球避險情緒高漲，企業透過衍生性商品避險的成本將增加。對鋼鐵等大宗商品產業而言，強勢美元將壓抑以美元計價的商品價格，同時全球經濟若因高油價而放緩，將衝擊其終端需求。</li></ul></div></details></div>
+            <div id="forecast-box"><details class='analysis-container'><summary>📢 下週預測：通膨與利率雙高格局</summary><div class='analysis-content'><strong>⛓️ 市場邏輯傳導：</strong><p>原物料與氣候溢價推升 ➔ 影響<strong>通膨/利率預期</strong> ➔ 最終定價<strong>美元走勢</strong>。</p><hr><strong>📉 資產動態預測：</strong><ul><li><strong>亞洲貨幣 (TWD/JPY/KRW)：</strong>在 DXY 98.51 壓制下，將面臨強大的防禦性貶值壓力，進口成本上升恐引發連鎖緊縮。</li><li><strong>避險成本與農工產業：</strong>黃金創高與小麥溢價將進一步壓縮下游實體企業獲利，S&P 500 雖達 7165.08，但傳統產業與科技龍頭將持續分化。</li></ul></div></details></div>
         </section>
 
         <section>
@@ -218,7 +220,7 @@
                 </div>
                 <div class="trend-card">
                     <h4>Dollar Index (美元指數)</h4>
-                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{"symbols": [["TVC:DXY"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}</script></div>
+                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{"symbols": [["美元指數", "CAPITALCOM:DXY"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}</script></div>
                 </div>
                 <div class="trend-card">
                     <h4>Gold Spot (黃金)</h4>
@@ -256,15 +258,15 @@
         <div class="focus-card">
             <div class="focus-idx">01</div>
             <div class="focus-content">
-                <h4>油價飆升：荷姆茲海峽成全球通膨的引爆點</h4>
-                <p>伊朗革命衛隊在荷姆茲海峽的軍事行動，導致多艘貨輪遭襲擊與扣押，顯著加劇了市場對全球原油供應中斷的憂慮。 由於全球約 20% 的石油需行經此地，此一瓶頸的風險直接推動 WTI 油價站上 94.0 美元，布蘭特原油更突破每桶 100 美元。 這不僅衝擊能源市場，更成為全球央行，特別是聯準會，在制定利率政策時無法忽視的通膨上行風險。</p>
+                <h4>勞動市場展現韌性與疫情補貼回收</h4>
+                <p>蒙大拿州失業率維持 3.6% 低檔 [1.3]，堪薩斯州亦追討高達數千萬美元的疫情失業救濟金。這顯示美國就業市場基底穩固，且政府正逐步收緊疫情以來的流動性，進一步壓縮了聯準會的寬鬆政策彈性。</p>
             </div>
         </div>
         <div class="focus-card">
             <div class="focus-idx">02</div>
             <div class="focus-content">
-                <h4>美歐政策分歧：美元的強勢背景</h4>
-                <p>在美國因能源價格而面臨頑固通膨壓力時，歐洲央行的官員態度則相對保守。儘管部分分析預期ECB可能因持續的通膨而在六月開始加息，但整體信號顯示其更有耐心。 這種政策預期的落差，擴大了美債與歐債的利差，使資金持續流向美元資產，成為推動美元指數(DXY)攀升至 98.595 水位背後的關鍵驅動力。</p>
+                <h4>氣候溢價點燃農產通膨擔憂</h4>
+                <p>受到極端氣候影響，小麥期貨累積「天氣溢價」並帶動市場對實體通膨重燃的疑慮。在能源價格同步攀高之際，市場正重新定價原物料對 CPI 的潛在推升力道，使通膨降溫之路面臨挑戰。</p>
             </div>
         </div>
             </div>
@@ -274,7 +276,7 @@
             <h2 class="section-h2">⛓️ 利率與匯率傳導矩陣</h2>
             <div class="deep-dive-box">
                 <h3>Macro Linkage Analysis</h3>
-                <div id="linkage-box">全球總經的傳導鏈極為清晰：荷姆茲海峽的地緣政治風險點燃了 WTI 油價漲勢 ，進而加劇美國通膨預期。為抑制通膨，市場預期聯準會將維持高利率更長時間，導致美國十年期公債殖利率穩居 4.292% 高位。高殖利率與避險情緒共同作用，將美元指數(DXY)推升至 98.595。在此背景下，利率政策與美國存在巨大差異的日圓(JPY)，以及與中國經濟連動性高且對美元敏感的台幣(TWD)，均面臨顯著的貶值壓力。</div>
+                <div id="linkage-box">美債十年期殖利率高檔盤整為美元提供強大避險與利差保護。就業強勁與原物料通膨預期使得聯準會寬鬆空間受限。美元走強對非美貨幣產生抽血效應，日圓與台幣等亞洲貨幣首當其衝，面臨龐大貶值壓力，恐引發亞洲央行被動緊縮阻貶的連鎖反應。</div>
             </div>
         </section>
 
@@ -297,27 +299,27 @@
                         <div class="var-name">🔥 通膨預期</div>
                         <span class="badge">CPI/PPI Outlook</span>
                     </td>
-                    <td data-label="當前狀態"><div class="status trend-up">4750.0 USD/oz (黃金) <span class="status_detail">WTI 原油報 94.0 USD/bbl</span></div></td>
+                    <td data-label="當前狀態"><div class="status">能源與農產雙漲 <span class="status-detail">WTI原油報 94.88 USD/bbl，黃金報 4725.4 USD/oz</span></div></td>
                     <td data-label="趨勢"><span class="trend-up ">持續攀升</span></td>
-                    <td data-label="驅動因素" class="desc-text">荷姆茲海峽地緣風險推升能源成本、AI 數據中心電力需求構成結構性支撐。</td>
+                    <td data-label="驅動因素" class="desc-text">氣候異常推升小麥天候溢價 [1.4]，結合高漲的實體能源成本與避險買盤，市場開始反映新一輪實體經濟的通膨推升壓力。</td>
                 </tr>
                 <tr>
                     <td data-label="核心變數">
                         <div class="var-name">📉 利率預期</div>
                         <span class="badge">Fed Funds / US10Y</span>
                     </td>
-                    <td data-label="當前狀態"><div class="status trend-up">4.292% <span class="status_detail">美國十年期公債殖利率突破前高</span></div></td>
-                    <td data-label="趨勢"><span class="trend-up ">高點盤整</span></td>
-                    <td data-label="驅動因素" class="desc-text">頑固的通膨數據使市場對聯準會短期內降息的預期降溫，就業市場信號錯綜複雜。</td>
+                    <td data-label="當前狀態"><div class="status">殖利率高位盤整 <span class="status-detail">US10Y報 4.310%</span></div></td>
+                    <td data-label="趨勢"><span class="trend-up ">高點震盪</span></td>
+                    <td data-label="驅動因素" class="desc-text">蒙大拿州等地方就業數據顯示勞動力市場具備強大韌性，加上原物料通膨預期難降，市場收回鴿派降息預期。</td>
                 </tr>
                 <tr>
                     <td data-label="核心變數">
                         <div class="var-name">🦅 美元指數</div>
                         <span class="badge">DXY Strength</span>
                     </td>
-                    <td data-label="當前狀態"><div class="status trend-up">98.595 <span class="status_detail">指數穩步走強，逼近百元大關</span></div></td>
-                    <td data-label="趨勢"><span class="trend-up ">緩步反彈</span></td>
-                    <td data-label="驅動因素" class="desc-text">全球避險情緒升溫、相對於歐元和日圓等貨幣存在顯著的利差優勢。</td>
+                    <td data-label="當前狀態"><div class="status">避險與利差雙重推升 <span class="status-detail">DXY報 98.51</span></div></td>
+                    <td data-label="趨勢"><span class="trend-up ">穩步走強</span></td>
+                    <td data-label="驅動因素" class="desc-text">美債殖利率居高不下提供豐厚利差，全球地緣危機與通膨不確定性驅使國際資金回流美元資產避險。</td>
                 </tr>
                     </tbody>
                 </table>
@@ -329,12 +331,12 @@
             <div class="risk-grid" id="risk-grid">
                 
         <div class="risk-item">
-            <span class="risk-title">⚠️ 停滯性通膨風險</span>
-            <p class="risk-content">若中東衝突持續升級，導致油價失控性飆漲，全球經濟可能陷入「停滯性通膨」的困境。 在此情境下，各國央行將面臨經濟成長停滯與物價飆升的雙重壓力，貨幣政策將進退兩難，大幅增加全球經濟硬著陸的風險。</p>
+            <span class="risk-title">⚠️ 氣候與地緣雙重通膨風險</span>
+            <p class="risk-content">農產品的天候溢價與高漲的實體能源成本疊加，若引發新一波 CPI 數據向上反彈，恐徹底粉碎市場的降息預期並引發股債雙殺。</p>
         </div>
         <div class="risk-item">
-            <span class="risk-title">⚠️ 就業市場急劇惡化</span>
-            <p class="risk-content">儘管當前通膨是市場焦點，但美國就業數據已出現一些矛盾信號。例如，初領失業救濟金人數略高於預期，升至 21.4 萬人。 若後續數據（如非農就業報告）顯示勞動力市場急劇且意外地走弱，市場的敘事焦點將迅速從「對抗通膨」轉向「擔憂衰退」，可能引發債券殖利率和美元指數的快速反轉下跌。</p>
+            <span class="risk-title">⚠️ 強勢美元引發的亞幣競貶</span>
+            <p class="risk-content">居高不下的美債殖利率使美元資產維持極高吸引力，若 DXY 持續強勢，亞洲央行干預匯市的防禦成本將成倍增加，並推升輸入性通膨風險。</p>
         </div>
             </div>
         </section>
@@ -359,17 +361,17 @@
                 <ul class="news-list" id="news-list">
                     
                 <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMi3wFBVV95cUxPUkdTODF3NEIwVXlBLTVSVEJJR3o4ZzhjU1h0MDZ4R3ZNWnZ2Z0VjVDEwb0lWQVJ6RnhoRGdNU1ZMS3BVU2p5eWstRl80VFd4S0VyU0dhSmVxWG04NjQtUmhaclZ2MzgtVlFEVUMwaUlrN0pldnRYMkRRV01QRWZhQ2NDNWNMQ3MyaXFsWGtkdlFPbVNCcjI3T2hLREcyNGNJeXhZZW8wZVZSVnd1ZkRiT0JjM0diU0F6dEZZcVpTNkN3NFI4NUhiU1hQQUVMSlpvSGVUUmJhMTBGRF85SmdN0gHzAUFVX3lxTE82TWdRUU1ZZm9QLWdzZkpPWEF1dUpsaGxWSXZJYUtKazE1aE82NWRCQ2diMFYyNHVMLXpmanM3RVl2dG9IYjVvTkJ3SEg4V1pPRmdlWWVqOVpmelh6TFpfYktEbWN2b2diYnVzQXBwMzhWT2o4enBDRm9YaTNBWXNqeV9ENnBvbjFwSXFPaXk4ZjJERExHc3ZSSG1uUVRBZXZwV1NZNUVsNUx5eVBBeWZlTXBZV2VCRGdEZFFpRldjaEViNmpiQWVndlZvMGVqS2xNMkRlamxKRVloeWZfWk4tbHoyTWxGNVpZN24wRWVPODZvVQ?oc=5" target="_blank">📄 Javier Milei faces the dilemma of lowering inflation or boosting the economy in Argentina - EL PAÍS English</a>
+                    <a href="https://news.google.com/rss/articles/CBMijgFBVV95cUxOUzdnc2UwMXA4eUZlQU5VSFhPdnlka3JBX2ZITmdpcDFocVQwQjNfNnpyT1l6SWRYN1I1WXhlVGdEdm5RQVd0YWxVblZKWXhmWDBROW5IdktXMF9qcmhSMV9MbWJGTjhCQTRZVHVUZEdDNFNscWdMc3NGWXc0eS0tWV9uTjBQOWNHckk2TGJn?oc=5" target="_blank">📄 Montana’s Unemployment Rate Remains at 3.6% - State of Montana Newsroom (.gov)</a>
                 </li>
                 <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMic0FVX3lxTE54RW11OGFEb1J3bmFjLXZfV2tkM3d6aXRGMy1IcW5hNV9iQ2w2YTJKQUE2YW1XZ3lldWhSU0hCRnFtU1ZFRmVvQ1Bwa2dQWkgyeHhvWGRIb1hlampBVzM2blhvWDcyMld6RjB1clVrY1VrY1k?oc=5" target="_blank">📄 How to cope with losing your job and make unemployment suck a little less - vox.com</a>
+                    <a href="https://news.google.com/rss/articles/CBMirwFBVV95cUxPd19NTy1Ua0p0cFEwdEc5SmdOcWxCaHpLV1l6aWJjRkdrZzNCZGNoYjhlOGYtMmFGSVlkQ3NVXzdheGRPdDdMdmMtcFhSMVhxQ2tEV1ltOEt5RWtVUHhaMEk0d0JialBsdTVCN3VueURJT2JIVE9OM1lfX0dXQVg0OUtzLUVobTZGZVhzY1k5SzB4eVA1Y09jN3Nwbllfd1ZDTDV2Ny1abjhYVWIzcTJJ?oc=5" target="_blank">📄 Wheat Rallies on Weather but Fails to Excite Row Crops: When Will the Markets Trade Inflation? - AgWeb</a>
                 </li>
                 <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMiiwFBVV95cUxQekJ0THdiS2VQcUJnTWladlNKRFlVS0lVREFUZFFqdjJ2MTRiM1VBOFVQRzRrcnNMMTBBbWlCUnV6dEtQUUFod3BWZEZIb2VNZkYxaEhFWVduRk9RVXlGMWxkYjI5SmdRZlNieWU3eEdyZ0dHTDJ2bHFMaVQ1bG5IcV9MUzlaNGlHMjNB?oc=5" target="_blank">📄 ECB: Inflation signals allow patience – BNY - FXStreet</a>
+                    <a href="https://news.google.com/rss/articles/CBMizwFBVV95cUxPclNrUFFlS3JFVHhrV0VYYTB0WjgxbnR3d0NGa3d3Q1cwZVVFS3RQZzJYMHVLSDVHQmZaYllnNmpqMFE0VWpSYnZPTHBTUm9ucmVsZVZ6NTJfbm1mcWtwTms1UGdab042eU1wa2lOaG9ZcEVmT3dvaUx6ZEc2emdzM0dzVlRIM0NUajVjY0dKX1V6MVFkelctUnp6TWd5Nnp5Z3g4dHUxQmM1SU5ONFlQX25jS1dNa0RvMV9iRURiV0U1aVZXTDhvLTFyV3Q0TVE?oc=5" target="_blank">📄 Kansas sends letters telling people to repay $67.4M in unemployment benefits dating to the pandemic - Kansas Reflector</a>
                 </li>
                 </ul>
             </details>
-            <p style="text-align: center; color: #cbd5e1; font-size: 0.8rem; margin-top: 2rem;">© 2026 Macro Strategy Lab. 最後更新：<span class="date-display">2026-04-23 23:52</span></p>
+            <p style="text-align: center; color: #cbd5e1; font-size: 0.8rem; margin-top: 2rem;">© 2026 Macro Strategy Lab. 最後更新：<span class="date-display">2026-04-25 08:08</span></p>
         </footer>
     </div>
     <script>
@@ -424,4 +426,4 @@
     </script>
 </body>
 </html>
-<!-- Build Trace (TPE): 2026-04-23 23:52 -->
+<!-- Build Trace (TPE): 2026-04-25 08:08 -->
