@@ -687,6 +687,13 @@ def update_dashboard(ai_response, news_list, today_str):
         </header>
 
         <section>
+            <h2 class="section-h2">🎯 關鍵事件深度剖析</h2>
+            <div class="focus-grid" id="focus-grid">
+                {focus_html}
+            </div>
+        </section>
+
+        <section>
             <h2 class="section-h2">📻 本週市場主旋律 (Narrative)</h2>
             <div class="narrative-box" id="narrative-box">
                 {weekly_narrative}
@@ -734,12 +741,6 @@ def update_dashboard(ai_response, news_list, today_str):
         </section>
 
 
-        <section>
-            <h2 class="section-h2">🎯 關鍵事件深度剖析</h2>
-            <div class="focus-grid" id="focus-grid">
-                {focus_html}
-            </div>
-        </section>
 
         <section>
             <h2 class="section-h2">⛓️ 利率與匯率傳導矩陣</h2>
