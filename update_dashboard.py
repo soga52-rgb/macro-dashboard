@@ -63,7 +63,13 @@ def fetch_weekly_news():
             link_node = item.find('link')
             title = title_node.text if title_node is not None else "新聞標題"
             link = link_node.text if link_node is not None else "#"
-            headlines.append({"title": title, "link": link})
+            
+            source_node = item.find('source')
+            pubdate_node = item.find('pubDate')
+            source = source_node.text if source_node is not None else "新聞媒體"
+            pubdate = pubdate_node.text if pubdate_node is not None else datetime.now().strftime("%Y/%m/%d %H:%M:%S")
+            
+            headlines.append({"title": title, "link": link, "source": source, "pubdate": pubdate})
         return headlines
     except Exception as e:
         print(f"新聞抓取失敗: {e}")
@@ -132,7 +138,7 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
     print(f"正在呼叫 Gemini API 進行智能推論 (今日日期: {today_str})...")
     
     if isinstance(news_data, list) and len(news_data) > 0:
-        news_text = "\n".join([item['title'] for item in news_data])
+        news_text = "\n".join([f"[{item.get('source', '新聞媒體')} | {item.get('pubdate', '')}] {item['title']} (URL: {item['link']})" for item in news_data])
     else:
         news_text = "未能抓取新聞，請基於目前全球總體經濟狀況直接進行推論。"
 
@@ -184,7 +190,25 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
 請嚴格輸出以下 JSON 格式，不要有任何多餘文字：
 {{
   "weekly_narrative": "(約 150 字) 基於市場情緒與 Phase 1 解析撰寫的本週摘要。",
-  "focus_items": [ {{ "title": "...", "content": "..." }}, {{ "title": "...", "content": "..." }} ],
+  "focus_items": [ {{
+    "category": "事件分類(例:央行政策)",
+    "title": "新聞標題",
+    "source": "新聞來源",
+    "publish_date": "發布時間",
+    "price_direction": "物價方向(偏多/偏空/中性)",
+    "rate_direction": "利率方向(偏多/偏空/中性)",
+    "usd_direction": "美元指數方向(偏多/偏空/中性)",
+    "short_summary": "一句話總結",
+    "original_summary": "新聞原始摘要",
+    "one_sentence_conclusion": "一句話結論",
+    "news_summary": "新聞詳細摘要",
+    "transmission_path": "傳導路徑",
+    "price_reason": "物價變動原因",
+    "rate_reason": "利率變動原因",
+    "usd_reason": "美元變動原因",
+    "original_focus": "原始重點",
+    "original_link": "新聞原始連結網址"
+  }} ],
   "fx_rates_linkage": "(120 字) Phase 2 走勢研判，拆解利率與匯率的實際傳導。",
   "outlook_risks": [ {{ "title": "...", "content": "..." }}, {{ "title": "...", "content": "..." }} ],
   "analysis": [
@@ -372,13 +396,85 @@ def update_dashboard(ai_response, news_list, today_str):
     # 準備焦點事件 HTML
     focus_html = ""
     for idx, item in enumerate(focus_items):
+        cat = item.get('category', '總經動態')
+        title = item.get('title', '無標題')
+        source = item.get('source', '網路新聞')
+        pubdate = item.get('publish_date', today_str)
+        price_dir = item.get('price_direction', '中性')
+        rate_dir = item.get('rate_direction', '中性')
+        usd_dir = item.get('usd_direction', '中性')
+        short_sum = item.get('short_summary', '')
+        orig_sum = item.get('original_summary', '')
+        one_sent = item.get('one_sentence_conclusion', '')
+        news_sum = item.get('news_summary', '')
+        trans_path = item.get('transmission_path', '')
+        price_rsn = item.get('price_reason', '')
+        rate_rsn = item.get('rate_reason', '')
+        usd_rsn = item.get('usd_reason', '')
+        orig_focus = item.get('original_focus', '')
+        orig_link = item.get('original_link', '#')
+        
         focus_html += f"""
-        <div class="focus-card">
-            <div class="focus-idx">0{idx+1}</div>
-            <div class="focus-content">
-                <h4>{item.get('title', '')}</h4>
-                <p>{item.get('content', '')}</p>
+        <div class="news-detail-card">
+            <div class="nd-header">
+                <span class="nd-category">{cat}</span>
+                <h3 class="nd-title">{title}</h3>
+                <div class="nd-meta">{source} | 發布 {pubdate}</div>
+                <div class="nd-pills">
+                    <span class="nd-pill">物價{price_dir}</span>
+                    <span class="nd-pill">利率{rate_dir}</span>
+                    <span class="nd-pill">美元{usd_dir}</span>
+                </div>
+                <div class="nd-short-summary">{short_sum}</div>
             </div>
+            <details class="nd-details">
+                <summary></summary>
+                <div class="nd-content">
+                    <div class="nd-orig-summary">{orig_sum}</div>
+                    <div class="nd-meta-tags">
+                        <span>新聞來源: {source}</span>
+                        <span>新聞發布時間: {pubdate}</span>
+                        <span>分析執行時間: {today_str}</span>
+                        <span>事件分類: {cat}</span>
+                    </div>
+                    <div class="nd-directions">
+                        <div class="nd-dir-box"><div class="nd-dir-label">物價方向</div><div class="nd-dir-value">{price_dir}</div></div>
+                        <div class="nd-dir-box"><div class="nd-dir-label">利率方向</div><div class="nd-dir-value">{rate_dir}</div></div>
+                        <div class="nd-dir-box"><div class="nd-dir-label">美元指數方向</div><div class="nd-dir-value">{usd_dir}</div></div>
+                    </div>
+                    <div class="nd-conclusion">
+                        <div class="nd-box-title">一句話結論</div>
+                        <p>{one_sent}</p>
+                    </div>
+                    <div class="nd-grid">
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">新聞摘要</div>
+                            <p>{news_sum}</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">傳導路徑</div>
+                            <p>{trans_path}</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">物價原因</div>
+                            <p>{price_rsn}</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">利率原因</div>
+                            <p>{rate_rsn}</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">美元原因</div>
+                            <p>{usd_rsn}</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">原始重點</div>
+                            <p>{orig_focus}</p>
+                            <a href="{orig_link}" target="_blank" class="nd-btn">查看原文</a>
+                        </div>
+                    </div>
+                </div>
+            </details>
         </div>"""
 
     # 準備風險預警 HTML
@@ -530,12 +626,33 @@ def update_dashboard(ai_response, news_list, today_str):
         .trend-widget-container {{ flex-grow: 1; width: 100%; height: 500px; }}
 
         .focus-grid {{ display: flex; flex-direction: column; gap: 1rem; margin-bottom: 3rem; }}
-        .focus-card {{ 
-            display: flex; gap: 1.5rem; padding: 1.5rem; background: #f8fafc; border-radius: 8px; border: 1px solid #edf2f7;
-        }}
-        .focus-idx {{ font-size: 2rem; font-weight: 800; color: #cbd5e1; line-height: 1; }}
-        .focus-content h4 {{ font-size: 1.15rem; margin-bottom: 0.5rem; color: var(--accent-color); }}
-        .focus-content p {{ font-size: 1.05rem; color: #475569; }}
+        .news-detail-card {{ background: #fff; border: 1px solid #edf2f7; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }}
+        .nd-category {{ background: #e0f2fe; color: #0284c7; padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; display: inline-block; margin-bottom: 0.8rem; }}
+        .nd-title {{ font-size: 1.3rem; font-weight: 700; color: #1e293b; margin-bottom: 0.5rem; line-height: 1.4; }}
+        .nd-meta {{ font-size: 0.85rem; color: #64748b; margin-bottom: 1rem; }}
+        .nd-pills {{ display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }}
+        .nd-pill {{ background: #64748b; color: #fff; padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: 500; }}
+        .nd-short-summary {{ font-size: 1.05rem; color: #334155; margin-bottom: 0.5rem; }}
+        .nd-details summary {{ color: #0284c7; font-weight: 600; cursor: pointer; list-style: none; font-size: 0.95rem; outline: none; margin-top: 0.5rem; display: inline-block; }}
+        .nd-details summary::-webkit-details-marker {{ display: none; }}
+        .nd-details summary::before {{ content: "展開詳情 ▼"; }}
+        .nd-details[open] summary::before {{ content: "收合詳情 ▲"; }}
+        .nd-content {{ margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #edf2f7; }}
+        .nd-orig-summary {{ font-size: 1.05rem; color: #475569; margin-bottom: 1.5rem; }}
+        .nd-meta-tags {{ display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }}
+        .nd-meta-tags span {{ background: #f8fafc; border: 1px solid #e2e8f0; color: #64748b; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; }}
+        .nd-directions {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }}
+        .nd-dir-box {{ border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; text-align: left; }}
+        .nd-dir-label {{ font-size: 0.85rem; color: #64748b; margin-bottom: 0.5rem; }}
+        .nd-dir-value {{ font-size: 1.5rem; font-weight: 700; color: #64748b; }}
+        .nd-conclusion {{ background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 1.2rem; margin-bottom: 1.5rem; }}
+        .nd-box-title {{ font-size: 0.9rem; font-weight: 700; color: #0284c7; margin-bottom: 0.5rem; }}
+        .nd-conclusion p {{ font-size: 1.05rem; color: #0f172a; font-weight: 500; }}
+        .nd-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }}
+        .nd-grid-box {{ border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.2rem; display: flex; flex-direction: column; }}
+        .nd-grid-box p {{ font-size: 0.95rem; color: #334155; flex-grow: 1; }}
+        .nd-btn {{ display: inline-block; background: #0284c7; color: #fff; text-decoration: none; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.9rem; font-weight: 600; align-self: flex-start; margin-top: 1rem; }}
+        .nd-btn:hover {{ background: #0369a1; }}
 
         .deep-dive-box {{ 
             background: #fffcf0; border: 1px solid #fef3c7; padding: 2rem; border-radius: 12px; margin-bottom: 3rem;
@@ -630,6 +747,8 @@ def update_dashboard(ai_response, news_list, today_str):
         .news-item a:hover {{ text-decoration: underline; color: #1e3a8a; }}
 
         @media (max-width: 768px) {{
+            .nd-directions {{ grid-template-columns: 1fr; }}
+            .nd-grid {{ grid-template-columns: 1fr; }}
             .newsletter-wrapper {{ padding: 2rem 1.5rem; }}
             .risk-grid {{ grid-template-columns: 1fr; }}
             table, thead, tbody, th, td, tr {{ display: block; }}
