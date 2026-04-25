@@ -195,9 +195,22 @@
                     <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.2rem;">AI 主播 | 每日精準解析</div>
                 </div>
                 <audio id="podcast-audio" controls style="height: 35px; outline: none; margin-left: 0.5rem;">
-                    <source src="podcast_20260425_000914.mp3" type="audio/mpeg">
+                    <source src="podcast_20260423_155650.mp3" type="audio/mpeg">
                     您的瀏覽器不支援音訊元素。
                 </audio>
+            </div>
+            
+            <!-- 每週回顧影片 (若存在) -->
+            <div id="weekly-video-container" style="margin-top: 1.5rem; display: none;">
+                <div style="background: #fffcf0; padding: 1rem; border-radius: 12px; border: 1px solid #fef3c7; box-shadow: var(--shadow-md);">
+                    <h3 style="font-size: 1.1rem; color: #92400e; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <span>🎬</span> 本週總經動態回顧影片
+                    </h3>
+                    <video id="weekly-video-player" controls style="width: 100%; border-radius: 8px; max-height: 400px; background: #000;">
+                        <source src="" type="video/mp4">
+                        您的瀏覽器不支援影片元素。
+                    </video>
+                </div>
             </div>
 
             <div style="margin-top: 1.5rem;" class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>{"symbols": [ {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FOREXCOM:NSXUSD", "title": "Nasdaq 100"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "BITSTAMP:BTCUSD", "title": "BTC/USD"}, {"proName": "BITSTAMP:ETHUSD", "title": "ETH/USD"} ], "showSymbolLogo": true, "colorTheme": "light", "isTransparent": true, "displayMode": "adaptive", "locale": "zh_TW"}</script></div>
@@ -414,6 +427,20 @@
                 if (!audioSource.src.endsWith(newSrc)) {
                     audioSource.src = newSrc;
                     audioPlayer.load();
+                }
+                
+                // 動態更新影片來源
+                const videoContainer = document.getElementById('weekly-video-container');
+                const videoPlayer = document.getElementById('weekly-video-player');
+                const videoSource = videoPlayer.querySelector('source');
+                if (selectedItem.weekly_video) {
+                    videoContainer.style.display = 'block';
+                    if (!videoSource.src.endsWith(selectedItem.weekly_video)) {
+                        videoSource.src = selectedItem.weekly_video;
+                        videoPlayer.load();
+                    }
+                } else {
+                    videoContainer.style.display = 'none';
                 }
                 
                 // 更新時間戳記

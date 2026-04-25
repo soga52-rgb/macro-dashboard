@@ -402,6 +402,16 @@ def update_dashboard(ai_response, news_list, today_str):
                     <td data-label="驅動因素" class="desc-text">{drivers}</td>
                 </tr>"""
 
+    # 尋找最新的週報影片
+    weekly_video_filename = ""
+    try:
+        video_files = [f for f in os.listdir(WORKSPACE_DIR) if f.startswith("weekly_video_") and f.endswith(".mp4")]
+        if video_files:
+            video_files.sort(reverse=True)
+            weekly_video_filename = video_files[0]
+    except Exception as e:
+        pass
+
     # === 歷史資料存檔 (保留過去 7 天) ===
     historical_data = []
     if os.path.exists(HISTORY_FILE):
@@ -420,7 +430,8 @@ def update_dashboard(ai_response, news_list, today_str):
         "tbody_html": tbody_html,
         "risk_html": risk_html,
         "news_html": news_html,
-        "podcast_file": podcast_filename
+        "podcast_file": podcast_filename,
+        "weekly_video": weekly_video_filename
     }
     
     # 若當日(取日期前綴)已存在則更新，否則新增於最前面
@@ -636,6 +647,19 @@ def update_dashboard(ai_response, news_list, today_str):
                     您的瀏覽器不支援音訊元素。
                 </audio>
             </div>
+            
+            <!-- 每週回顧影片 (若存在) -->
+            <div id="weekly-video-container" style="margin-top: 1.5rem; display: {'block' if weekly_video_filename else 'none'};">
+                <div style="background: #fffcf0; padding: 1rem; border-radius: 12px; border: 1px solid #fef3c7; box-shadow: var(--shadow-md);">
+                    <h3 style="font-size: 1.1rem; color: #92400e; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <span>🎬</span> 本週總經動態回顧影片
+                    </h3>
+                    <video id="weekly-video-player" controls style="width: 100%; border-radius: 8px; max-height: 400px; background: #000;">
+                        <source src="{weekly_video_filename}" type="video/mp4">
+                        您的瀏覽器不支援影片元素。
+                    </video>
+                </div>
+            </div>
 
             <div style="margin-top: 1.5rem;" class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>{{"symbols": [ {{"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}}, {{"proName": "FOREXCOM:NSXUSD", "title": "Nasdaq 100"}}, {{"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}}, {{"proName": "BITSTAMP:BTCUSD", "title": "BTC/USD"}}, {{"proName": "BITSTAMP:ETHUSD", "title": "ETH/USD"}} ], "showSymbolLogo": true, "colorTheme": "light", "isTransparent": true, "displayMode": "adaptive", "locale": "zh_TW"}}</script></div>
         </header>
@@ -793,6 +817,20 @@ def update_dashboard(ai_response, news_list, today_str):
                 if (!audioSource.src.endsWith(newSrc)) {{
                     audioSource.src = newSrc;
                     audioPlayer.load();
+                }}
+                
+                // 動態更新影片來源
+                const videoContainer = document.getElementById('weekly-video-container');
+                const videoPlayer = document.getElementById('weekly-video-player');
+                const videoSource = videoPlayer.querySelector('source');
+                if (selectedItem.weekly_video) {{
+                    videoContainer.style.display = 'block';
+                    if (!videoSource.src.endsWith(selectedItem.weekly_video)) {{
+                        videoSource.src = selectedItem.weekly_video;
+                        videoPlayer.load();
+                    }}
+                }} else {{
+                    videoContainer.style.display = 'none';
                 }}
                 
                 // 更新時間戳記
