@@ -83,18 +83,40 @@ def fetch_realtime_data():
         "BTC (比特幣, USD)": "BTC-USD"
     }
     market_data = {}
+    import urllib.parse
     for name, symbol in symbols.items():
         try:
-            url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d"
+            # 加入 URL 編碼與 range=15d 防呆機制
+            encoded_symbol = urllib.parse.quote(symbol)
+            url = f"https://query1.finance.yahoo.com/v8/finance/chart/{encoded_symbol}?interval=1d&range=15d"
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
             response = urllib.request.urlopen(req, timeout=15)
             data = json.loads(response.read())
-            price = data['chart']['result'][0]['meta']['regularMarketPrice']
+            
+            result = data.get('chart', {}).get('result', [])
+            if not result:
+                raise ValueError("No result data")
+                
+            meta = result[0].get('meta', {})
+            live_price = meta.get('regularMarketPrice')
+            
+            # 若無即時報價，則往前尋找最近一個有效收盤價
+            if live_price is not None:
+                price = live_price
+            else:
+                closes = result[0].get('indicators', {}).get('quote', [{}])[0].get('close', [])
+                valid_closes = [c for c in closes if c is not None]
+                if valid_closes:
+                    price = valid_closes[-1]
+                else:
+                    raise ValueError("No valid close price found")
+
             if symbol == "^TNX":
                 market_data[name] = f"{price:.3f} 殖利率%"
             else:
-                market_data[name] = str(price)
+                market_data[name] = f"{price:.2f}" if isinstance(price, (int, float)) else str(price)
         except Exception as e:
+            print(f"[{symbol}] 抓取失敗: {e}")
             market_data[name] = "Data Unavailable"
     
     # 格式化輸出
