@@ -60,12 +60,33 @@
         .trend-widget-container { flex-grow: 1; width: 100%; height: 500px; }
 
         .focus-grid { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 3rem; }
-        .focus-card { 
-            display: flex; gap: 1.5rem; padding: 1.5rem; background: #f8fafc; border-radius: 8px; border: 1px solid #edf2f7;
-        }
-        .focus-idx { font-size: 2rem; font-weight: 800; color: #cbd5e1; line-height: 1; }
-        .focus-content h4 { font-size: 1.15rem; margin-bottom: 0.5rem; color: var(--accent-color); }
-        .focus-content p { font-size: 1.05rem; color: #475569; }
+        .news-detail-card { background: #fff; border: 1px solid #edf2f7; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+        .nd-category { background: #e0f2fe; color: #0284c7; padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; display: inline-block; margin-bottom: 0.8rem; }
+        .nd-title { font-size: 1.3rem; font-weight: 700; color: #1e293b; margin-bottom: 0.5rem; line-height: 1.4; }
+        .nd-meta { font-size: 0.85rem; color: #64748b; margin-bottom: 1rem; }
+        .nd-pills { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .nd-pill { background: #64748b; color: #fff; padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: 500; }
+        .nd-short-summary { font-size: 1.05rem; color: #334155; margin-bottom: 0.5rem; }
+        .nd-details summary { color: #0284c7; font-weight: 600; cursor: pointer; list-style: none; font-size: 0.95rem; outline: none; margin-top: 0.5rem; display: inline-block; }
+        .nd-details summary::-webkit-details-marker { display: none; }
+        .nd-details summary::before { content: "展開詳情 ▼"; }
+        .nd-details[open] summary::before { content: "收合詳情 ▲"; }
+        .nd-content { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #edf2f7; }
+        .nd-orig-summary { font-size: 1.05rem; color: #475569; margin-bottom: 1.5rem; }
+        .nd-meta-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
+        .nd-meta-tags span { background: #f8fafc; border: 1px solid #e2e8f0; color: #64748b; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; }
+        .nd-directions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+        .nd-dir-box { border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; text-align: left; }
+        .nd-dir-label { font-size: 0.85rem; color: #64748b; margin-bottom: 0.5rem; }
+        .nd-dir-value { font-size: 1.5rem; font-weight: 700; color: #64748b; }
+        .nd-conclusion { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 1.2rem; margin-bottom: 1.5rem; }
+        .nd-box-title { font-size: 0.9rem; font-weight: 700; color: #0284c7; margin-bottom: 0.5rem; }
+        .nd-conclusion p { font-size: 1.05rem; color: #0f172a; font-weight: 500; }
+        .nd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .nd-grid-box { border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.2rem; display: flex; flex-direction: column; }
+        .nd-grid-box p { font-size: 0.95rem; color: #334155; flex-grow: 1; }
+        .nd-btn { display: inline-block; background: #0284c7; color: #fff; text-decoration: none; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.9rem; font-weight: 600; align-self: flex-start; margin-top: 1rem; }
+        .nd-btn:hover { background: #0369a1; }
 
         .deep-dive-box { 
             background: #fffcf0; border: 1px solid #fef3c7; padding: 2rem; border-radius: 12px; margin-bottom: 3rem;
@@ -160,6 +181,8 @@
         .news-item a:hover { text-decoration: underline; color: #1e3a8a; }
 
         @media (max-width: 768px) {
+            .nd-directions { grid-template-columns: 1fr; }
+            .nd-grid { grid-template-columns: 1fr; }
             .newsletter-wrapper { padding: 2rem 1.5rem; }
             .risk-grid { grid-template-columns: 1fr; }
             table, thead, tbody, th, td, tr { display: block; }
@@ -177,13 +200,13 @@
             <span class="date">GLOBAL MACRO WEEKLY INSIGHTS</span>
             <h1>全球總經週報 <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 400;">[PRO-ENGINE V3.0]</span></h1>
             <p style="color: #94a3b8;">由 AI 驅動的自動化全域分析 (Rolling 48-Hour Window)</p>
-            <p style="font-size: 1rem; color: #ef4444; font-weight: 800; margin-top: 0.5rem; text-decoration: underline;" class="date-display">🕒 最後更新時間：2026-04-25 08:08</p>
+            <p style="font-size: 1rem; color: #ef4444; font-weight: 800; margin-top: 0.5rem; text-decoration: underline;" class="date-display">🕒 最後更新時間：2026-04-26 08:03</p>
             
             <!-- 日期選單與狀態列 -->
             <div style="margin-top: 1rem; display: flex; align-items: center; justify-content: center; gap: 10px;">
                 <label for="history-selector" style="font-weight: 600; color: #475569;">📅 歷史回顧：</label>
                 <select id="history-selector" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #cbd5e1; outline: none; font-family: inherit; font-size: 0.95rem; background: #fffcf0;">
-                    <option value="0">2026-04-25 08:08 (最新)</option>
+                    <option value="0">2026-04-26 08:03 (最新)</option>
                 </select>
             </div>
             
@@ -195,7 +218,7 @@
                     <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.2rem;">AI 主播 | 每日精準解析</div>
                 </div>
                 <audio id="podcast-audio" controls style="height: 35px; outline: none; margin-left: 0.5rem;">
-                    <source src="podcast_20260423_155650.mp3" type="audio/mpeg">
+                    <source src="podcast_20260426_000508.mp3" type="audio/mpeg">
                     您的瀏覽器不支援音訊元素。
                 </audio>
             </div>
@@ -220,19 +243,188 @@
             <h2 class="section-h2">🎯 關鍵事件深度剖析</h2>
             <div class="focus-grid" id="focus-grid">
                 
-        <div class="focus-card">
-            <div class="focus-idx">01</div>
-            <div class="focus-content">
-                <h4>勞動市場展現韌性與疫情補貼回收</h4>
-                <p>蒙大拿州失業率維持 3.6% 低檔 [1.3]，堪薩斯州亦追討高達數千萬美元的疫情失業救濟金。這顯示美國就業市場基底穩固，且政府正逐步收緊疫情以來的流動性，進一步壓縮了聯準會的寬鬆政策彈性。</p>
+        <div class="news-detail-card">
+            <div class="nd-header">
+                <span class="nd-category">總經預測</span>
+                <h3 class="nd-title">Economists Raise US Inflation Forecasts as Iran War Drags On</h3>
+                <div class="nd-meta">Bloomberg.com | 發布 2026-04-24</div>
+                <div class="nd-pills">
+                    <span class="nd-pill">物價偏多</span>
+                    <span class="nd-pill">利率偏多</span>
+                    <span class="nd-pill">美元偏多</span>
+                </div>
+                <div class="nd-short-summary">彭博調查顯示因伊朗戰爭推升能源價格，經濟學家上調美國通膨預期，估計今年僅降息一次。</div>
             </div>
+            <details class="nd-details">
+                <summary></summary>
+                <div class="nd-content">
+                    <div class="nd-orig-summary">Economists raised their estimates for US inflation and said they expect only one Federal Reserve interest-rate cut this year amid elevated energy costs sparked by the Iran war.</div>
+                    <div class="nd-meta-tags">
+                        <span>新聞來源: Bloomberg.com</span>
+                        <span>新聞發布時間: 2026-04-24</span>
+                        <span>分析執行時間: 2026-04-26 08:03</span>
+                        <span>事件分類: 總經預測</span>
+                    </div>
+                    <div class="nd-directions">
+                        <div class="nd-dir-box"><div class="nd-dir-label">物價方向</div><div class="nd-dir-value">偏多</div></div>
+                        <div class="nd-dir-box"><div class="nd-dir-label">利率方向</div><div class="nd-dir-value">偏多</div></div>
+                        <div class="nd-dir-box"><div class="nd-dir-label">美元指數方向</div><div class="nd-dir-value">偏多</div></div>
+                    </div>
+                    <div class="nd-conclusion">
+                        <div class="nd-box-title">一句話結論</div>
+                        <p>能源通膨外溢，聯準會降息預期大幅收斂。</p>
+                    </div>
+                    <div class="nd-grid">
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">新聞摘要</div>
+                            <p>彭博針對90位經濟學家的最新調查指出，受伊朗戰爭引發的能源成本飆升影響，美國第二季PCE通膨預期上調至3.6%。同時專家預估今年Fed僅將降息一次，消費支出預期亦略微下調，顯示經濟面臨停滯性通膨風險。</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">傳導路徑</div>
+                            <p>伊朗戰爭 ➔ 能源供給受阻與油價居高 ➔ 核心通膨預期上修 ➔ Fed降息路徑限縮</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">物價原因</div>
+                            <p>能源生產與煉油能力受損，導致燃料等企業投入與消費成本增加。</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">利率原因</div>
+                            <p>通膨數據高於預期，限制了聯準會今年實施寬鬆政策的空間。</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">美元原因</div>
+                            <p>利率維持高檔預期帶動美債殖利率上升，利差優勢推升美元避險買盤。</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">原始重點</div>
+                            <p>Economists expect only one Federal Reserve interest-rate cut this year amid elevated energy costs.</p>
+                            <a href="https://news.google.com/rss/articles/CBMisAFBVV95cUxNRDhKRFpvYXROOWt3YXlRVXpGVkdQd0Z3SlBIV0txcjZBVnpGYUNMekdTNlRJVEd1SFpOdGdQWDRvazBJblpyRUxhTEdTM1V6VTY1OEwxR0g4U19xa0FHTnNFMHJkVDk1d1Z0SFVoWDRzU3RQQVlrNEdFbTdZaWNnUFIxT1RsUFo2OUxKUXVoRmctOTlTOTIzQ0t0NFNodXc0b2FjM2hQUUJUb0tEdjZyMA?oc=5" target="_blank" class="nd-btn">查看原文</a>
+                        </div>
+                    </div>
+                </div>
+            </details>
         </div>
-        <div class="focus-card">
-            <div class="focus-idx">02</div>
-            <div class="focus-content">
-                <h4>氣候溢價點燃農產通膨擔憂</h4>
-                <p>受到極端氣候影響，小麥期貨累積「天氣溢價」並帶動市場對實體通膨重燃的疑慮。在能源價格同步攀高之際，市場正重新定價原物料對 CPI 的潛在推升力道，使通膨降溫之路面臨挑戰。</p>
+        <div class="news-detail-card">
+            <div class="nd-header">
+                <span class="nd-category">通膨數據</span>
+                <h3 class="nd-title">UK inflation jumps to 3.3% in March as fuel prices surge amid Iran war</h3>
+                <div class="nd-meta">CNBC | 發布 2026-04-22</div>
+                <div class="nd-pills">
+                    <span class="nd-pill">物價偏多</span>
+                    <span class="nd-pill">利率中性</span>
+                    <span class="nd-pill">美元偏多</span>
+                </div>
+                <div class="nd-short-summary">受中東戰事引發燃料價格大漲影響，英國3月CPI跳升至3.3%。</div>
             </div>
+            <details class="nd-details">
+                <summary></summary>
+                <div class="nd-content">
+                    <div class="nd-orig-summary">U.K. inflation jumped to 3.3% in March as the Iran war sparked a sharp rise in fuel prices.</div>
+                    <div class="nd-meta-tags">
+                        <span>新聞來源: CNBC</span>
+                        <span>新聞發布時間: 2026-04-22</span>
+                        <span>分析執行時間: 2026-04-26 08:03</span>
+                        <span>事件分類: 通膨數據</span>
+                    </div>
+                    <div class="nd-directions">
+                        <div class="nd-dir-box"><div class="nd-dir-label">物價方向</div><div class="nd-dir-value">偏多</div></div>
+                        <div class="nd-dir-box"><div class="nd-dir-label">利率方向</div><div class="nd-dir-value">中性</div></div>
+                        <div class="nd-dir-box"><div class="nd-dir-label">美元指數方向</div><div class="nd-dir-value">偏多</div></div>
+                    </div>
+                    <div class="nd-conclusion">
+                        <div class="nd-box-title">一句話結論</div>
+                        <p>全球能源通膨壓力隨中東戰事同步飆升。</p>
+                    </div>
+                    <div class="nd-grid">
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">新聞摘要</div>
+                            <p>英國國家統計局公布3月CPI加速上升至3.3%，主要受伊朗戰爭帶動車用燃料單月大漲8.7%所致。專家預估秋季通膨可能突破4%，但英國經濟基本面疲軟使央行陷入兩難，可能暫緩升息步伐。</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">傳導路徑</div>
+                            <p>中東戰事 ➔ 原油與燃料價格飆升 ➔ 英國CPI大幅反彈 ➔ 停滯性通膨風險上升</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">物價原因</div>
+                            <p>柴油與汽油等車用燃料價格跳升，創下近年來最大漲幅。</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">利率原因</div>
+                            <p>通膨雖升溫，但經濟增長疲弱使央行傾向維持現狀以避免經濟衰退。</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">美元原因</div>
+                            <p>英國面臨停滯性通膨困境，促使國際資金轉入相對強韌的美元資產。</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">原始重點</div>
+                            <p>British consumer price inflation rose to 3.3% in March marking the first impact of the Middle East war on prices.</p>
+                            <a href="https://news.google.com/rss/articles/CBMipgFBVV95cUxQWGhTX0F4WVRNU2t0bzFHbmw1SW1CVzdSaExNLUtRckVHNlhaYjJoSUhhQnN1WXZObnN3UjNVb2oxbVp0YzVkYlBmX3MxSDUweVFVWU4tVk5XM0IwTEdCZ01ORnFjN0duNDBQUGxyOG45dFNyUXpMX1NJemJZbW5aUGZrc0JyaW5Edk1TSGZYTnllbnhoaTJFUnlUN015MUd0aVZZNkR30gGrAUFVX3lxTE5KN2N1cDh4YWZzdVZsMzdxaVh5Sm05MzI2bFVmakY3TFU5VUZCT1VmbFN1bkxzaVZmMDBuRTREZGFnMDREVGhzNHpRX09MaGlHV05qUjFxazFZQnF4RHJvTGZIbUYwWHhkMVIzc3B5UzAtV0dESkU0U2pEYUhoemxnT3dKTmhHSUhkLWV4SFNYdmozbVloVzhnREdYaTNGRWZSNi1INndLMEVjaw?oc=5" target="_blank" class="nd-btn">查看原文</a>
+                        </div>
+                    </div>
+                </div>
+            </details>
+        </div>
+        <div class="news-detail-card">
+            <div class="nd-header">
+                <span class="nd-category">大宗商品</span>
+                <h3 class="nd-title">Gold slips on inflation concerns as high oil prices and stronger dollar weigh</h3>
+                <div class="nd-meta">CNBC | 發布 2026-04-23</div>
+                <div class="nd-pills">
+                    <span class="nd-pill">物價偏空</span>
+                    <span class="nd-pill">利率偏多</span>
+                    <span class="nd-pill">美元偏多</span>
+                </div>
+                <div class="nd-short-summary">儘管具備通膨避險需求，強勢美元與高利率預期仍導致金價微幅回落。</div>
+            </div>
+            <details class="nd-details">
+                <summary></summary>
+                <div class="nd-content">
+                    <div class="nd-orig-summary">Gold slips on inflation concerns as high oil prices and stronger dollar weigh on safe-haven demand.</div>
+                    <div class="nd-meta-tags">
+                        <span>新聞來源: CNBC</span>
+                        <span>新聞發布時間: 2026-04-23</span>
+                        <span>分析執行時間: 2026-04-26 08:03</span>
+                        <span>事件分類: 大宗商品</span>
+                    </div>
+                    <div class="nd-directions">
+                        <div class="nd-dir-box"><div class="nd-dir-label">物價方向</div><div class="nd-dir-value">偏空</div></div>
+                        <div class="nd-dir-box"><div class="nd-dir-label">利率方向</div><div class="nd-dir-value">偏多</div></div>
+                        <div class="nd-dir-box"><div class="nd-dir-label">美元指數方向</div><div class="nd-dir-value">偏多</div></div>
+                    </div>
+                    <div class="nd-conclusion">
+                        <div class="nd-box-title">一句話結論</div>
+                        <p>高殖利率與強美元雙重夾擊，壓抑黃金避險光環。</p>
+                    </div>
+                    <div class="nd-grid">
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">新聞摘要</div>
+                            <p>伊朗戰爭雖推升油價與全球通膨疑慮，但市場隨之收斂降息預期，導致美債殖利率與美元雙雙走揚。不孳息的黃金因而面臨機會成本增加的拋售壓力，資金暫時轉向高收益的美元避險資產。</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">傳導路徑</div>
+                            <p>通膨隱憂上升 ➔ Fed降息預期降溫 ➔ 美債殖利率與美元上漲 ➔ 黃金持有成本增加</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">物價原因</div>
+                            <p>強勢美元與美債殖利率攀升，削弱了黃金作為無息資產的吸引力。</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">利率原因</div>
+                            <p>高油價引發的黏性通膨預期，使市場定價長期高利率環境。</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">美元原因</div>
+                            <p>高利率與地緣避險雙引擎同時啟動，推動國際避險資金湧入美元。</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">原始重點</div>
+                            <p>Gold falls on oil-driven inflation fears, higher yields, and stronger US dollar.</p>
+                            <a href="https://news.google.com/rss/articles/CBMiqwFBVV95cUxPdExNa0xYSE41dVFMcFNrWlVpTGxsaUh6WmEtOFM2MkNPTXB0Q2hmczZqVklTa2piSFpLbE8zNEllc1RyOWR2SzFPeUFSYWxteGFBcGt6cXpMa0NJVGM5Q0hDeE1hM0ttRURkSmdlV1B3SUZ6VjRuSC1hWDZSSHBVdnN1S2doUXRmT0kxcVVQWFFUSzlPTjRKbzRkOC1rMEFmWXRLdUpPSmhia2_SAbABQVVfeXFMUEo2MWJfZ00xZFNsX2RaREVibkZWeFRzd0NwRUVpb1lBeE13bTFLV011NnJkYm5JOGphZVQxMGptcXljYzNleUlaQWROTkZ0TWwyOGZwa29wVWljUkxRb2w1eU54NGtXSFV4bVYxRW9oVnpGS1ZUc3diVDNHdVNuQmJKRU8yZGlzRUlraWE2VFAzd3FoMjlNZVplMTNDd3hwU29yWmZXOVRpNGRXaVl0ZVk?oc=5" target="_blank" class="nd-btn">查看原文</a>
+                        </div>
+                    </div>
+                </div>
+            </details>
         </div>
             </div>
         </section>
@@ -240,9 +432,9 @@
         <section>
             <h2 class="section-h2">📻 本週市場主旋律 (Narrative)</h2>
             <div class="narrative-box" id="narrative-box">
-                本週市場聚焦於強韌的美國勞動數據與農產通膨再起。蒙大拿州失業率持平於低檔，加上堪薩斯州追討疫情救濟金，顯示就業市場緊俏且流動性逐步收緊。同時，極端氣候推升小麥天氣溢價，結合高油價喚醒市場對通膨回溫的擔憂。在此背景下，美債殖利率與美元雙雙維持高位，限縮聯準會降息空間並對亞洲匯市施壓。
+                本週全球宏觀環境受伊朗戰爭帶動的能源通膨主導，WTI原油高達94.40美元，推升英美兩國物價預期。彭博調查顯示市場已將Fed今年降息次數預期收斂至僅一次。在降息無望與避險需求雙重加持下，美債十年期殖利率穩居4.310%，並推升美元指數至98.51。儘管具備通膨避險屬性，黃金仍受制於強美元與高息環境而微幅承壓於4740.90美元。整體市場呈現「高息、強美元、亞幣承壓」的緊縮基調。
             </div>
-            <div id="forecast-box"><details class='analysis-container'><summary>📢 下週預測：通膨與利率雙高格局</summary><div class='analysis-content'><strong>⛓️ 市場邏輯傳導：</strong><p>原物料與氣候溢價推升 ➔ 影響<strong>通膨/利率預期</strong> ➔ 最終定價<strong>美元走勢</strong>。</p><hr><strong>📉 資產動態預測：</strong><ul><li><strong>亞洲貨幣 (TWD/JPY/KRW)：</strong>在 DXY 98.51 壓制下，將面臨強大的防禦性貶值壓力，進口成本上升恐引發連鎖緊縮。</li><li><strong>避險成本與農工產業：</strong>黃金創高與小麥溢價將進一步壓縮下游實體企業獲利，S&P 500 雖達 7165.08，但傳統產業與科技龍頭將持續分化。</li></ul></div></details></div>
+            <div id="forecast-box"><details class='analysis-container'><summary>📢 下週預測：高通膨與強美元主旋律</summary><div class='analysis-content'><strong>⛓️ 市場邏輯傳導：</strong><p>地緣戰爭推升油價 ➔ 影響<strong>通膨與利率預期 (降息縮減)</strong> ➔ 最終定價<strong>強勢美元走勢 (DXY穩居98.51)</strong>。</p><hr><strong>📉 資產動態預測：</strong><ul><li><strong>亞洲貨幣 (TWD/JPY)：</strong>面臨嚴峻貶值挑戰，龐大利差恐迫使亞洲央行進場干預或釋出鷹派指引以防阻資本外逃。</li><li><strong>避險成本與企業估值：</strong>高達4.310%的無風險利率壓抑黃金(4740.90美元)短線上攻動能；美股在標普500高達7165.08的位階上，AI科技巨頭與傳統價值股將呈現極端分化。</li></ul></div></details></div>
         </section>
 
         <section>
@@ -290,7 +482,7 @@
             <h2 class="section-h2">⛓️ 利率與匯率傳導矩陣</h2>
             <div class="deep-dive-box">
                 <h3>Macro Linkage Analysis</h3>
-                <div id="linkage-box">美債十年期殖利率高檔盤整為美元提供強大避險與利差保護。就業強勁與原物料通膨預期使得聯準會寬鬆空間受限。美元走強對非美貨幣產生抽血效應，日圓與台幣等亞洲貨幣首當其衝，面臨龐大貶值壓力，恐引發亞洲央行被動緊縮阻貶的連鎖反應。</div>
+                <div id="linkage-box">伊朗戰爭引爆能源通膨，迫使市場將Fed降息預期收斂。US10Y強勢支撐在4.310%，高昂無風險利率疊加避險情緒，推升DXY至98.51。此利差劣勢與進口通膨壓力，對亞幣造成毀滅性打擊，日圓與台幣面臨極大防禦性貶值壓力。除非原油供給瓶頸解除，強勢美元將持續主導匯市，亞洲央行恐需被動緊縮抵禦資本外流。</div>
             </div>
         </section>
 
@@ -313,27 +505,27 @@
                         <div class="var-name">🔥 通膨預期</div>
                         <span class="badge">CPI/PPI Outlook</span>
                     </td>
-                    <td data-label="當前狀態"><div class="status">能源與農產雙漲 <span class="status-detail">WTI原油報 94.88 USD/bbl，黃金報 4725.4 USD/oz</span></div></td>
-                    <td data-label="趨勢"><span class="trend-up ">持續攀升</span></td>
-                    <td data-label="驅動因素" class="desc-text">氣候異常推升小麥天候溢價 [1.4]，結合高漲的實體能源成本與避險買盤，市場開始反映新一輪實體經濟的通膨推升壓力。</td>
+                    <td data-label="當前狀態"><div class="status">能源成本攀升 <span class="status-detail">WTI原油報 94.40 USD/bbl</span></div></td>
+                    <td data-label="趨勢"><span class="trend-up ">強烈攀升</span></td>
+                    <td data-label="驅動因素" class="desc-text">中東戰事引發燃料飆漲，彭博調查估美Q2 PCE上調至3.6%</td>
                 </tr>
                 <tr>
                     <td data-label="核心變數">
                         <div class="var-name">📉 利率預期</div>
                         <span class="badge">Fed Funds / US10Y</span>
                     </td>
-                    <td data-label="當前狀態"><div class="status">殖利率高位盤整 <span class="status-detail">US10Y報 4.310%</span></div></td>
-                    <td data-label="趨勢"><span class="trend-up ">高點震盪</span></td>
-                    <td data-label="驅動因素" class="desc-text">蒙大拿州等地方就業數據顯示勞動力市場具備強大韌性，加上原物料通膨預期難降，市場收回鴿派降息預期。</td>
+                    <td data-label="當前狀態"><div class="status">殖利率高位震盪 <span class="status-detail">US10Y報 4.310%</span></div></td>
+                    <td data-label="趨勢"><span class="trend-up ">支撐強勁</span></td>
+                    <td data-label="驅動因素" class="desc-text">降息預期縮減至年內僅一次，勞動市場展現韌性</td>
                 </tr>
                 <tr>
                     <td data-label="核心變數">
                         <div class="var-name">🦅 美元指數</div>
                         <span class="badge">DXY Strength</span>
                     </td>
-                    <td data-label="當前狀態"><div class="status">避險與利差雙重推升 <span class="status-detail">DXY報 98.51</span></div></td>
+                    <td data-label="當前狀態"><div class="status">避險利差雙重推升 <span class="status-detail">DXY報 98.51</span></div></td>
                     <td data-label="趨勢"><span class="trend-up ">穩步走強</span></td>
-                    <td data-label="驅動因素" class="desc-text">美債殖利率居高不下提供豐厚利差，全球地緣危機與通膨不確定性驅使國際資金回流美元資產避險。</td>
+                    <td data-label="驅動因素" class="desc-text">強勁美債殖利率與地緣政治避險需求帶動國際資金回流</td>
                 </tr>
                     </tbody>
                 </table>
@@ -345,12 +537,12 @@
             <div class="risk-grid" id="risk-grid">
                 
         <div class="risk-item">
-            <span class="risk-title">⚠️ 氣候與地緣雙重通膨風險</span>
-            <p class="risk-content">農產品的天候溢價與高漲的實體能源成本疊加，若引發新一波 CPI 數據向上反彈，恐徹底粉碎市場的降息預期並引發股債雙殺。</p>
+            <span class="risk-title">⚠️ 地緣衝突外溢與能源通膨失控風險</span>
+            <p class="risk-content">中東戰事若進一步波及原油運輸命脈，WTI原油恐進一步攀升，將全面墊高全球生產與運輸成本，引發二次通膨並徹底粉碎年內降息希望。</p>
         </div>
         <div class="risk-item">
-            <span class="risk-title">⚠️ 強勢美元引發的亞幣競貶</span>
-            <p class="risk-content">居高不下的美債殖利率使美元資產維持極高吸引力，若 DXY 持續強勢，亞洲央行干預匯市的防禦成本將成倍增加，並推升輸入性通膨風險。</p>
+            <span class="risk-title">⚠️ 亞幣競貶與新興市場資本外流風險</span>
+            <p class="risk-content">Fed長期維持高利率使美債利差持續擴大，強勢美元指數若居高不下，恐引發非美貨幣(特別是日圓與台幣)競貶潮，加劇進口性通膨與龐大資金流出壓力。</p>
         </div>
             </div>
         </section>
@@ -375,17 +567,17 @@
                 <ul class="news-list" id="news-list">
                     
                 <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMijgFBVV95cUxOUzdnc2UwMXA4eUZlQU5VSFhPdnlka3JBX2ZITmdpcDFocVQwQjNfNnpyT1l6SWRYN1I1WXhlVGdEdm5RQVd0YWxVblZKWXhmWDBROW5IdktXMF9qcmhSMV9MbWJGTjhCQTRZVHVUZEdDNFNscWdMc3NGWXc0eS0tWV9uTjBQOWNHckk2TGJn?oc=5" target="_blank">📄 Montana’s Unemployment Rate Remains at 3.6% - State of Montana Newsroom (.gov)</a>
+                    <a href="https://news.google.com/rss/articles/CBMiqwFBVV95cUxPdExNa0xYSE41dVFMcFNrWlVpTGxsaUh6WmEtOFM2MkNPTXB0Q2hmczZqVklTa2piSFpLbE8zNEllc1RyOWR2SzFPeUFSYWxteGFBcGt6cXpMa0NJVGM5Q0hDeE1hM0ttRURkSmdlV1B3SUZ6VjRuSC1hWDZSSHBVdnN1S2doUXRmT0kxcVVQWFFUSzlPTjRKbzRkOC1rMEFmWXRLdUpPSmhia2_SAbABQVVfeXFMUEo2MWJfZ00xZFNsX2RaREVibkZWeFRzd0NwRUVpb1lBeE13bTFLV011NnJkYm5JOGphZVQxMGptcXljYzNleUlaQWROTkZ0TWwyOGZwa29wVWljUkxRb2w1eU54NGtXSFV4bVYxRW9oVnpGS1ZUc3diVDNHdVNuQmJKRU8yZGlzRUlraWE2VFAzd3FoMjlNZVplMTNDd3hwU29yWmZXOVRpNGRXaVl0ZVk?oc=5" target="_blank">📄 Gold slips on inflation concerns as high oil prices and stronger dollar weigh - CNBC</a>
                 </li>
                 <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMirwFBVV95cUxPd19NTy1Ua0p0cFEwdEc5SmdOcWxCaHpLV1l6aWJjRkdrZzNCZGNoYjhlOGYtMmFGSVlkQ3NVXzdheGRPdDdMdmMtcFhSMVhxQ2tEV1ltOEt5RWtVUHhaMEk0d0JialBsdTVCN3VueURJT2JIVE9OM1lfX0dXQVg0OUtzLUVobTZGZVhzY1k5SzB4eVA1Y09jN3Nwbllfd1ZDTDV2Ny1abjhYVWIzcTJJ?oc=5" target="_blank">📄 Wheat Rallies on Weather but Fails to Excite Row Crops: When Will the Markets Trade Inflation? - AgWeb</a>
+                    <a href="https://news.google.com/rss/articles/CBMipgFBVV95cUxQWGhTX0F4WVRNU2t0bzFHbmw1SW1CVzdSaExNLUtRckVHNlhaYjJoSUhhQnN1WXZObnN3UjNVb2oxbVp0YzVkYlBmX3MxSDUweVFVWU4tVk5XM0IwTEdCZ01ORnFjN0duNDBQUGxyOG45dFNyUXpMX1NJemJZbW5aUGZrc0JyaW5Edk1TSGZYTnllbnhoaTJFUnlUN015MUd0aVZZNkR30gGrAUFVX3lxTE5KN2N1cDh4YWZzdVZsMzdxaVh5Sm05MzI2bFVmakY3TFU5VUZCT1VmbFN1bkxzaVZmMDBuRTREZGFnMDREVGhzNHpRX09MaGlHV05qUjFxazFZQnF4RHJvTGZIbUYwWHhkMVIzc3B5UzAtV0dESkU0U2pEYUhoemxnT3dKTmhHSUhkLWV4SFNYdmozbVloVzhnREdYaTNGRWZSNi1INndLMEVjaw?oc=5" target="_blank">📄 UK inflation jumps to 3.3% in March as fuel prices surge amid Iran war - CNBC</a>
                 </li>
                 <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMizwFBVV95cUxPclNrUFFlS3JFVHhrV0VYYTB0WjgxbnR3d0NGa3d3Q1cwZVVFS3RQZzJYMHVLSDVHQmZaYllnNmpqMFE0VWpSYnZPTHBTUm9ucmVsZVZ6NTJfbm1mcWtwTms1UGdab042eU1wa2lOaG9ZcEVmT3dvaUx6ZEc2emdzM0dzVlRIM0NUajVjY0dKX1V6MVFkelctUnp6TWd5Nnp5Z3g4dHUxQmM1SU5ONFlQX25jS1dNa0RvMV9iRURiV0U1aVZXTDhvLTFyV3Q0TVE?oc=5" target="_blank">📄 Kansas sends letters telling people to repay $67.4M in unemployment benefits dating to the pandemic - Kansas Reflector</a>
+                    <a href="https://news.google.com/rss/articles/CBMisAFBVV95cUxNRDhKRFpvYXROOWt3YXlRVXpGVkdQd0Z3SlBIV0txcjZBVnpGYUNMekdTNlRJVEd1SFpOdGdQWDRvazBJblpyRUxhTEdTM1V6VTY1OEwxR0g4U19xa0FHTnNFMHJkVDk1d1Z0SFVoWDRzU3RQQVlrNEdFbTdZaWNnUFIxT1RsUFo2OUxKUXVoRmctOTlTOTIzQ0t0NFNodXc0b2FjM2hQUUJUb0tEdjZyMA?oc=5" target="_blank">📄 Economists Raise US Inflation Forecasts as Iran War Drags On - Bloomberg.com</a>
                 </li>
                 </ul>
             </details>
-            <p style="text-align: center; color: #cbd5e1; font-size: 0.8rem; margin-top: 2rem;">© 2026 Macro Strategy Lab. 最後更新：<span class="date-display">2026-04-25 08:08</span></p>
+            <p style="text-align: center; color: #cbd5e1; font-size: 0.8rem; margin-top: 2rem;">© 2026 Macro Strategy Lab. 最後更新：<span class="date-display">2026-04-26 08:03</span></p>
         </footer>
     </div>
     <script>
@@ -454,4 +646,4 @@
     </script>
 </body>
 </html>
-<!-- Build Trace (TPE): 2026-04-25 08:08 -->
+<!-- Build Trace (TPE): 2026-04-26 08:03 -->
