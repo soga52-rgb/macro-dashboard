@@ -888,7 +888,7 @@ def update_dashboard(ai_response, news_list, today_str):
             </div>
         </section>
 
-        <section>
+        <section style="display: none;">
             <h2 class="section-h2">🧭 下週風險預警</h2>
             <div class="risk-grid" id="risk-grid">
                 {risk_html}
