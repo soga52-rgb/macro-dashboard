@@ -861,7 +861,7 @@ def update_dashboard(ai_response, news_list, today_str):
 
 
 
-        <section>
+        <section style="display: none;">
             <h2 class="section-h2">⛓️ 利率與匯率傳導矩陣</h2>
             <div class="deep-dive-box">
                 <h3>Macro Linkage Analysis</h3>
@@ -869,7 +869,7 @@ def update_dashboard(ai_response, news_list, today_str):
             </div>
         </section>
 
-        <section>
+        <section style="display: none;">
             <h2 class="section-h2">📊 核心變數數據監測</h2>
             <div class="table-container">
                 <table>
