@@ -559,6 +559,10 @@ def update_dashboard(ai_response, news_list, today_str):
     else:
         historical_data.insert(0, today_pack)
         
+    # 強制依日期由新到舊排序 (防呆機制，確保最新的一定在最前面)
+    historical_data.sort(key=lambda x: x.get("date", ""), reverse=True)
+    
+    # 保留前 7 筆 (最舊的第 8 筆會被自動淘汰)
     historical_data = historical_data[:7]
     
     with open(HISTORY_FILE, "w", encoding="utf-8") as f:
@@ -806,7 +810,7 @@ def update_dashboard(ai_response, news_list, today_str):
         </header>
 
         <section>
-            <h2 class="section-h2">🎯 關鍵事件深度剖析</h2>
+            <h2 class="section-h2">🎯 新聞剖析</h2>
             <div class="focus-grid" id="focus-grid">
                 {focus_html}
             </div>
@@ -821,11 +825,11 @@ def update_dashboard(ai_response, news_list, today_str):
         </section>
 
         <section>
-            <h2 class="section-h2">📈 宏觀指標動態走勢 (4-Week Trend)</h2>
+            <h2 class="section-h2">📈 宏觀指標動態走勢</h2>
             <div class="trend-grid">
                 <div class="trend-card">
                     <h4>US 10Y Yield (十年期公債)</h4>
-                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{"symbols": [["美國十年期公債", "FRED:DGS10"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["12m|1D", "60m|1W", "all|1M"], "isTransparent": true}</script></div>
+                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["美國十年期公債", "FRED:DGS10"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
                 </div>
                 <div class="trend-card">
                     <h4>Dollar Index (美元指數)</h4>
