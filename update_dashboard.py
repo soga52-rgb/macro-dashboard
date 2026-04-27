@@ -174,7 +174,7 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
 
 ### 撰寫指令 (三部曲核心邏輯):
 1. **Phase 1 新聞解析 (News Parsing)**: 解析 Fed 利率路徑、通膨 (CPI/PCE) 與就業數據。運用 Search Grounding 補充新聞背後的脈絡。
-2. **Phase 2 走勢研判 (Trend Analysis)**: 推論美債 10Y 殖利率與美元指數 (DXY) 的傳導鏈，並預測日圓 (JPY) 與台幣 (TWD) 等亞洲貨幣走勢。若無顯著新聞請跳過通膨環節。
+2. **Phase 2 走勢研判 (Trend Analysis)**: **【核心要求】請詳細研判「十年期公債殖利率」、「美元指數」、「亞洲貨幣 (台幣/日圓)」、「黃金」與「原油」等資產在過去一週（或最近數日）的變化狀況與其背後的驅動邏輯。**
 3. **Phase 3 圖表驗證 (Chart Verification)**: 產出結論以對照網頁下方的即時走勢圖。確保你的推論方向符合【最新市場即時報價】的水位。
 
 ### 精確報價與防範幻覺 (Data Accuracy): 
@@ -189,7 +189,7 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
 ### 輸出格式 (JSON):
 請嚴格輸出以下 JSON 格式，不要有任何多餘文字：
 {{
-  "weekly_narrative": "(約 150 字) 基於市場情緒與 Phase 1 解析撰寫的本週摘要。",
+  "weekly_narrative": "(約 150 字) 基於市場情緒與 Phase 1、Phase 2 解析撰寫的總經分析摘要，請聚焦於客觀趨勢描述，避開任何主觀投資建議。",
   "focus_items": [ {{
     "category": "事件分類(例:央行政策)",
     "title": "新聞標題",
@@ -244,7 +244,7 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
     }}
   ],
   "next_week_forecast_html": "<details class='analysis-container'><summary>📢 下週預測：[主旋律]</summary><div class='analysis-content'><strong>⛓️ 市場邏輯傳導：</strong><p>[因子] ➔ 影響<strong>通膨/利率預期</strong> ➔ 最終定價<strong>美元走勢</strong>。</p><hr><strong>📉 資產動態預測：</strong><ul><li><strong>亞洲貨幣 (TWD/JPY/KRW)：</strong>...</li><li><strong>避險成本與鋼鐵業：</strong>...</li></ul></div></details>",
-  "podcast_script": "(約 800 字) 以『各位聽眾大家好，歡迎回到全球總經戰情室...』開場。🚨【嚴格規定】1. 必須分為雙階段播報：第一階段「摘要 CNBC/Reuters 等全網新聞重點」，第二階段「解析市場情緒與走勢研判」。 2. 播報中『絕對不要』提及具體的價格或點位數值，以免與網頁產生落差。"
+  "podcast_script": "(約 800 字) 以『各位聽眾大家好，歡迎回到全球總經戰情室...』開場。🚨【嚴格規定】1. 必須分為雙階段播報：第一階段「摘要 CNBC/Reuters 等全網新聞重點」，第二階段「解析市場客觀情緒與走勢研判」。 2. 播報中『絕對不要』提及任何投資建議，也『絕對不要』提及具體的價格或點位數值，以免與網頁產生落差。"
 }}
 """
     
@@ -573,7 +573,7 @@ def update_dashboard(ai_response, news_list, today_str):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>【全球總經週報】宏觀趨勢與資產配置分析</title>
+    <title>【全球總經報導】宏觀趨勢與資產配置分析</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {{
@@ -768,7 +768,7 @@ def update_dashboard(ai_response, news_list, today_str):
     <div class="newsletter-wrapper">
         <header class="report-header">
             <span class="date">GLOBAL MACRO WEEKLY INSIGHTS</span>
-            <h1>全球總經週報 <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 400;">[PRO-ENGINE V3.0]</span></h1>
+            <h1>全球總經報導 <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 400;">[PRO-ENGINE V3.0]</span></h1>
             <p style="color: #94a3b8;">由 AI 驅動的自動化全域分析 (Rolling 48-Hour Window)</p>
             <p style="font-size: 1rem; color: #ef4444; font-weight: 800; margin-top: 0.5rem; text-decoration: underline;" class="date-display">🕒 最後更新時間：{today_str}</p>
             
@@ -817,7 +817,7 @@ def update_dashboard(ai_response, news_list, today_str):
         </section>
 
         <section>
-            <h2 class="section-h2">📻 本週市場主旋律 (Narrative)</h2>
+            <h2 class="section-h2">📻 總經分析</h2>
             <div class="narrative-box" id="narrative-box">
                 {weekly_narrative}
             </div>
