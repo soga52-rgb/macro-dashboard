@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import urllib.request
+import urllib.error
 import csv
 import subprocess
 from datetime import datetime, timedelta, timezone
@@ -83,24 +84,52 @@ prompt = f"""你是一位專業的總經財經新聞主播。請根據以下我�
 """
 
 script_text = "未能生成腳本。"
-try:
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key={GEMINI_API_KEY}"
-    data = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "safetySettings": [
-            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
-        ]
-    }
-    req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers={'Content-Type': 'application/json'})
-    response = urllib.request.urlopen(req, timeout=120)
-    result = json.loads(response.read().decode('utf-8'))
-    script_text = result['candidates'][0]['content']['parts'][0]['text'].strip()
-    print("✅ 腳本生成成功！")
-except Exception as e:
-    print(f"❌ 腳本生成失敗: {e}")
+strategies = [
+    ("v1beta", "gemini-3.1-pro-preview"), 
+    ("v1beta", "gemini-2.5-pro")
+]
+
+import time
+success = False
+for version, model in strategies:
+    if success: break
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            print(f"-> 嘗試連線方案：{version} / {model} (第 {attempt + 1} 次)...")
+            url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent?key={GEMINI_API_KEY}"
+            data = {
+                "contents": [{"parts": [{"text": prompt}]}],
+                "safetySettings": [
+                    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
+                ]
+            }
+            req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers={'Content-Type': 'application/json'})
+            response = urllib.request.urlopen(req, timeout=180)
+            result = json.loads(response.read().decode('utf-8'))
+            script_text = result['candidates'][0]['content']['parts'][0]['text'].strip()
+            print(f"[SUCCESS] {model} 回應成功!")
+            success = True
+            break
+        except urllib.error.HTTPError as e:
+            error_data = e.read().decode('utf-8')
+            if e.code in [429, 503] and attempt < max_retries - 1:
+                wait_time = 90
+                print(f"   [WAIT] 伺服器忙碌或配額限制，等待 {wait_time} 秒後重試...")
+                time.sleep(wait_time)
+                continue
+            else:
+                print(f"   [FAIL] {model} 錯誤 ({e.code}): {error_data}")
+                break
+        except Exception as e:
+            print(f"   [FAIL] {model} 發生其他錯誤: {e}")
+            break
+
+if not success:
+    print("❌ 腳本生成失敗")
     sys.exit(1)
 
 # ==============================================================================
