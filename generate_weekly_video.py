@@ -299,4 +299,46 @@ for f_name in os.listdir(WORKSPACE_DIR):
             except Exception as ex:
                 pass
 
+# ==============================================================================
+# 6. 更新 JSON 與 HTML 寫入最新影片連結
+# ==============================================================================
+print("正在更新儀表板連結...")
+try:
+    # 1. 更新 historical_data.json
+    if os.path.exists(HISTORY_FILE):
+        with open(HISTORY_FILE, "r", encoding="utf-8") as f:
+            hist_data = json.load(f)
+        if hist_data:
+            # 更新最新一筆的 weekly_video
+            hist_data[0]["weekly_video"] = video_filename
+            with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+                json.dump(hist_data, f, ensure_ascii=False, indent=2)
+
+    # 2. 更新 index.html
+    html_path = os.path.join(WORKSPACE_DIR, "index.html")
+    if os.path.exists(html_path):
+        with open(html_path, "r", encoding="utf-8") as f:
+            html_content = f.read()
+        
+        # 替換 display: none 為 display: block
+        import re
+        html_content = re.sub(
+            r'<div id="weekly-video-container"[^>]*display:\s*none;?["\'][^>]*>',
+            r'<div id="weekly-video-container" style="margin-top: 1.5rem; display: block;">',
+            html_content
+        )
+        
+        # 替換影片來源，處理 <source src="" type="video/mp4">
+        html_content = re.sub(
+            r'<source src="[^"]*" type="video/mp4">',
+            f'<source src="{video_filename}" type="video/mp4">',
+            html_content
+        )
+        
+        with open(html_path, "w", encoding="utf-8") as f:
+            f.write(html_content)
+        print("✅ 成功將影片連結嵌入儀表板！")
+except Exception as e:
+    print(f"⚠️ 更新儀表板連結失敗: {e}")
+
 print("🎉 所有作業完成！")
