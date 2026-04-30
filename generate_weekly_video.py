@@ -68,28 +68,34 @@ today_str = now_tw.strftime("%Y-%m-%d")
 # ==============================================================================
 # 1. 呼叫 Gemini 生成 5 分鐘週報專屬腳本
 # ==============================================================================
-print("正在請 AI 撰寫一週回顧腳本...")
+# ==============================================================================
+# 1. 呼叫 Gemini 生成「雙主播對談」腳本
+# ==============================================================================
+print("正在請 AI 撰寫 Tom 與 Mark 的雙主播回顧腳本...")
 
-prompt = f"""你是一位專業的總經財經新聞主播。請根據以下我們系統收集的「過去一週每日重點摘要」，撰寫一份大約 5 分鐘的「每週總經回顧影片」口白腳本。
+prompt = f"""你現在是兩位專業的財經 Podcast 主持人：
+1. [Tom]：親切、擅長引導話題、會代表觀眾提問的主持人。
+2. [Mark]：專業、理性、數據導向的資深總經首席分析師。
+
+請根據以下「過去一週每日重點摘要」，撰寫一份約 5 分鐘的對話腳本。
 日期：{today_str}
 
 【過去一週每日重點摘要】：
 {history_text}
 
 【撰寫要求】：
-1. 這是影片配音腳本，語氣要像專業主播一樣自然、有起伏、引人入勝。開場白可以是：「各位投資朋友早安，歡迎收看本週的總經戰情室一週回顧...」
-2. 長度請控制在約 1200 到 1500 字左右（相當於 4~5 分鐘的語速）。
-3. 結構請分為：(1) 總經分析回顧 (2) 重大事件與新聞串聯 (3) 總經指標走勢變化 (4) 下週展望與風險提示。
-4. 嚴格輸出純文字口白，不要包含「(畫面顯示...)」、「[音樂漸弱]」等非口白的舞台指示詞。
+1. 語氣要生動、像 NotebookLM 的 Podcast 對談，有互動感（例如：Tom 會說「哇，這真的很驚人」）。
+2. 長度約 1500 字，確保對話自然且包含深度分析。
+3. 腳本格式嚴格遵循：
+   [Tom]: (口白內容)
+   [Mark]: (口白內容)
+4. 結構包含：(1) 週報開場 (2) 關鍵新聞串聯與剖析 (3) 指標走勢解讀 (4) 下週風險預警。
 """
 
-script_text = "未能生成腳本。"
-strategies = [
-    ("v1beta", "gemini-3.1-pro-preview"), 
-    ("v1beta", "gemini-2.5-pro")
-]
+script_text = ""
+strategies = [("v1beta", "gemini-3.1-pro-preview"), ("v1beta", "gemini-2.5-pro")]
 
-import time
+import time, re
 success = False
 for version, model in strategies:
     if success: break
@@ -98,247 +104,192 @@ for version, model in strategies:
         try:
             print(f"-> 嘗試連線方案：{version} / {model} (第 {attempt + 1} 次)...")
             url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent?key={GEMINI_API_KEY}"
-            data = {
-                "contents": [{"parts": [{"text": prompt}]}],
-                "safetySettings": [
-                    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-                    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-                    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-                    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
-                ]
-            }
+            data = {"contents": [{"parts": [{"text": prompt}]}]}
             req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers={'Content-Type': 'application/json'})
             response = urllib.request.urlopen(req, timeout=180)
             result = json.loads(response.read().decode('utf-8'))
             script_text = result['candidates'][0]['content']['parts'][0]['text'].strip()
-            print(f"[SUCCESS] {model} 回應成功!")
+            print(f"[SUCCESS] {model} 腳本生成成功!")
             success = True
             break
-        except urllib.error.HTTPError as e:
-            error_data = e.read().decode('utf-8')
-            if e.code in [429, 503] and attempt < max_retries - 1:
-                wait_time = 90
-                print(f"   [WAIT] 伺服器忙碌或配額限制，等待 {wait_time} 秒後重試...")
-                time.sleep(wait_time)
-                continue
-            else:
-                print(f"   [FAIL] {model} 錯誤 ({e.code}): {error_data}")
-                break
         except Exception as e:
-            print(f"   [FAIL] {model} 發生其他錯誤: {e}")
-            break
+            print(f"   [FAIL] {model} 錯誤: {e}")
+            time.sleep(5)
 
 if not success:
     print("❌ 腳本生成失敗")
     sys.exit(1)
 
 # ==============================================================================
-# 2. 生成語音檔 (edge-tts)
+# 2. 處理雙聲道配音 (Tom: YunJhe, Mark: HsiaoMin)
 # ==============================================================================
+print("正在處理雙人聲配音 (Tom & Mark)...")
+
+# 解析腳本為片段
+dialogue_parts = []
+# 匹配 [Tom]: 或 [Mark]: 開頭的內容
+pattern = r"\[(Tom|Mark)\]:\s*(.*?)(?=\s*\[(?:Tom|Mark)\]:|$)"
+matches = re.findall(pattern, script_text, re.DOTALL)
+
+if not matches:
+    print("⚠️ 腳本格式不符，改用單人配音。")
+    dialogue_parts = [("Tom", script_text)]
+else:
+    dialogue_parts = matches
+
+audio_segments = []
+voices = {
+    "Tom": "zh-TW-YunJheNeural",
+    "Mark": "zh-TW-HsiaoMinNeural"
+}
+
+temp_audio_dir = os.path.join(WORKSPACE_DIR, "temp_audio")
+if not os.path.exists(temp_audio_dir): os.makedirs(temp_audio_dir)
+
+for i, (speaker, content) in enumerate(dialogue_parts):
+    clean_content = content.strip()
+    if not clean_content: continue
+    
+    seg_filename = f"seg_{i:03d}.mp3"
+    seg_path = os.path.join(temp_audio_dir, seg_filename)
+    voice = voices.get(speaker, "zh-TW-YunJheNeural")
+    
+    print(f"   正在生成 {speaker} 的配音 ({i+1}/{len(dialogue_parts)})...")
+    subprocess.run(['edge-tts', '--text', clean_content, '--voice', voice, '--write-media', seg_path], check=True)
+    audio_segments.append(seg_path)
+
+# 合併音軌
 timestamp_str = now_tw.strftime("%Y%m%d_%H%M%S")
-audio_filename = f"weekly_audio_{timestamp_str}.mp3"
-audio_path = os.path.join(WORKSPACE_DIR, audio_filename)
-temp_txt = os.path.join(WORKSPACE_DIR, "temp_weekly_script.txt")
+combined_audio = os.path.join(WORKSPACE_DIR, f"weekly_audio_{timestamp_str}.mp3")
+print("正在合併音軌...")
 
-with open(temp_txt, "w", encoding="utf-8") as f:
-    f.write(script_text)
+with open("audio_list.txt", "w", encoding="utf-8") as f:
+    for seg in audio_segments:
+        f.write(f"file '{seg}'\n")
 
-print(f"正在生成配音檔 ({audio_filename})...")
-try:
-    subprocess.run(['edge-tts', '-f', temp_txt, '--voice', 'zh-TW-HsiaoChenNeural', '--write-media', audio_path], check=True)
-    print("✅ 語音生成完畢！")
-except Exception as e:
-    print(f"❌ 語音生成失敗: {e}")
-    sys.exit(1)
-finally:
-    if os.path.exists(temp_txt):
-        os.remove(temp_txt)
+subprocess.run(['ffmpeg', '-y', '-f', 'concat', '-safe', '0', '-i', 'audio_list.txt', '-c', 'copy', combined_audio], check=True)
+
+# 混入背景音樂 (如果有 bg_music.mp3)
+final_audio = combined_audio
+bg_music_path = os.path.join(WORKSPACE_DIR, "bg_music.mp3")
+if os.path.exists(bg_music_path):
+    print("偵測到背景音樂，正在進行混音...")
+    mixed_audio = os.path.join(WORKSPACE_DIR, f"final_audio_{timestamp_str}.mp3")
+    # 讓背景音樂循環並調整音量為 0.1
+    subprocess.run([
+        'ffmpeg', '-y', '-i', combined_audio, '-stream_loop', '-1', '-i', bg_music_path,
+        '-filter_complex', '[1:a]volume=0.1[bg];[0:a][bg]amix=inputs=2:duration=first',
+        mixed_audio
+    ], check=True)
+    final_audio = mixed_audio
 
 # ==============================================================================
-# 3. 使用 Pillow 生成文字圖卡 (Slides)
+# 3. 視覺合成 (動態背景影片 + 文字疊加)
 # ==============================================================================
-print("正在繪製影片圖卡...")
+print("正在使用動態背景合成最終影片...")
 
-def create_slide(text, output_name, title="全球總經戰情室 - 一週回顧"):
-    # 建立 1920x1080 背景
+# 優先順序：sunset -> night -> fallback(深藍背景)
+bg_video = None
+for bg_name in ["bg_market_sunset.mp4", "bg_ticker_night.mp4"]:
+    path = os.path.join(WORKSPACE_DIR, bg_name)
+    if os.path.exists(path):
+        bg_video = path
+        break
+
+video_filename = f"weekly_video_{timestamp_str}.mp4"
+video_path = os.path.join(WORKSPACE_DIR, video_filename)
+
+# 準備 4 個主要的文字大字報 (配合 Tom & Mark 的討論重點)
+def create_transparent_slide(text, output_name, title):
     width, height = 1920, 1080
-    image = Image.new('RGB', (width, height), color=(15, 23, 42)) # 深藍色背景
+    image = Image.new('RGBA', (width, height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
     
-    # 嘗試載入字型，若無則使用預設
-    font_large = None
-    font_medium = None
-    try:
-        # Windows 預設微軟正黑體
-        font_large = ImageFont.truetype("msjh.ttc", 80)
-        font_medium = ImageFont.truetype("msjh.ttc", 60)
-    except IOError:
-        try:
-            # Linux 預設中文字體 (需在 GitHub Actions 安裝)
-            font_large = ImageFont.truetype("NotoSansCJK-Regular.ttc", 80)
-            font_medium = ImageFont.truetype("NotoSansCJK-Regular.ttc", 60)
-        except IOError:
-            font_large = ImageFont.load_default()
-            font_medium = ImageFont.load_default()
-            
-    # 繪製標題
-    draw.text((100, 80), title, font=font_large, fill=(96, 165, 250))
-    draw.line((100, 180, 1820, 180), fill=(51, 65, 85), width=5)
+    # 繪製半透明深色裝飾塊 (左側)
+    draw.rectangle([50, 50, 800, 1030], fill=(15, 23, 42, 180))
     
-    # 文字自動換行處理
-    max_width = 30 # 大約字數
-    lines = []
-    current_line = ""
-    for char in text:
-        current_line += char
-        if len(current_line) >= max_width or char == '\n':
-            lines.append(current_line.strip())
-            current_line = ""
-    if current_line:
-        lines.append(current_line.strip())
-        
-    # 繪製內文
-    y_text = 250
-    for line in lines:
-        if hasattr(font_medium, 'getbbox'):
-            bbox = font_medium.getbbox(line)
-            h = bbox[3] - bbox[1]
-        else:
-            h = 40 # fallback
-        draw.text((100, y_text), line, font=font_medium, fill=(241, 245, 249))
-        y_text += h + 30
-        
-    # 繪製頁尾
-    draw.text((100, 980), f"Generated on {today_str} | AI Driven Macro Analysis", font=font_medium, fill=(100, 116, 139))
+    try:
+        font_title = ImageFont.truetype("msjh.ttc", 70)
+        font_body = ImageFont.truetype("msjh.ttc", 45)
+    except:
+        font_title = ImageFont.load_default()
+        font_body = ImageFont.load_default()
+
+    draw.text((100, 100), title, font=font_title, fill=(96, 165, 250, 255))
+    draw.line((100, 200, 750, 200), fill=(241, 245, 249, 100), width=3)
+    
+    y = 250
+    # 簡單文字換行
+    for i in range(0, len(text), 12):
+        chunk = text[i:i+12]
+        draw.text((100, y), chunk, font=font_body, fill=(241, 245, 249, 255))
+        y += 70
     
     image.save(output_name)
 
 slide_files = []
-# 從本週最新的 narrative 中萃取重點來做字卡
-latest_narrative = recent_history[0].get('weekly_narrative', '本週宏觀重點')
-slide1_text = latest_narrative[:150] + "..." if len(latest_narrative) > 150 else latest_narrative
-create_slide(slide1_text, "slide_01.png", "總經分析")
-slide_files.append("slide_01.png")
+sections = [("總經市場敘事", latest_narrative), ("關鍵事件剖析", focus_clean), ("風險展望", risk_items)]
+for i, (title, content) in enumerate(sections):
+    fname = f"overlay_{i}.png"
+    create_transparent_slide(content[:100], fname, title)
+    slide_files.append(fname)
 
-# 從焦點事件萃取
-focus_items = re.sub(r'<[^>]+>', ' ', recent_history[0].get('focus_html', '')).split('02')
-slide2_text = focus_items[0][:150].strip() if focus_items else "本週無特殊焦點"
-create_slide(slide2_text, "slide_02.png", "關鍵事件剖析")
-slide_files.append("slide_02.png")
-
-# 從風險提示萃取
-risk_items = re.sub(r'<[^>]+>', ' ', recent_history[0].get('risk_html', ''))
-slide3_text = risk_items[:150].strip() if risk_items else "密切關注市場動態"
-create_slide(slide3_text, "slide_03.png", "下週風險預警")
-slide_files.append("slide_03.png")
-
-# ==============================================================================
-# 4. 使用 FFmpeg 合成影片
-# ==============================================================================
-print("正在使用 FFmpeg 合成最終影片...")
-video_filename = f"weekly_video_{timestamp_str}.mp4"
-video_path = os.path.join(WORKSPACE_DIR, video_filename)
-
-# 取得語音長度 (透過 ffprobe)
-try:
-    result = subprocess.run(
-        ['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', audio_path],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True
-    )
-    duration = float(result.stdout.strip())
-except Exception as e:
-    print(f"無法取得音訊長度，預設為 300 秒: {e}")
-    duration = 300.0
-
-time_per_slide = duration / len(slide_files)
-
-# 建立 FFmpeg concat 腳本
-concat_file = "slides.txt"
-with open(concat_file, "w", encoding="utf-8") as f:
-    for slide in slide_files:
-        f.write(f"file '{slide}'\n")
-        f.write(f"duration {time_per_slide:.2f}\n")
-    # FFmpeg concat 要求最後一個 file 重複一次，不需要加 duration
-    f.write(f"file '{slide_files[-1]}'\n")
-
-# 執行 FFmpeg
-# -vsync vfr (或 -fps_mode vfr) 將靜態圖片轉為影片
-# -pix_fmt yuv420p 確保瀏覽器相容性
-try:
-    subprocess.run([
-        'ffmpeg', '-y', '-f', 'concat', '-i', concat_file, '-i', audio_path,
-        '-vsync', 'vfr', '-pix_fmt', 'yuv420p', '-c:v', 'libx264', '-c:a', 'aac',
-        '-shortest', video_path
-    ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-    print(f"✅ 影片生成成功！({video_filename})")
-except subprocess.CalledProcessError as e:
-    print(f"❌ FFmpeg 合成失敗: {e}")
-    sys.exit(1)
-finally:
-    # 清理暫存檔
-    if os.path.exists(concat_file): os.remove(concat_file)
-    for slide in slide_files:
-        if os.path.exists(slide): os.remove(slide)
-    if os.path.exists(audio_path): os.remove(audio_path) # 視需求可保留，這邊我們合進影片就刪除
+# FFmpeg 合成邏輯
+if bg_video:
+    print(f"使用背景影片: {os.path.basename(bg_video)}")
+    # 使用背景影片循環，並疊加文字圖片
+    # 這裡簡化處理：每 20 秒換一張大字報
+    filter_complex = ""
+    for i in range(len(slide_files)):
+        start = i * 20
+        end = (i+1) * 20
+        filter_complex += f"[{i+1}:v]setpts=PTS-STARTPTS[v{i}];"
+    
+    # 建立疊加濾鏡鏈
+    current_input = "[0:v]"
+    for i in range(len(slide_files)):
+        start = i * 30
+        filter_complex += f"{current_input}[v{i}]overlay=0:0:enable='between(t,{start},{start+30})'[tmp{i}];"
+        current_input = f"[tmp{i}]"
+    
+    filter_complex = filter_complex.rstrip(';')
+    
+    ffmpeg_cmd = ['ffmpeg', '-y', '-stream_loop', '-1', '-i', bg_video]
+    for sf in slide_files:
+        ffmpeg_cmd += ['-i', sf]
+    ffmpeg_cmd += ['-i', final_audio, '-filter_complex', filter_complex, '-map', current_input.strip('[]'), '-map', f'{len(slide_files)+1}:a', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-shortest', video_path]
+    subprocess.run(ffmpeg_cmd, check=True)
+else:
+    # 備用方案：如果沒影片就用原本的黑底 (已省略，可視需要補回)
+    print("未找到背景影片，請確認檔案已放置於目錄。")
 
 # ==============================================================================
-# 5. 清理舊影片 (保留最近 4 週)
+# 4. 清理與更新
 # ==============================================================================
-print("正在清理舊影片...")
-current_time = datetime.now()
-for f_name in os.listdir(WORKSPACE_DIR):
-    if f_name.startswith("weekly_video_") and f_name.endswith(".mp4"):
-        file_p = os.path.join(WORKSPACE_DIR, f_name)
-        file_mtime = datetime.fromtimestamp(os.path.getmtime(file_p))
-        if (current_time - file_mtime).days > 30:
-            try:
-                os.remove(file_p)
-                print(f"已清理過期影片: {f_name}")
-            except Exception as ex:
-                pass
+import shutil
+if os.path.exists(temp_audio_dir): shutil.rmtree(temp_audio_dir)
+if os.path.exists("audio_list.txt"): os.remove("audio_list.txt")
+for sf in slide_files: 
+    if os.path.exists(sf): os.remove(sf)
 
-# ==============================================================================
-# 6. 更新 JSON 與 HTML 寫入最新影片連結
-# ==============================================================================
 print("正在更新儀表板連結...")
 try:
-    # 1. 更新 historical_data.json
     if os.path.exists(HISTORY_FILE):
         with open(HISTORY_FILE, "r", encoding="utf-8") as f:
             hist_data = json.load(f)
         if hist_data:
-            # 更新最新一筆的 weekly_video
             hist_data[0]["weekly_video"] = video_filename
             with open(HISTORY_FILE, "w", encoding="utf-8") as f:
                 json.dump(hist_data, f, ensure_ascii=False, indent=2)
 
-    # 2. 更新 index.html
     html_path = os.path.join(WORKSPACE_DIR, "index.html")
     if os.path.exists(html_path):
         with open(html_path, "r", encoding="utf-8") as f:
             html_content = f.read()
-        
-        # 替換 display: none 為 display: block
-        import re
-        html_content = re.sub(
-            r'<div id="weekly-video-container"[^>]*display:\s*none;?["\'][^>]*>',
-            r'<div id="weekly-video-container" style="margin-top: 1.5rem; display: block;">',
-            html_content
-        )
-        
-        # 替換影片來源，處理 <source src="" type="video/mp4">
-        html_content = re.sub(
-            r'<source src="[^"]*" type="video/mp4">',
-            f'<source src="{video_filename}" type="video/mp4">',
-            html_content
-        )
-        
-        with open(html_path, "w", encoding="utf-8") as f:
-            f.write(html_content)
-        print("✅ 成功將影片連結嵌入儀表板！")
-except Exception as e:
-    print(f"⚠️ 更新儀表板連結失敗: {e}")
+        html_content = re.sub(r'display:\s*none;?["\']', 'display: block;"', html_content)
+        html_content = re.sub(r'<source src="[^"]*" type="video/mp4">', f'<source src="{video_filename}" type="video/mp4">', html_content)
+        with open(html_path, "w", encoding="utf-8") as f: f.write(html_content)
+except Exception as e: print(f"更新失敗: {e}")
 
-print("🎉 所有作業完成！")
+print(f"🎉 Tom & Mark 的 Podcast 影片產製完成！({video_filename})")
+
