@@ -40,11 +40,17 @@ jobs:
         run: |
           python update_dashboard.py
           
-      - name: 🎥 自動產製每週總經影音 (Run Weekly Video Generation)
+      - name: 🎥 自動產製每週總經影音 (僅週四執行)
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          python generate_weekly_video.py
+          TW_DAY=$(TZ='Asia/Taipei' date +%u)
+          if [ "$TW_DAY" -eq 4 ] || [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "今天是週四（或手動觸發），開始產製雙主播回顧影片..."
+            python generate_weekly_video.py
+          else
+            echo "今天不是週四 (星期 $TW_DAY)，跳過影片產製，僅保留每日 Podcast。"
+          fi
           
       - name: 📦 上傳網頁產物 (Upload Artifact)
         uses: actions/upload-pages-artifact@v3
