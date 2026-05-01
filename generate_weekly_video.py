@@ -11,6 +11,7 @@ import sys
 import os
 if r"D:\Lib\site-packages" not in sys.path:
     sys.path.append(r"D:\Lib\site-packages")
+os.environ["PYTHONPATH"] = r"D:\Lib\site-packages"
 
 try:
     from PIL import Image, ImageDraw, ImageFont
@@ -109,8 +110,7 @@ import time, re
 success = False
 
 script_cache_path = os.path.join(WORKSPACE_DIR, "temp_script.txt")
-# 強制忽略快取，確保影片內容是最新的
-if False and os.path.exists(script_cache_path) and time.time() - os.path.getmtime(script_cache_path) < 3600:
+if os.path.exists(script_cache_path) and time.time() - os.path.getmtime(script_cache_path) < 3600:
     print("-> 讀取已快取的腳本內容 (一小時內有效)，避免重複耗費 API 額度。")
     with open(script_cache_path, "r", encoding="utf-8") as f:
         script_text = f.read()
@@ -149,8 +149,8 @@ print("正在處理雙人聲配音 (Tom & Miranda)...")
 
 # 解析腳本為片段
 dialogue_parts = []
-# 匹配 [Tom]: 或 [Miranda]: 開頭的內容
-pattern = r"\[(Tom|Miranda)\]:\s*(.*?)(?=\s*\[(?:Tom|Miranda)\]:|$)"
+# 匹配 [Tom]: 或 **[Tom]**: 或 Tom： 開頭的內容
+pattern = r'(?:\*?\*?\[?(Tom|Miranda)\]?\*?\*?[:：])\s*(.*?)(?=\s*(?:\*?\*?\[?(?:Tom|Miranda)\]?\*?\*?[:：])|$)'
 matches = re.findall(pattern, script_text, re.DOTALL)
 
 if not matches:
@@ -275,22 +275,19 @@ def create_transparent_slide(text, output_name, title, slide_index, total_slides
         "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc" # Ubuntu Fallback
     ]
     
-    font_path_to_use = None
+    font_title = None
     for fp in font_paths:
-        if os.path.exists(fp):
-            font_path_to_use = fp
+        try:
+            font_title = ImageFont.truetype(fp, 55)
+            font_body = ImageFont.truetype(fp, 40)
+            font_name = ImageFont.truetype(fp, 25)
+            font_page = ImageFont.truetype(fp, 30)
             break
+        except Exception:
+            continue
             
-    try:
-        if font_path_to_use:
-            font_title = ImageFont.truetype(font_path_to_use, 55)
-            font_body = ImageFont.truetype(font_path_to_use, 40)
-            font_name = ImageFont.truetype(font_path_to_use, 25)
-            font_page = ImageFont.truetype(font_path_to_use, 30)
-        else:
-            raise Exception("No CJK font found")
-    except Exception as e:
-        print(f"警告：無法載入中文字型 ({e})，將使用預設字型，中文字可能變成方塊。")
+    if font_title is None:
+        print("警告：無法載入中文字型，將使用預設字型，中文字可能變成方塊。")
         font_title = ImageFont.load_default()
         font_body = ImageFont.load_default()
         font_name = ImageFont.load_default()
