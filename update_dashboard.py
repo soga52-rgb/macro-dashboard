@@ -1,5 +1,7 @@
 import os
 import sys
+if r"D:\Lib\site-packages" not in sys.path:
+    sys.path.append(r"D:\Lib\site-packages")
 
 try:
     import json

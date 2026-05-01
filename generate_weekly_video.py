@@ -7,6 +7,11 @@ import csv
 import subprocess
 from datetime import datetime, timedelta, timezone
 
+import sys
+import os
+if r"D:\Lib\site-packages" not in sys.path:
+    sys.path.append(r"D:\Lib\site-packages")
+
 try:
     from PIL import Image, ImageDraw, ImageFont
 except ImportError:
@@ -104,7 +109,8 @@ import time, re
 success = False
 
 script_cache_path = os.path.join(WORKSPACE_DIR, "temp_script.txt")
-if os.path.exists(script_cache_path) and time.time() - os.path.getmtime(script_cache_path) < 3600:
+# 強制忽略快取，確保影片內容是最新的
+if False and os.path.exists(script_cache_path) and time.time() - os.path.getmtime(script_cache_path) < 3600:
     print("-> 讀取已快取的腳本內容 (一小時內有效)，避免重複耗費 API 額度。")
     with open(script_cache_path, "r", encoding="utf-8") as f:
         script_text = f.read()
@@ -369,7 +375,7 @@ for sf in slide_files:
 ffmpeg_cmd += ['-i', final_audio]
 
 # 加入動態聲波濾鏡 (適合直式的尺寸)
-filter_complex = f"[{len(slide_files)+1}:a]showwaves=s=280x100:mode=cline:colors=0x38bdf8[wave];"
+filter_complex = f"[{len(slide_files)+1}:a]asplit=2[wave_in][a_out];[wave_in]showwaves=s=280x100:mode=cline:colors=0x38bdf8[wave];"
 current_input = "[0:v]"
 for i in range(len(slide_files)):
     start, end = slide_timings[i]
@@ -384,8 +390,9 @@ filter_complex += f"{current_input}[wave]overlay=220:1060[final_v]"
 ffmpeg_cmd += [
     '-filter_complex', filter_complex,
     '-map', '[final_v]',
-    '-map', f'{len(slide_files)+1}:a',
+    '-map', '[a_out]',
     '-c:v', 'libx264',
+    '-c:a', 'aac',
     '-pix_fmt', 'yuv420p',
     '-shortest',
     video_path
