@@ -829,7 +829,7 @@ def update_dashboard(ai_response, news_list, today_str):
                 </div>
             </div>
 
-            <div style="margin-top: 1.5rem;" class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>{{"symbols": [ {{"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}}, {{"proName": "FOREXCOM:NSXUSD", "title": "Nasdaq 100"}}, {{"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}}, {{"proName": "FX:USDJPY", "title": "USD/JPY"}}, {{"proName": "FX_IDC:USDTWD", "title": "USD/TWD"}}, {{"proName": "SGX:FEF1!", "title": "Iron Ore"}}, {{"proName": "OTC:NPSCY", "title": "Nippon Steel"}}, {{"proName": "NYSE:NUE", "title": "Nucor"}}, {{"proName": "FRED:DGS10", "title": "US10Y"}} ], "showSymbolLogo": true, "colorTheme": "light", "isTransparent": true, "displayMode": "adaptive", "locale": "zh_TW"}}</script></div>
+            <div style="margin-top: 1.5rem;" class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>{{"symbols": [ {{"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}}, {{"proName": "FOREXCOM:NSXUSD", "title": "Nasdaq 100"}}, {{"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}}, {{"proName": "FX:USDJPY", "title": "USD/JPY"}}, {{"proName": "FX_IDC:USDTWD", "title": "USD/TWD"}}, {{"proName": "COMEX:HRC1!", "title": "HRC Steel"}}, {{"proName": "OTC:NPSCY", "title": "Nippon Steel"}}, {{"proName": "NYSE:NUE", "title": "Nucor"}}, {{"proName": "FRED:DGS10", "title": "US10Y"}} ], "showSymbolLogo": true, "colorTheme": "light", "isTransparent": true, "displayMode": "adaptive", "locale": "zh_TW"}}</script></div>
         </header>
 
         <section>
