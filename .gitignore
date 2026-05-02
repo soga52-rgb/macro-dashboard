@@ -6,6 +6,8 @@ test*.mp3
 test*.mp4
 dummy*.mp3
 dummy*.mp4
+# 排除影片產製的中間合成音訊 (weekly_audio_*.mp3)
+weekly_audio_*.mp3
 # 排除暫存音訊目錄
 temp_audio/
 # 排除 mark.png (舊版主播圖)
