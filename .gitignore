@@ -1,5 +1,19 @@
 
-*.mp3
-*.mp4
+# 排除暫存文字檔 (temp_podcast.txt, audio_list.txt 等)
 *.txt
+# 排除暫存測試檔
+test*.mp3
+test*.mp4
+dummy*.mp3
+dummy*.mp4
+# 排除暫存音訊目錄
+temp_audio/
+# 排除 mark.png (舊版主播圖)
 mark.png
+
+# ✅ 允許 Podcast 音訊 (podcast_YYYYMMDD_HHMMSS.mp3)
+!podcast_*.mp3
+# ✅ 允許每週回顧影片 (weekly_video_YYYYMMDD_HHMMSS.mp4)
+!weekly_video_*.mp4
+# ✅ 允許背景影片 (供 GitHub Pages 使用)
+!bg_*.mp4

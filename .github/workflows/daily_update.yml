@@ -68,6 +68,24 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add index.html macro_analysis.csv historical_data.json
           git add generate_weekly_video.py tom.png miranda.png 2>/dev/null || true
+          
+          # ✅ 加入 Podcast 音訊檔 (mp3 通常 1-3MB，在 GitHub 100MB 限制內)
+          git add podcast_*.mp3 2>/dev/null || echo "No new podcast files to add"
+          
+          # ✅ 加入週報影片 (僅限小於 80MB 的檔案，避免超過 GitHub 100MB 硬限制)
+          for f in weekly_video_*.mp4; do
+            if [ -f "$f" ]; then
+              SIZE=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f" 2>/dev/null || echo 0)
+              SIZE_MB=$((SIZE / 1024 / 1024))
+              if [ "$SIZE_MB" -lt 80 ]; then
+                git add "$f"
+                echo "✅ 已加入影片: $f (${SIZE_MB}MB)"
+              else
+                echo "⚠️ 影片 $f 過大 (${SIZE_MB}MB)，跳過 commit（超過 GitHub 80MB 建議上限）"
+              fi
+            fi
+          done
+          
           git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update: Dashboard generated on $(date +'%Y-%m-%d %H:%M')" && git push)
           
   # 新的部署任務：直接發布到 GitHub Pages

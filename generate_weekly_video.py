@@ -383,15 +383,20 @@ for i in range(len(slide_files)):
 # 最後把聲波疊加在兩位主播中間
 filter_complex += f"{current_input}[wave]overlay=220:1060[final_v]"
 
-# 最終合成指令
+# 最終合成指令 (加入壓縮參數，讓輸出影片小於 50MB，符合 GitHub 限制)
 ffmpeg_cmd += [
     '-filter_complex', filter_complex,
     '-map', '[final_v]',
     '-map', '[a_out]',
     '-c:v', 'libx264',
+    '-preset', 'fast',        # 編碼速度/壓縮率平衡
+    '-crf', '28',             # 品質 (18=高品質大檔, 28=中等品質小檔, 35=低品質極小檔)
+    '-vf', 'scale=720:1280',  # 確保輸出解析度一致
     '-c:a', 'aac',
+    '-b:a', '96k',            # 音訊碼率 96k (語音足夠)
     '-pix_fmt', 'yuv420p',
     '-shortest',
+    '-movflags', '+faststart', # 讓瀏覽器可以邊下載邊播放
     video_path
 ]
 
@@ -406,6 +411,38 @@ if os.path.exists(temp_audio_dir): shutil.rmtree(temp_audio_dir)
 if os.path.exists("audio_list.txt"): os.remove("audio_list.txt")
 for sf in slide_files: 
     if os.path.exists(sf): os.remove(sf)
+
+# 清理舊的週報影片，只保留最新 3 支
+try:
+    video_files_all = sorted(
+        [f for f in os.listdir(WORKSPACE_DIR) if f.startswith("weekly_video_") and f.endswith(".mp4")],
+        reverse=True
+    )
+    for old_video in video_files_all[3:]:  # 保留最新 3 支
+        old_path = os.path.join(WORKSPACE_DIR, old_video)
+        try:
+            os.remove(old_path)
+            print(f"清理舊影片: {old_video}")
+        except Exception as ex:
+            print(f"清理舊影片失敗: {ex}")
+except Exception as e:
+    print(f"清理週報影片時發生錯誤: {e}")
+
+# 同樣清理舊的 weekly_audio 合成音訊
+try:
+    audio_files_all = sorted(
+        [f for f in os.listdir(WORKSPACE_DIR) if f.startswith("weekly_audio_") and f.endswith(".mp3")],
+        reverse=True
+    )
+    for old_audio in audio_files_all[3:]:
+        old_path = os.path.join(WORKSPACE_DIR, old_audio)
+        try:
+            os.remove(old_path)
+            print(f"清理舊音訊: {old_audio}")
+        except Exception as ex:
+            print(f"清理舊音訊失敗: {ex}")
+except Exception as e:
+    print(f"清理週報音訊時發生錯誤: {e}")
 
 print("正在更新儀表板連結...")
 try:
