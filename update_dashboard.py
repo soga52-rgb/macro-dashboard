@@ -523,13 +523,23 @@ def update_dashboard(ai_response, news_list, today_str):
                     <td data-label="驅動因素" class="desc-text">{drivers}</td>
                 </tr>"""
 
-    # 尋找最新的週報影片
+    # 尋找最新的週報影片 (僅週四才帶入影片連結，與影片產製排程一致)
     weekly_video_filename = ""
     try:
-        video_files = [f for f in os.listdir(WORKSPACE_DIR) if f.startswith("weekly_video_") and f.endswith(".mp4")]
-        if video_files:
-            video_files.sort(reverse=True)
-            weekly_video_filename = video_files[0]
+        from datetime import timezone, timedelta
+        tw_tz = timezone(timedelta(hours=8))
+        now_tw = datetime.now(tw_tz)
+        # 週四 = weekday() 3
+        is_thursday = (now_tw.weekday() == 3)
+        
+        if is_thursday:
+            video_files = [f for f in os.listdir(WORKSPACE_DIR) if f.startswith("weekly_video_") and f.endswith(".mp4")]
+            if video_files:
+                video_files.sort(reverse=True)
+                weekly_video_filename = video_files[0]
+                print(f"📹 今天是週四，載入本週影片: {weekly_video_filename}")
+        else:
+            print(f"📅 今天是星期 {now_tw.weekday() + 1}（非週四），不載入影片連結。")
     except Exception as e:
         pass
 
