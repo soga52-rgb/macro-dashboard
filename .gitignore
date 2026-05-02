@@ -1,4 +1,6 @@
 
+# 排除本機暫存測試目錄
+scratch/
 # 排除暫存文字檔 (temp_podcast.txt, audio_list.txt 等)
 *.txt
 # 排除暫存測試檔
