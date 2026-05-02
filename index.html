@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>??蜇蝬撠?閫頞典???ａ?蝵桀???/title>
+    <title>【全球總經報導】宏觀趨勢與資產配置分析</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -69,8 +69,8 @@
         .nd-short-summary { font-size: 1.05rem; color: #334155; margin-bottom: 0.5rem; }
         .nd-details summary { color: #0284c7; font-weight: 600; cursor: pointer; list-style: none; font-size: 0.95rem; outline: none; margin-top: 0.5rem; display: inline-block; }
         .nd-details summary::-webkit-details-marker { display: none; }
-        .nd-details summary::before { content: "撅?閰單? ??; }
-        .nd-details[open] summary::before { content: "?嗅?閰單? ??; }
+        .nd-details summary::before { content: "展開詳情 ▼"; }
+        .nd-details[open] summary::before { content: "收合詳情 ▲"; }
         .nd-content { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #edf2f7; }
         .nd-orig-summary { font-size: 1.05rem; color: #475569; margin-bottom: 1.5rem; }
         .nd-meta-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
@@ -110,7 +110,7 @@
         .status { font-weight: 600; color: var(--text-primary); }
         .status-detail { display: block; font-size: 0.9rem; font-weight: 400; color: #475569; margin-top: 0.4rem; line-height: 1.5; }
         
-        /* 撠平???嗅??孵?璅?? */
+        /* 專業分析收合方塊樣式 */
         .analysis-container {
             margin: 20px 0;
             border: 1px solid #e0e0e0;
@@ -126,7 +126,7 @@
             cursor: pointer;
             font-weight: 700;
             font-size: 1.1rem;
-            list-style: none; /* ?梯???蝞剝 */
+            list-style: none; /* 隱藏原生箭頭 */
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -139,9 +139,9 @@
             background: #ffffff;
         }
 
-        /* ?芸?蝢拙?蝞剝 */
+        /* 自定義小箭頭 */
         .analysis-container summary::after {
-            content: "??;
+            content: "▼";
             font-size: 0.8rem;
             color: var(--text-secondary);
             transition: transform 0.3s ease;
@@ -208,40 +208,40 @@
     <div class="newsletter-wrapper">
         <header class="report-header">
             <span class="date">GLOBAL MACRO WEEKLY INSIGHTS</span>
-            <h1>?函?蝮賜??勗? <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 400;">[PRO-ENGINE V3.0]</span></h1>
-            <p style="color: #94a3b8;">??AI 撽?????典??? (Rolling 48-Hour Window)</p>
-            <p style="font-size: 1rem; color: #ef4444; font-weight: 800; margin-top: 0.5rem; text-decoration: underline;" class="date-display">?? ?敺?唳???2026-05-02 07:05</p>
+            <h1>全球總經報導 <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 400;">[PRO-ENGINE V3.0]</span></h1>
+            <p style="color: #94a3b8;">由 AI 驅動的自動化全域分析 (Rolling 48-Hour Window)</p>
+            <p style="font-size: 1rem; color: #ef4444; font-weight: 800; margin-top: 0.5rem; text-decoration: underline;" class="date-display">🕒 最後更新時間：2026-05-02 12:35</p>
             
-            <!-- ?交??詨???? -->
+            <!-- 日期選單與狀態列 -->
             <div style="margin-top: 1rem; display: flex; align-items: center; justify-content: center; gap: 10px;">
-                <label for="history-selector" style="font-weight: 600; color: #475569;">?? 甇瑕?“嚗?/label>
+                <label for="history-selector" style="font-weight: 600; color: #475569;">📅 歷史回顧：</label>
                 <select id="history-selector" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #cbd5e1; outline: none; font-family: inherit; font-size: 0.95rem; background: #fffcf0;">
-                    <option value="0">2026-05-02 07:05 (???</option>
+                    <option value="0">2026-05-02 12:35 (最新)</option>
                 </select>
             </div>
             
-            <!-- Podcast ?剜??-->
+            <!-- Podcast 播放器 -->
             <div class="podcast-container">
-                <span class="podcast-icon">??儭?/span>
+                <span class="podcast-icon">🎙️</span>
                 <div class="podcast-text">
-                    <div class="podcast-title">?典?蝮賜??唳?摰文誨??/div>
-                    <div class="podcast-subtitle">AI 銝餅 | 瘥蝎暹?閫??</div>
+                    <div class="podcast-title">全域總經戰情室廣播</div>
+                    <div class="podcast-subtitle">AI 主播 | 每日精準解析</div>
                 </div>
                 <audio id="podcast-audio" class="podcast-audio-element" controls>
-                    <source src="podcast_20260501_230719.mp3" type="audio/mpeg">
-                    ?函??汗?其??舀?唾?????
+                    <source src="podcast_20260502_043732.mp3" type="audio/mpeg">
+                    您的瀏覽器不支援音訊元素。
                 </audio>
             </div>
             
-            <!-- 瘥勗?憿批蔣??(?亙??? -->
-            <div id="weekly-video-container" style="margin-top: 1.5rem; display: block;">
+            <!-- 每週回顧影片 (若存在) -->
+            <div id="weekly-video-container" style="margin-top: 1.5rem; display: none;">
                 <div style="background: #fffcf0; padding: 1rem; border-radius: 12px; border: 1px solid #fef3c7; box-shadow: var(--shadow-md);">
                     <h3 style="font-size: 1.1rem; color: #92400e; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-                        <span>?</span> ?祇梁蜇蝬???憿批蔣??
+                        <span>🎬</span> 本週總經動態回顧影片
                     </h3>
                     <video id="weekly-video-player" controls style="width: 100%; border-radius: 8px; max-height: 400px; background: #000;">
-                        <source src="weekly_video_20260430_200723.mp4" type="video/mp4">
-                        ?函??汗?其??舀敶梁?????
+                        <source src="" type="video/mp4">
+                        您的瀏覽器不支援影片元素。
                     </video>
                 </div>
             </div>
@@ -250,187 +250,187 @@
         </header>
 
         <section>
-            <h2 class="section-h2">? ?啗???</h2>
+            <h2 class="section-h2">🎯 新聞剖析</h2>
             <div class="focus-grid" id="focus-grid">
                 
         <div class="news-detail-card">
             <div class="nd-header">
-                <span class="nd-category">憭株??輻?</span>
-                <h3 class="nd-title">Fed holds rates steady but with highest level of dissent since 1992</h3>
-                <div class="nd-meta">CNBC | ?澆? 2026-04-29</div>
+                <span class="nd-category">通膨數據</span>
+                <h3 class="nd-title">Eurozoneinflationjumpsto3%aseconomicgrowthalmoststalls-CNBC</h3>
+                <div class="nd-meta">CNBC | 發布 2026-04-30</div>
                 <div class="nd-pills">
-                    <span class="nd-pill">?拙??</span>
-                    <span class="nd-pill">?拍???</span>
-                    <span class="nd-pill">蝢???</span>
+                    <span class="nd-pill">物價偏多</span>
+                    <span class="nd-pill">利率中性</span>
+                    <span class="nd-pill">美元偏多</span>
                 </div>
-                <div class="nd-short-summary">?舀????萎????1992撟港??憭折???/div>
+                <div class="nd-short-summary">歐元區四月通膨跳升至3%，Q1經濟幾近停滯。</div>
+            </div>
+            <details class="nd-details">
+                <summary></summary>
+                <div class="nd-content">
+                    <div class="nd-orig-summary">Theeurozoneeconomyexpandedbyameager0.1%inthefirstquarter, whileinflationjumpedto3%inAprilduetosurgingenergycosts.</div>
+                    <div class="nd-meta-tags">
+                        <span>新聞來源: CNBC</span>
+                        <span>新聞發布時間: 2026-04-30</span>
+                        <span>分析執行時間: 2026-05-02 12:35</span>
+                        <span>事件分類: 通膨數據</span>
+                    </div>
+                    <div class="nd-directions">
+                        <div class="nd-dir-box"><div class="nd-dir-label">物價方向</div><div class="nd-dir-value">偏多</div></div>
+                        <div class="nd-dir-box"><div class="nd-dir-label">利率方向</div><div class="nd-dir-value">中性</div></div>
+                        <div class="nd-dir-box"><div class="nd-dir-label">美元指數方向</div><div class="nd-dir-value">偏多</div></div>
+                    </div>
+                    <div class="nd-conclusion">
+                        <div class="nd-box-title">一句話結論</div>
+                        <p>中東戰事引發能源價格飆漲，使歐洲深陷實質性的滯脹泥沼[1.1]。</p>
+                    </div>
+                    <div class="nd-grid">
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">新聞摘要</div>
+                            <p>受伊朗戰火引發的全球能源危機衝擊，歐元區四月 CPI 躍升至 3%，遠超央行 2% 目標。更糟的是，第一季 GDP 僅微幅增長 0.1%。能源成本年增高達 10.9%，引發市場對歐洲步入「滯脹（低增長、高通膨）」的強烈擔憂。通膨高漲與低迷經濟的組合使決策者面臨兩難，若不慎應對恐引發深度衰退。</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">傳導路徑</div>
+                            <p>油價飆升 -> 能源成本大漲 -> 歐元區通膨超標疊加經濟停滯 -> 滯脹風險升溫。</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">物價原因</div>
+                            <p>中東地緣衝突導致原油與能源供應受阻，直接推升終端物價與核心通膨。</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">利率原因</div>
+                            <p>通膨高漲但經濟基本面異常脆弱，迫使央行暫緩寬鬆步伐並保持高度觀望。</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">美元原因</div>
+                            <p>歐洲經濟停滯拖累歐元匯率，疊加地緣避險需求，推升了美元的避險買盤。</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">原始重點</div>
+                            <p>Stagflation fears rise as Eurozone inflation hits 3% and GDP growth stalls.</p>
+                            <a href="https://www.cnbc.com/" target="_blank" class="nd-btn">查看原文</a>
+                        </div>
+                    </div>
+                </div>
+            </details>
+        </div>
+        <div class="news-detail-card">
+            <div class="nd-header">
+                <span class="nd-category">央行政策</span>
+                <h3 class="nd-title">European Central Bank keeps rates on hold in the face of inflation threat - CNBC</h3>
+                <div class="nd-meta">CNBC | 發布 2026-04-30</div>
+                <div class="nd-pills">
+                    <span class="nd-pill">物價中性</span>
+                    <span class="nd-pill">利率中性</span>
+                    <span class="nd-pill">美元偏多</span>
+                </div>
+                <div class="nd-short-summary">歐洲央行在通膨威脅與增長停滯下維持利率不變。</div>
+            </div>
+            <details class="nd-details">
+                <summary></summary>
+                <div class="nd-content">
+                    <div class="nd-orig-summary">The ECB's governing council opted to hold its benchmark deposit facility rate at 2% on Thursday, facing stagflation fears.</div>
+                    <div class="nd-meta-tags">
+                        <span>新聞來源: CNBC</span>
+                        <span>新聞發布時間: 2026-04-30</span>
+                        <span>分析執行時間: 2026-05-02 12:35</span>
+                        <span>事件分類: 央行政策</span>
+                    </div>
+                    <div class="nd-directions">
+                        <div class="nd-dir-box"><div class="nd-dir-label">物價方向</div><div class="nd-dir-value">中性</div></div>
+                        <div class="nd-dir-box"><div class="nd-dir-label">利率方向</div><div class="nd-dir-value">中性</div></div>
+                        <div class="nd-dir-box"><div class="nd-dir-label">美元指數方向</div><div class="nd-dir-value">偏多</div></div>
+                    </div>
+                    <div class="nd-conclusion">
+                        <div class="nd-box-title">一句話結論</div>
+                        <p>面對經濟停滯與高通膨的雙重夾擊，歐洲央行被迫中斷降息循環。</p>
+                    </div>
+                    <div class="nd-grid">
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">新聞摘要</div>
+                            <p>歐洲央行（ECB）管理委員會決議維持基準存款利率於 2% 不變。在伊朗戰事推升能源成本並使四月份通膨率躍升至 3% 的背景下，決策者面臨艱困考驗：若升息抗通膨恐將脆弱的經濟（Q1僅增0.1%）推入衰退，若降息則可能使物價徹底失控。最終央行選擇按兵不動，靜待中東局勢明朗。</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">傳導路徑</div>
+                            <p>通膨反撲疊加經濟放緩 -> ECB 陷入政策兩難 -> 決議按兵不動 -> 利差優勢轉向美國。</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">物價原因</div>
+                            <p>能源危機導致的輸入性通膨抵銷了國內需求疲軟所帶來的降價壓力。</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">利率原因</div>
+                            <p>實體經濟過於脆弱無法承受進一步升息，但也因通膨高昂而無降息空間。</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">美元原因</div>
+                            <p>歐元區經濟前景黯淡與 ECB 的鴿派妥協，反向襯托出美元強勁的吸引力。</p>
+                        </div>
+                        <div class="nd-grid-box">
+                            <div class="nd-box-title">原始重點</div>
+                            <p>ECB policy decision amid rising fuel prices and stalling economic growth.</p>
+                            <a href="https://www.cnbc.com/" target="_blank" class="nd-btn">查看原文</a>
+                        </div>
+                    </div>
+                </div>
+            </details>
+        </div>
+        <div class="news-detail-card">
+            <div class="nd-header">
+                <span class="nd-category">聯準會動向</span>
+                <h3 class="nd-title">Fed holds rates steady but with highest level of dissent since 1992 - CNBC</h3>
+                <div class="nd-meta">CNBC | 發布 2026-04-29</div>
+                <div class="nd-pills">
+                    <span class="nd-pill">物價偏多</span>
+                    <span class="nd-pill">利率偏多</span>
+                    <span class="nd-pill">美元偏多</span>
+                </div>
+                <div class="nd-short-summary">聯準會按兵不動，但內部爆發30多年來最大鷹派雜音。</div>
             </div>
             <details class="nd-details">
                 <summary></summary>
                 <div class="nd-content">
                     <div class="nd-orig-summary">An unusually divided Federal Reserve held its key interest rate steady as policymakers grappled with persistent inflation and awaited a looming leadership transition.</div>
                     <div class="nd-meta-tags">
-                        <span>?啗?靘?: CNBC</span>
-                        <span>?啗??澆???: 2026-04-29</span>
-                        <span>???瑁???: 2026-05-02 07:05</span>
-                        <span>鈭辣??: 憭株??輻?</span>
+                        <span>新聞來源: CNBC</span>
+                        <span>新聞發布時間: 2026-04-29</span>
+                        <span>分析執行時間: 2026-05-02 12:35</span>
+                        <span>事件分類: 聯準會動向</span>
                     </div>
                     <div class="nd-directions">
-                        <div class="nd-dir-box"><div class="nd-dir-label">?拙?孵?</div><div class="nd-dir-value">??</div></div>
-                        <div class="nd-dir-box"><div class="nd-dir-label">?拍??孵?</div><div class="nd-dir-value">??</div></div>
-                        <div class="nd-dir-box"><div class="nd-dir-label">蝢???孵?</div><div class="nd-dir-value">??</div></div>
+                        <div class="nd-dir-box"><div class="nd-dir-label">物價方向</div><div class="nd-dir-value">偏多</div></div>
+                        <div class="nd-dir-box"><div class="nd-dir-label">利率方向</div><div class="nd-dir-value">偏多</div></div>
+                        <div class="nd-dir-box"><div class="nd-dir-label">美元指數方向</div><div class="nd-dir-value">偏多</div></div>
                     </div>
                     <div class="nd-conclusion">
-                        <div class="nd-box-title">銝?亥店蝯?</div>
-                        <p>?暺扯翰雿澹ed曋寞晷?祇嚗?憭拇?畾??蝢?擃????/p>
+                        <div class="nd-box-title">一句話結論</div>
+                        <p>通膨復燃引爆 Fed 內部路線之爭，高利率環境將比預期更長。</p>
                     </div>
                     <div class="nd-grid">
                         <div class="nd-grid-box">
-                            <div class="nd-box-title">?啗???</div>
-                            <p>?舀??捱霅啁雁?皞??霈?雿捱蝑??⊥?銝剖?曆???992撟港誑靘??憭???蟡?[1.1]??雿??∪撥??撠?脫?銝凋??祝擛??)?曉?嚗蜓閬???????漲??嚗蝙敺??游??剜??折??舐???敺孵??澈??/p>
+                            <div class="nd-box-title">新聞摘要</div>
+                            <p>美國聯準會（Fed）宣布維持基準利率不變，但本次會議爆發了自 1992 年以來最高層級的內部反對聲浪。多位官員強烈反對暗示未來降息的鴿派指引，顯示在油價飆升、核心通膨頑固的背景下，Fed 內部對於貨幣政策路徑出現嚴重分裂。同時，市場正密切關注獲參議院批准的 Kevin Warsh 帶來的新領導層影響。</p>
                         </div>
                         <div class="nd-grid-box">
-                            <div class="nd-box-title">?喳?頝臬?</div>
-                            <p>??? ??Fed曋寞晷??撖祇? ?????瘨 ??蝢畾??????鞈瘚蝢?</p>
+                            <div class="nd-box-title">傳導路徑</div>
+                            <p>通膨數據僵固 -> Fed 內部反對寬鬆的雜音激增 -> 市場重新定價長期高利率 -> 支撐長債殖利率與美元。</p>
                         </div>
                         <div class="nd-grid-box">
-                            <div class="nd-box-title">?拙??</div>
-                            <p>?詨?PCE???葉?梯皞?潸???/p>
+                            <div class="nd-box-title">物價原因</div>
+                            <p>美國實體內需強韌與全球戰爭能源溢價，使核心物價難以順利回落。</p>
                         </div>
                         <div class="nd-grid-box">
-                            <div class="nd-box-title">?拍???</div>
-                            <p>Fed摰撠??臬??舐???甇扯???</p>
+                            <div class="nd-box-title">利率原因</div>
+                            <p>鷹派委員擔憂過早釋放寬鬆信號會讓對抗通膨的努力前功盡棄。</p>
                         </div>
                         <div class="nd-grid-box">
-                            <div class="nd-box-title">蝢???</div>
-                            <p>蝢畾?雁??雿??游之甇??拙榆</p>
+                            <div class="nd-box-title">美元原因</div>
+                            <p>Fed 相對於歐洲具備更強硬的底氣維持高利率，美歐利差預期擴大支撐美元強勢。</p>
                         </div>
                         <div class="nd-grid-box">
-                            <div class="nd-box-title">????</div>
-                            <p>Highest level of dissent in FOMC regarding policy easing bias.</p>
-                            <a href="https://www.cnbc.com/" target="_blank" class="nd-btn">?亦???</a>
-                        </div>
-                    </div>
-                </div>
-            </details>
-        </div>
-        <div class="news-detail-card">
-            <div class="nd-header">
-                <span class="nd-category">蝮賜??豢?</span>
-                <h3 class="nd-title">Euro zone inflation jumps to 3% as economic growth almost stalls</h3>
-                <div class="nd-meta">CNBC | ?澆? 2026-04-30</div>
-                <div class="nd-pills">
-                    <span class="nd-pill">?拙??</span>
-                    <span class="nd-pill">?拍?銝剜?/span>
-                    <span class="nd-pill">蝢???</span>
-                </div>
-                <div class="nd-short-summary">甇???瑕?????瞈?皛舐?瘜交?</div>
-            </div>
-            <details class="nd-details">
-                <summary></summary>
-                <div class="nd-content">
-                    <div class="nd-orig-summary">Euro zone annual inflation rose to 3.0% in April, while preliminary data showed the economy expanded by a marginal 0.1% in the first quarter.</div>
-                    <div class="nd-meta-tags">
-                        <span>?啗?靘?: CNBC</span>
-                        <span>?啗??澆???: 2026-04-30</span>
-                        <span>???瑁???: 2026-05-02 07:05</span>
-                        <span>鈭辣??: 蝮賜??豢?</span>
-                    </div>
-                    <div class="nd-directions">
-                        <div class="nd-dir-box"><div class="nd-dir-label">?拙?孵?</div><div class="nd-dir-value">??</div></div>
-                        <div class="nd-dir-box"><div class="nd-dir-label">?拍??孵?</div><div class="nd-dir-value">銝剜?/div></div>
-                        <div class="nd-dir-box"><div class="nd-dir-label">蝢???孵?</div><div class="nd-dir-value">??</div></div>
-                    </div>
-                    <div class="nd-conclusion">
-                        <div class="nd-box-title">銝?亥店蝯?</div>
-                        <p>皛航憸券?甇散蝬?靽∪?嚗?雿輯???Ｘ???????芥?/p>
-                    </div>
-                    <div class="nd-grid">
-                        <div class="nd-grid-box">
-                            <div class="nd-box-title">?啗???</div>
-                            <p>?葉?勗蝺?瘝餉?蝒蔣?選??賣??寞?格?憭批?憌?嚗葆????4?PI撟游??歲?3%??甇文???蝚砌?摮ΔDP?凝撟???.1%嚗?鞎餉???仿?∪?嚗?瘣脫迤?Ｚ?游頂??皛舀折(Stagflation)?望???/p>
-                        </div>
-                        <div class="nd-grid-box">
-                            <div class="nd-box-title">?喳?頝臬?</div>
-                            <p>?賣??寞憭扳撞 ??甇??CPI憌?銝DP?趙 ??皛航憸券憓? ??甇??踹? ??DXY韏啣撥</p>
-                        </div>
-                        <div class="nd-grid-box">
-                            <div class="nd-box-title">?拙??</div>
-                            <p>銝剜?啁撠?硃靘??嚗皞??砍之瞍?/p>
-                        </div>
-                        <div class="nd-grid-box">
-                            <div class="nd-box-title">?拍???</div>
-                            <p>蝬??銵圈?鈭CB憭批???征??/p>
-                        </div>
-                        <div class="nd-grid-box">
-                            <div class="nd-box-title">蝢???</div>
-                            <p>甇散蝬?????潛???甇?蝬???</p>
-                        </div>
-                        <div class="nd-grid-box">
-                            <div class="nd-box-title">????</div>
-                            <p>Stagflation threat with inflation hitting 3% and near-zero growth.</p>
-                            <a href="https://www.cnbc.com/" target="_blank" class="nd-btn">?亦???</a>
-                        </div>
-                    </div>
-                </div>
-            </details>
-        </div>
-        <div class="news-detail-card">
-            <div class="nd-header">
-                <span class="nd-category">憭株??輻?</span>
-                <h3 class="nd-title">European Central Bank keeps rates on hold in the face of inflation threat</h3>
-                <div class="nd-meta">CNBC | ?澆? 2026-04-30</div>
-                <div class="nd-pills">
-                    <span class="nd-pill">?拙??</span>
-                    <span class="nd-pill">?拍?銝剜?/span>
-                    <span class="nd-pill">蝢???</span>
-                </div>
-                <div class="nd-short-summary">?憡?銝?瘣脣亢銵雁???霈?/div>
-            </div>
-            <details class="nd-details">
-                <summary></summary>
-                <div class="nd-content">
-                    <div class="nd-orig-summary">The ECB maintained key interest rates unchanged as inflation pressures intensify from the Middle East conflict.</div>
-                    <div class="nd-meta-tags">
-                        <span>?啗?靘?: CNBC</span>
-                        <span>?啗??澆???: 2026-04-30</span>
-                        <span>???瑁???: 2026-05-02 07:05</span>
-                        <span>鈭辣??: 憭株??輻?</span>
-                    </div>
-                    <div class="nd-directions">
-                        <div class="nd-dir-box"><div class="nd-dir-label">?拙?孵?</div><div class="nd-dir-value">??</div></div>
-                        <div class="nd-dir-box"><div class="nd-dir-label">?拍??孵?</div><div class="nd-dir-value">銝剜?/div></div>
-                        <div class="nd-dir-box"><div class="nd-dir-label">蝢???孵?</div><div class="nd-dir-value">??</div></div>
-                    </div>
-                    <div class="nd-conclusion">
-                        <div class="nd-box-title">銝?亥店蝯?</div>
-                        <p>ECB?券??瞈?皛舐?憭暹?銝?交捱蝑??/p>
-                    </div>
-                    <div class="nd-grid">
-                        <div class="nd-grid-box">
-                            <div class="nd-box-title">?啗???</div>
-                            <p>甇散憭株??冽??啣?捱蝑?霅唬葉瘙箏??銝???蝞⊿?刻皞?澆??潛?撘瑞??憡?嚗????唳???璆萄漲?摹??瞈?祇嚗CB?⊥??∪??脖?甇亦?蝺葬?輻?嚗捱蝑征???啣??蝮柴?/p>
-                        </div>
-                        <div class="nd-grid-box">
-                            <div class="nd-box-title">?喳?頝臬?</div>
-                            <p>皛航?啣? ??ECB?∪?? ??撖西釭鞎?憭????摹甇??詨??????典?蝢???芷???/p>
-                        </div>
-                        <div class="nd-grid-box">
-                            <div class="nd-box-title">?拙??</div>
-                            <p>?脣?賣???蝺??蝒?擃?銝?/p>
-                        </div>
-                        <div class="nd-grid-box">
-                            <div class="nd-box-title">?拍???</div>
-                            <p>蝬??餈??趙嚗瘜?擃??/p>
-                        </div>
-                        <div class="nd-grid-box">
-                            <div class="nd-box-title">蝢???</div>
-                            <p>ECB?雿?賊＊鈭ed?詨?頛撥?疏撟?蝑?瘞?/p>
-                        </div>
-                        <div class="nd-grid-box">
-                            <div class="nd-box-title">????</div>
-                            <p>ECB holding rates steady amid escalating inflation risks.</p>
-                            <a href="https://www.cnbc.com/" target="_blank" class="nd-btn">?亦???</a>
+                            <div class="nd-box-title">原始重點</div>
+                            <p>Federal Reserve's deeply divided decision to hold rates amid persistent inflation.</p>
+                            <a href="https://www.cnbc.com/" target="_blank" class="nd-btn">查看原文</a>
                         </div>
                     </div>
                 </div>
@@ -440,47 +440,47 @@
         </section>
 
         <section>
-            <h2 class="section-h2">? 蝮賜???</h2>
+            <h2 class="section-h2">📻 總經分析</h2>
             <div class="narrative-box" id="narrative-box">
-                ?函?撣甇??甇亙?趙?寥◢?芥??扔蝡舫?芥?銝餉遘銝西??憓葉?勗蝺??蝒??潸皞????餅嚗?TI?硃??02.50蝢?嚗?亙???蝢鈭活?????敹CE??.2%嚗???CPI頝喳???%嚗翰雿輯皞???瘣脣亢銵??銝?嚗銝胚ed?游??992撟港誑靘?憭批?撠祝擛??????摮ΔDP?游撐??瘣脰?銋?皛舐?蝬? 敶Ｘ?撘瑞?撠?嚗撌株??輸鞈??典?蝢??(DXY)??8.21嚗S10Y畾????.378%????蝺?雿輯????鳩?交??鞈嚗???瘥撟???仿??4625.60??8146.03?風?脤?雿?
+                本週全球宏觀市場籠罩於中東地緣衝突與『滯脹（Stagflation）』陰霾之中。伊朗戰事推升 WTI 原油突破 101.94 美元，直接導致歐美核心通膨死灰復燃，歐元區四月 CPI 更跳升至 3%。面對經濟停滯與通膨反撲的兩難，歐洲央行被迫按兵不動；美國聯準會亦維持利率不變，但內部爆發自 1992 年以來最激烈的反對降息雜音。長期高利率預期支撐 US10Y 殖利率站穩 4.378%，並帶動 DXY 衝高至 98.21，對亞幣施加極大貶值壓力。然而，極端的避險與抗通膨焦慮促使資金湧入黃金與比特幣，同時 AI 資本支出熱潮持續支撐 S&P 500 的市場韌性。
             </div>
-            <div id="forecast-box"><details class='analysis-container'><summary>? 銝梢?皜穿?皛航?圈?撥?Ｙ???????</summary><div class='analysis-content'><strong>?? 撣?摩?喳?嚗?/strong><p>?啁楠?踵祥銵?撘?賣?憌撞 ??敶梢<strong>????????舫????</strong> ???蝯???strong>撘瑕蝢???瑼??拍?韏啣</strong>??/p><hr><strong>?? 鞈???葫嚗?/strong><ul><li><strong>鈭散鞎典馳 (TWD/JPY/KRW)嚗?/strong>?典撥?Ｙ???擃??菜??拍?憯?銝?鈭馳撠?蝥?典撜餌?鞈憭??眸?澆???/li><li><strong>?輸鞈?雿???</strong>撖阡?暺????孵馳?冽?撟?縑?典??靘菔????臭?嚗????潭璆萇垢?輸??澆摮惇?扼?/li><li><strong>?硃?皞憛?</strong>銝剜靘???芾?蝺抵圾嚗?瘝寥?雿??芸???憓??函?撖阡?隡平???嚗?瘛勗祕擃?瞈???/li></ul></div></details></div>
+            <div id="forecast-box"><details class='analysis-container'><summary>📢 下週預測：中東地緣風暴與全球滯脹陰霾</summary><div class='analysis-content'><strong>⛓️ 市場邏輯傳導：</strong><p>中東衝突加劇 ➔ 能源供給受阻推升<strong>通膨預期</strong> ➔ 迫使歐美央行維持<strong>高利率環境</strong> ➔ 利差優勢與極端避險情緒最終定價<strong>強勢美元走勢</strong>。</p><hr><strong>📉 資產動態預測：</strong><ul><li><strong>亞洲貨幣 (台幣/日圓)：</strong>在美元指數高居 98.21 水位與美國長債殖利率 4.378% 的強勢壓抑下，亞幣利差劣勢擴大，台幣與日圓將持續面臨嚴峻的資金外流與貶值壓力。</li><li><strong>黃金與原油：</strong>油價受戰事直接驅動維持 101.94 美元高檔；而法幣貶值焦慮促使資金無懼強美元，瘋狂湧入避險，支撐黃金衝破 4625.60 美元高位，比特幣亦突破 78283.02 美元。</li><li><strong>十年期公債與美股：</strong>高通膨逼退降息預期，長債殖利率獲強烈支撐；然而 AI 資本支出狂熱對抗了高昂融資成本，使 S&P 500 於 7230.12 維持震盪分化。</li></ul></div></details></div>
         </section>
 
         <section>
-            <h2 class="section-h2">?? 摰?????韏啣</h2>
+            <h2 class="section-h2">📈 宏觀指標動態走勢</h2>
             <div class="trend-grid">
                 <div class="trend-card">
-                    <h4>US 10Y Yield (?僑???</h4>
-                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{"symbols": [["蝢??僑???, "FRED:DGS10"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["12m|1D", "60m|1W", "all|1M"], "isTransparent": true}</script></div>
+                    <h4>US 10Y Yield (十年期公債)</h4>
+                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{"symbols": [["美國十年期公債", "FRED:DGS10"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["12m|1D", "60m|1W", "all|1M"], "isTransparent": true}</script></div>
                 </div>
                 <div class="trend-card">
-                    <h4>Dollar Index (蝢??)</h4>
-                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{"symbols": [["蝢??", "CAPITALCOM:DXY"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}</script></div>
+                    <h4>Dollar Index (美元指數)</h4>
+                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{"symbols": [["美元指數", "CAPITALCOM:DXY"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}</script></div>
                 </div>
                 <div class="trend-card">
-                    <h4>Gold Spot (暺?)</h4>
+                    <h4>Gold Spot (黃金)</h4>
                     <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{"symbols": [["TVC:GOLD|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}</script></div>
                 </div>
                 <div class="trend-card">
-                    <h4>WTI Crude (镼踹噸撌?瘝?</h4>
-                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{"symbols": [["?硃?疏 (WTI)", "TVC:USOIL|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}</script></div>
+                    <h4>WTI Crude (西德州原油)</h4>
+                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{"symbols": [["原油期貨 (WTI)", "TVC:USOIL|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}</script></div>
                 </div>
                 <div class="trend-card">
-                    <h4>Brent Crude (撣?孵?瘝?</h4>
-                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{"symbols": [["撣?孵?瘝?, "TVC:UKOIL|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}</script></div>
+                    <h4>Brent Crude (布蘭特原油)</h4>
+                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{"symbols": [["布蘭特原油", "TVC:UKOIL|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}</script></div>
                 </div>
-                <!-- 鈭散鞎典馳 -->
+                <!-- 亞洲貨幣 -->
                 <div class="trend-card">
-                    <h4>USD / JPY (蝢?/?亙?)</h4>
+                    <h4>USD / JPY (美元/日圓)</h4>
                     <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{"symbols": [["FX:USDJPY|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}</script></div>
                 </div>
                 <div class="trend-card">
-                    <h4>USD / TWD (蝢?/?啣馳)</h4>
+                    <h4>USD / TWD (美元/台幣)</h4>
                     <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{"symbols": [["FX_IDC:USDTWD|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}</script></div>
                 </div>
                 <div class="trend-card">
-                    <h4>USD / KRW (蝢?/??)</h4>
+                    <h4>USD / KRW (美元/韓元)</h4>
                     <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{"symbols": [["FX_IDC:USDKRW|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}</script></div>
                 </div>
             </div>
@@ -489,53 +489,53 @@
 
 
         <section style="display: none;">
-            <h2 class="section-h2">?? ?拍???撠??/h2>
+            <h2 class="section-h2">⛓️ 利率與匯率傳導矩陣</h2>
             <div class="deep-dive-box">
                 <h3>Macro Linkage Analysis</h3>
-                <div id="linkage-box">?祇勗?粥?Ｘ楛?餃?????瞈??批榆?啜??撌桅????喳??摩???漁?潛?蝬???ed曋寞晷?嚗?US10Y畾?帘?箸4.378%??雿???甇???瑕?趙?折嚗CB?∪???憭抒?甇??拙榆???啁楠?輸?瘙?撠XY?典???8.21?撥?Ｙ??蝙鈭散鞎典馳憒撟???亙??Ｚ樴之?眸?澆???/div>
+                <div id="linkage-box">歐美央行在滯脹威脅下維持高利率，長端美債殖利率（US10Y 報 4.378%）受通膨預期與鷹派僵局支撐而居高不下，進一步拉大美亞利差。地緣避險與高殖利率雙重磁吸效應下，資金狂飆湧入美元（DXY 達 98.21），對台幣與日圓等亞幣造成毀滅性貶值壓力。同時，法幣信用遭通膨侵蝕的疑慮，促使熱錢無視高利率機會成本，瘋狂湧入黃金與比特幣尋求庇護。</div>
             </div>
         </section>
 
         <section style="display: none;">
-            <h2 class="section-h2">?? ?詨?霈?豢???葫</h2>
+            <h2 class="section-h2">📊 核心變數數據監測</h2>
             <div class="table-container">
                 <table>
                     <thead>
                         <tr>
-                            <th>?詨?霈</th>
-                            <th>?嗅????/th>
-                            <th>頞典</th>
-                            <th>撽???</th>
+                            <th>核心變數</th>
+                            <th>當前狀態</th>
+                            <th>趨勢</th>
+                            <th>驅動因素</th>
                         </tr>
                     </thead>
                     <tbody id="tbody-html">
                         
                 <tr>
-                    <td data-label="?詨?霈">
-                        <div class="var-name">? ???</div>
-                        <span class="badge">CPI/PPI Outlook</span>
+                    <td data-label="核心變數">
+                        <div class="var-name">🔥通膨預期</div>
+                        <span class="badge">CPI/PPIOutlook</span>
                     </td>
-                    <td data-label="?嗅????><div class="status">銝剜銵??典??賣??敹 <span class="status-detail">WTI?硃??102.50 USD/bbl</span></div></td>
-                    <td data-label="頞典"><span class="trend-up ">撘瑞????/span></td>
-                    <td data-label="撽???" class="desc-text">銝剜?啁?澈撘靘????芷??嚗?瘝寧??賣??寞憌??湔?券?蝢?????CPI [1.2]???敹CE??瘣脤???暹?隅?Ｕ?/td>
+                    <td data-label="當前狀態"><div class="status">中東衝突推升能源與核心通膨 <span class="status-detail">WTI原油報101.94USD/bbl，核心物價上揚</span></div></td>
+                    <td data-label="趨勢"><span class="trend-up ">強烈攀升</span></td>
+                    <td data-label="驅動因素" class="desc-text">伊朗戰事升溫引發供應鏈與航運受阻，能源成本狂飆直接推高歐美CPI[1.1]。滯脹陰霾籠罩，侵蝕消費者購買力。</td>
                 </tr>
                 <tr>
-                    <td data-label="?詨?霈">
-                        <div class="var-name">?? ?拍???</div>
+                    <td data-label="核心變數">
+                        <div class="var-name">📉 利率預期</div>
                         <span class="badge">Fed Funds / US10Y</span>
                     </td>
-                    <td data-label="?嗅????><div class="status">Fed?CB?銝?嚗?菜??拍?擃?? <span class="status-detail">US10Y??4.378%</span></div></td>
-                    <td data-label="頞典"><span class="trend-up ">擃??舀?</span></td>
-                    <td data-label="撽???" class="desc-text">蝢??擃?銝銝ed?1992撟港??憭批?撠??舐???CB??瞈?皛臬?璅???萎???撣?摰?瑟?擃??Higher for Longer)?啣???/td>
+                    <td data-label="當前狀態"><div class="status">Fed與ECB按兵不動，長債殖利率高位震盪 <span class="status-detail">US10Y報 4.378%，S&P 500 報 7230.12</span></div></td>
+                    <td data-label="趨勢"><span class="trend-up ">高位支撐</span></td>
+                    <td data-label="驅動因素" class="desc-text">通膨高燒不退且 Fed 爆發 1992 年來最大反對降息的雜音。市場重新定價長期高利率（Higher for Longer）環境。</td>
                 </tr>
                 <tr>
-                    <td data-label="?詨?霈">
-                        <div class="var-name">?? 蝢??</div>
+                    <td data-label="核心變數">
+                        <div class="var-name">🦅 美元指數</div>
                         <span class="badge">DXY Strength</span>
                     </td>
-                    <td data-label="?嗅????><div class="status">?輸???撥??祇???? <span class="status-detail">DXY撘瑕靘 98.21</span></div></td>
-                    <td data-label="頞典"><span class="trend-up ">蝛拇郊韏啣撥</span></td>
-                    <td data-label="撽???" class="desc-text">蝢?擐迤蝬??貉?甇散餈??趙(??0.1%) ?游?改???擃??拍??葉?勗蝺?◢?芸???芾??鳩?亦????Ｕ?/td>
+                    <td data-label="當前狀態"><div class="status">避險情緒與強勁基本面雙效疊加 <span class="status-detail">DXY 報 98.21，黃金飆至 4625.60 USD/oz</span></div></td>
+                    <td data-label="趨勢"><span class="trend-up ">穩步走強</span></td>
+                    <td data-label="驅動因素" class="desc-text">美國經濟較歐洲更具韌性，疊加高殖利率與中東極端地緣風險，催化全球避險資金大舉湧入美元資產。</td>
                 </tr>
                     </tbody>
                 </table>
@@ -543,29 +543,29 @@
         </section>
 
         <section style="display: none;">
-            <h2 class="section-h2">?妣 銝梢◢?芷?霅?/h2>
+            <h2 class="section-h2">🧭 下週風險預警</h2>
             <div class="risk-grid" id="risk-grid">
                 
         <div class="risk-item">
-            <span class="risk-title">?? 銝剜?啁楠?踵祥暺予曀??賣??望?</span>
-            <p class="risk-content">銝剜?啁?交?蝥郭??怨瘚瑕魚蝑??菔???函??硃靘??葉?瑕?撠?賣??寞撣豢???擃?銝??脖?甇交????Ｚ??撓?嚗??潭扔蝡航撓?交折??/p>
+            <span class="risk-title">⚠️ 地緣政治與能源供應斷鏈風險</span>
+            <p class="risk-content">中東戰火若進一步波及霍爾木茲海峽或其他關鍵原油運輸節點，將引發油價第二波井噴，徹底粉碎全球央行的通膨控制路徑。</p>
         </div>
         <div class="risk-item">
-            <span class="risk-title">?? 鈭馳蝡嗉眸????渲??砍??◢??/span>
-            <p class="risk-content">?函???撟湔??砍畾?雁??.378%?撥?Ｙ???憯銝?鈭散????游亢銵?典撜餌??脩戌?啜?暹??舐?撟脤?嚗?撘??抒?鞎典馳蝡嗉眸?之閬芋憭??日瞏柴?/p>
+            <span class="risk-title">⚠️ 全球實體經濟步入『深度滯脹』的衝擊</span>
+            <p class="risk-content">高昂的融資成本與被高物價侵蝕的消費者購買力，可能導致歐美非 AI 領域的企業獲利雪崩，進而引發大規模裁員與實體衰退。</p>
         </div>
             </div>
         </section>
 
         <section>
-            <h2 class="section-h2">?? ?函?撣?勗???/h2>
+            <h2 class="section-h2">📊 全球市場熱力圖</h2>
             <div class="visual-tools">
                 <div class="widget-box">
-                    <div class="widget-title">蝢 S&P 500 ?踹??勗?</div>
+                    <div class="widget-title">美股 S&P 500 板塊熱圖</div>
                     <div class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js" async>{ "exchanges": [], "dataSource": "S&P500", "grouping": "sector", "blockSize": "market_cap", "blockColor": "change", "locale": "zh_TW", "symbolUrl": "", "colorTheme": "light", "hasTopBar": false, "isTransparent": true, "hasSymbolTooltip": true, "width": "100%", "height": "450" }</script></div>
                 </div>
                 <div class="widget-box">
-                    <div class="widget-title">銝餉?鞎典馳撠撥撘梁?? (Forex Heat Map)</div>
+                    <div class="widget-title">主要貨幣對強弱熱力圖 (Forex Heat Map)</div>
                     <div class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-forex-heat-map.js" async>{"width": "100%","height": "400","currencies": ["EUR","USD","JPY","GBP","CHF","AUD","CAD","NZD","CNY"],"isTransparent": true,"colorTheme": "light","locale": "zh_TW"}</script></div>
                 </div>
             </div>
@@ -573,48 +573,48 @@
 
         <footer style="margin-top: 5rem; border-top: 1px solid #f1f5f9; padding-top: 2rem;">
             <details class="news-accordion">
-                <summary>?亦??祇勗??????(???湔)</summary>
+                <summary>查看本週參考新聞原文 (動態更新)</summary>
                 <ul class="news-list" id="news-list">
                     
                 <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMie0FVX3lxTFBsVlBSbjk4Z1NEcFc2YUoxRU9GWjAxam9sakdXZ3NJZllvWWVscjNoUjRFY1ZMUTVyQkhxazFubk81UWRpejJva3otMk96NXQ2bEZ0cFNDWHVMcERXYUpkNmhZVHRkaG82S2Q2TngzMGJxYW5BLXI3QlR2SdIBgAFBVV95cUxQYWhqNkN4Zy0yVEpPQ0FrUTgxRmJnTkZJLVZidm1xZm16UXlWN2dIbmpxZmR2aVFheXVLZ01oWUZEOXBpSmVsbHdHNXlOUGdYdWgyRXpRaDNjR09qWHhtdW81cmVvWnM2ekN5Ykk0bE9CekxhbmljbXNZc204d3F3WA?oc=5" target="_blank">?? Euro zone inflation jumps to 3% as economic growth almost stalls - CNBC</a>
+                    <a href="https://news.google.com/rss/articles/CBMie0FVX3lxTFBsVlBSbjk4Z1NEcFc2YUoxRU9GWjAxam9sakdXZ3NJZllvWWVscjNoUjRFY1ZMUTVyQkhxazFubk81UWRpejJva3otMk96NXQ2bEZ0cFNDWHVMcERXYUpkNmhZVHRkaG82S2Q2TngzMGJxYW5BLXI3QlR2SdIBgAFBVV95cUxQYWhqNkN4Zy0yVEpPQ0FrUTgxRmJnTkZJLVZidm1xZm16UXlWN2dIbmpxZmR2aVFheXVLZ01oWUZEOXBpSmVsbHdHNXlOUGdYdWgyRXpRaDNjR09qWHhtdW81cmVvWnM2ekN5Ykk0bE9CekxhbmljbXNZc204d3F3WA?oc=5" target="_blank">📄 Euro zone inflation jumps to 3% as economic growth almost stalls - CNBC</a>
                 </li>
                 <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMiuwFBVV95cUxPVmd2SVBkdzVUSFZnc1V0dDd5V0FYckM4WTBuUkhBbm9Xdy1oOTU1djNzN2hxT1YtWTdYN3Y4NzVDVlN4aEVuTHNwd21vTVZmSlJpeUdTelNyU3RRZ0hCQ2VXRVZHaUFCSkRjcHZieXRaNU15VFh2OFNOR3phbEdMTnMtV3diLUtUMmsxNVVPVVlaZkJPc1JCZUNNQThCV2hKcHI0dEF0RzBXTllnRHZnd3FnRERSOHBQbnhn0gHAAUFVX3lxTE1KNGJRUDJ2Yk55ZVRRM3U3SWtNMWFmZUJiUmFkUjd1dmhjSjhielVuSWJBWUh0T2NsTkxlX1hIRV9feGN6TU5jUDdSalZBV1owendlQUh6bXk2dHUtNnNJRHIxdFBjT1ZKZW1ZLXV2VE1EVDFxYmowTTFTR092ZjFYcjlCWnhqV0pxb1I3YjBUcXVmTlV5eE5LaFZNTUJSSDNadjdxM3NRQWZRRFBkY1hreWhmV05VS242QmF3aVZ4TQ?oc=5" target="_blank">?? European Central Bank keeps rates on hold in the face of inflation threat - CNBC</a>
+                    <a href="https://news.google.com/rss/articles/CBMiuwFBVV95cUxPVmd2SVBkdzVUSFZnc1V0dDd5V0FYckM4WTBuUkhBbm9Xdy1oOTU1djNzN2hxT1YtWTdYN3Y4NzVDVlN4aEVuTHNwd21vTVZmSlJpeUdTelNyU3RRZ0hCQ2VXRVZHaUFCSkRjcHZieXRaNU15VFh2OFNOR3phbEdMTnMtV3diLUtUMmsxNVVPVVlaZkJPc1JCZUNNQThCV2hKcHI0dEF0RzBXTllnRHZnd3FnRERSOHBQbnhn0gHAAUFVX3lxTE1KNGJRUDJ2Yk55ZVRRM3U3SWtNMWFmZUJiUmFkUjd1dmhjSjhielVuSWJBWUh0T2NsTkxlX1hIRV9feGN6TU5jUDdSalZBV1owendlQUh6bXk2dHUtNnNJRHIxdFBjT1ZKZW1ZLXV2VE1EVDFxYmowTTFTR092ZjFYcjlCWnhqV0pxb1I3YjBUcXVmTlV5eE5LaFZNTUJSSDNadjdxM3NRQWZRRFBkY1hreWhmV05VS242QmF3aVZ4TQ?oc=5" target="_blank">📄 European Central Bank keeps rates on hold in the face of inflation threat - CNBC</a>
                 </li>
                 <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMif0FVX3lxTFBTWklKY0pZemxlMnNiSkhXZEpUNFVXZk84QjNkM2tWT0pTa3BoSGZZXzVnM3ZoWld5eFJ5VUxkelVSU2s0dzV2SjZfR1VURnNnbFIxSWwzdDgzaEtrU3d5eXdFQUstOVltc1VvZWFvcDVNaUZoLUJMSDJPRjJDV2PSAYQBQVVfeXFMT3JUdkVsMGxZOVpyVXFIS3FCSkdWN1ZZakdEMlRGVTVuR1diSFpGR09TVWtzUmpVUFByS3NzN3VVblVuQnNYbHMzTktsZWVtaXVCS2owaU1nNlhBYzFaNlZEQlNLM2xNdnNWLWJWazZQRnpWcy1tNnZneU15VHB4aWgtTnVG?oc=5" target="_blank">?? Fed holds rates steady but with highest level of dissent since 1992 - CNBC</a>
+                    <a href="https://news.google.com/rss/articles/CBMif0FVX3lxTFBTWklKY0pZemxlMnNiSkhXZEpUNFVXZk84QjNkM2tWT0pTa3BoSGZZXzVnM3ZoWld5eFJ5VUxkelVSU2s0dzV2SjZfR1VURnNnbFIxSWwzdDgzaEtrU3d5eXdFQUstOVltc1VvZWFvcDVNaUZoLUJMSDJPRjJDV2PSAYQBQVVfeXFMT3JUdkVsMGxZOVpyVXFIS3FCSkdWN1ZZakdEMlRGVTVuR1diSFpGR09TVWtzUmpVUFByS3NzN3VVblVuQnNYbHMzTktsZWVtaXVCS2owaU1nNlhBYzFaNlZEQlNLM2xNdnNWLWJWazZQRnpWcy1tNnZneU15VHB4aWgtTnVG?oc=5" target="_blank">📄 Fed holds rates steady but with highest level of dissent since 1992 - CNBC</a>
                 </li>
                 </ul>
             </details>
-            <p style="text-align: center; color: #cbd5e1; font-size: 0.8rem; margin-top: 2rem;">穢 2026 Macro Strategy Lab. ?敺?堆?<span class="date-display">2026-05-02 07:05</span></p>
+            <p style="text-align: center; color: #cbd5e1; font-size: 0.8rem; margin-top: 2rem;">© 2026 Macro Strategy Lab. 最後更新：<span class="date-display">2026-05-02 12:35</span></p>
         </footer>
     </div>
     <script>
-    // 甇瑕鞈????摩
+    // 歷史資料切換邏輯
     document.addEventListener('DOMContentLoaded', async () => {
         try {
-            // ?????喲甇Ｗ翰??
+            // 加上時間戳防止快取
             const response = await fetch('historical_data.json?t=' + new Date().getTime());
             if (!response.ok) return;
             const data = await response.json();
             const selector = document.getElementById('history-selector');
             
-            // ?憛怠神?賊?
+            // 重新填寫選項
             selector.innerHTML = '';
             data.forEach((item, idx) => {
                 const option = document.createElement('option');
                 option.value = idx;
-                option.textContent = item.date + (idx === 0 ? ' (???' : '');
+                option.textContent = item.date + (idx === 0 ? ' (最新)' : '');
                 selector.appendChild(option);
             });
 
-            // 蝬??詨鈭辣
+            // 綁定選單事件
             selector.addEventListener('change', (e) => {
                 const selectedItem = data[e.target.value];
                 if (!selectedItem) return;
                 
-                // ???踵???憛摰?
+                // 動態替換各區塊內容
                 document.getElementById('narrative-box').innerHTML = selectedItem.weekly_narrative;
                 document.getElementById('forecast-box').innerHTML = selectedItem.next_week_forecast_html || '';
                 document.getElementById('focus-grid').innerHTML = selectedItem.focus_html;
@@ -623,7 +623,7 @@
                 document.getElementById('risk-grid').innerHTML = selectedItem.risk_html;
                 document.getElementById('news-list').innerHTML = selectedItem.news_html;
                 
-                // ???湔 Podcast ?唾?靘?
+                // 動態更新 Podcast 音訊來源
                 const audioPlayer = document.getElementById('podcast-audio');
                 const audioSource = audioPlayer.querySelector('source');
                 const newSrc = selectedItem.podcast_file || 'podcast.mp3';
@@ -632,7 +632,7 @@
                     audioPlayer.load();
                 }
                 
-                // ???湔敶梁?靘?
+                // 動態更新影片來源
                 const videoContainer = document.getElementById('weekly-video-container');
                 const videoPlayer = document.getElementById('weekly-video-player');
                 const videoSource = videoPlayer.querySelector('source');
@@ -646,15 +646,14 @@
                     videoContainer.style.display = 'none';
                 }
                 
-                // ?湔???唾?
+                // 更新時間戳記
                 document.querySelectorAll('.date-display').forEach(el => el.textContent = selectedItem.date);
             });
         } catch (error) {
-            console.log('?⊥?頛甇瑕鞈?:', error);
+            console.log('無法載入歷史資料:', error);
         }
     });
     </script>
 </body>
 </html>
-<!-- Build Trace (TPE): 2026-05-02 07:05 -->
-
+<!-- Build Trace (TPE): 2026-05-02 12:35 -->
