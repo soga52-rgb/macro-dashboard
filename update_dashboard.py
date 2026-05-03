@@ -176,6 +176,7 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
 {news_text}
 
 ### 撰寫指令 (三部曲核心邏輯):
+🚨【新聞時效規定】`focus_items` 中每則新聞的 `publish_date` **必須在今日 ({today_str}) 起算的過去 72 小時以內**。若找不到 72 小時內的新聞，請改用 Search Grounding 搜尋最新的相關報導。絕對禁止引用超過 3 天前的舊新聞。
 1. **Phase 1 新聞解析 (News Parsing)**: 解析 Fed 利率路徑、通膨 (CPI/PCE) 與就業數據。運用 Search Grounding 補充新聞背後的脈絡。
 2. **Phase 2 走勢研判 (Trend Analysis)**: **【核心要求】請詳細研判「十年期公債殖利率」、「美元指數」、「亞洲貨幣 (台幣/日圓)」、「黃金」與「原油」等資產在過去一週（或最近數日）的變化狀況與其背後的驅動邏輯。**
 3. **Phase 3 圖表驗證 (Chart Verification)**: 產出結論以對照網頁下方的即時走勢圖。確保你的推論方向符合【最新市場即時報價】的水位。
@@ -197,7 +198,7 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
     "category": "事件分類(例:央行政策)",
     "title": "新聞標題",
     "source": "新聞來源",
-    "publish_date": "發布時間",
+    "publish_date": "發布時間 (格式：YYYY-MM-DD，必須為今日起算 72 小時以內的新聞，請優先挑選今日或昨日的新聞)",
     "price_direction": "物價方向(偏多/偏空/中性)",
     "rate_direction": "利率方向(偏多/偏空/中性)",
     "usd_direction": "美元指數方向(偏多/偏空/中性)",
@@ -396,13 +397,35 @@ def update_dashboard(ai_response, news_list, today_str):
     with open(CSV_PATH, "w", encoding="utf-8") as f:
         f.write(csv_content)
 
+    # 輔助函式：格式化發布日期，若超過 3 天則標注警示
+    def format_publish_date(pubdate_str, today_str):
+        try:
+            # 嘗試解析 YYYY-MM-DD 格式
+            import re
+            match = re.search(r'(\d{4})[-/](\d{1,2})[-/](\d{1,2})', str(pubdate_str))
+            if match:
+                y, m, d = int(match.group(1)), int(match.group(2)), int(match.group(3))
+                pub_dt = datetime(y, m, d)
+                today_dt = datetime.strptime(today_str.split()[0], "%Y-%m-%d")
+                delta = (today_dt - pub_dt).days
+                date_str = f"{y}-{m:02d}-{d:02d}"
+                if delta > 3:
+                    return f"{date_str} ⚠️ ({delta}天前，資訊可能已過時)"
+                elif delta > 0:
+                    return f"{date_str} ({delta}天前)"
+                else:
+                    return f"{date_str} (今日)"
+        except Exception:
+            pass
+        return str(pubdate_str)
+
     # 準備焦點事件 HTML
     focus_html = ""
     for idx, item in enumerate(focus_items):
         cat = item.get('category', '總經動態')
         title = item.get('title', '無標題')
         source = item.get('source', '網路新聞')
-        pubdate = item.get('publish_date', today_str)
+        pubdate = format_publish_date(item.get('publish_date', today_str), today_str)
         price_dir = item.get('price_direction', '中性')
         rate_dir = item.get('rate_direction', '中性')
         usd_dir = item.get('usd_direction', '中性')
