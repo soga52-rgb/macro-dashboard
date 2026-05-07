@@ -381,7 +381,7 @@ for i in range(len(slide_files)):
     current_input = f"[tmp{i}]"
 
 # 最後把聲波疊加在兩位主播中間
-filter_complex += f"{current_input}[wave]overlay=220:1060[final_v]"
+filter_complex += f"{current_input}[wave]overlay=220:1060[overlaid];[overlaid]scale=720:1280[final_v]"
 
 # 最終合成指令 (加入壓縮參數，讓輸出影片小於 50MB，符合 GitHub 限制)
 ffmpeg_cmd += [
@@ -391,7 +391,6 @@ ffmpeg_cmd += [
     '-c:v', 'libx264',
     '-preset', 'fast',        # 編碼速度/壓縮率平衡
     '-crf', '28',             # 品質 (18=高品質大檔, 28=中等品質小檔, 35=低品質極小檔)
-    '-vf', 'scale=720:1280',  # 確保輸出解析度一致
     '-c:a', 'aac',
     '-b:a', '96k',            # 音訊碼率 96k (語音足夠)
     '-pix_fmt', 'yuv420p',
