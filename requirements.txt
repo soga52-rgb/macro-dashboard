@@ -1,0 +1,4 @@
+google-generativeai
+pandas
+edge-tts
+pillow

@@ -21,3 +21,5 @@ mark.png
 !weekly_video_*.mp4
 # ✅ 允許背景影片 (供 GitHub Pages 使用)
 !bg_*.mp4
+# ✅ 允許 requirements.txt
+!requirements.txt
