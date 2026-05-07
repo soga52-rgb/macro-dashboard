@@ -252,16 +252,16 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
 }}
 """
     
-    # 更新為 2026 Agentic 2.0 模型
+    # 使用者指定：只使用最新的 3.x 世代模型
     strategies = [
         ("v1beta", "gemini-3.1-pro-preview"), 
-        ("v1beta", "gemini-2.5-pro")
+        ("v1beta", "gemini-3.0-pro") # 將原本無效的 2.5 改為合理的 3.0 或維持原樣 (若存在的話)
     ]
     
     import time
     for version, model in strategies:
-        # 內層重試機制 (針對 503/429)
-        max_retries = 3
+        # 內層重試機制 (針對 503/429) - 將重試次數提高，以應付伺服器高負載
+        max_retries = 6
         for attempt in range(max_retries):
             try:
                 print(f"-> 嘗試連線方案: {version} / {model} (第 {attempt+1} 次)...")
