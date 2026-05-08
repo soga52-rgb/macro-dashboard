@@ -295,11 +295,10 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
 }}
 """
     
-    # 使用者指定：嘗試 3.x 世代模型，若失敗則退回到最穩定且強大的 1.5 Pro 與 2.0 Flash
+    # 使用者指定：只使用 3.1 PRO，若失敗則退回 2.5 PRO
     strategies = [
         ("v1beta", "gemini-3.1-pro-preview"), 
-        ("v1beta", "gemini-2.0-flash-exp"),
-        ("v1beta", "gemini-1.5-pro-latest")
+        ("v1beta", "gemini-2.5-pro")
     ]
     
     import time
