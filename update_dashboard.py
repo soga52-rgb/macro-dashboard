@@ -92,37 +92,21 @@ def fetch_realtime_data():
         "BTC (比特幣, USD)": "BTC-USD"
     }
     market_data = {}
-    import urllib.parse
-    
-    # 使用 YFinance Quote 批次 API 來加速抓取
-    symbol_str = ",".join(symbols.values())
-    encoded_symbols = urllib.parse.quote(symbol_str)
-    url = f"https://query1.finance.yahoo.com/v7/finance/quote?symbols={encoded_symbols}"
-    
-    try:
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        response = urllib.request.urlopen(req, timeout=15)
-        data = json.loads(response.read())
-        results = data.get('quoteResponse', {}).get('result', [])
-        
-        # 建立 Symbol -> Price 映射表
-        res_map = {r['symbol']: r.get('regularMarketPrice', 'Data Unavailable') for r in results}
-        
-        for name, symbol in symbols.items():
-            price = res_map.get(symbol, 'Data Unavailable')
-            if price != 'Data Unavailable':
-                if symbol == "^TNX":
-                    market_data[name] = f"{price:.3f} 殖利率%"
-                else:
-                    market_data[name] = f"{price:.2f}" if isinstance(price, (int, float)) else str(price)
+    for name, sym in symbols.items():
+        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}?range=1d&interval=1d"
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            response = urllib.request.urlopen(req, timeout=10)
+            data = json.loads(response.read())
+            price = data['chart']['result'][0]['meta']['regularMarketPrice']
+            if sym == "^TNX":
+                market_data[name] = f"{price:.3f} 殖利率%"
             else:
-                market_data[name] = "Data Unavailable"
-                
-    except Exception as e:
-        print(f"批次報價抓取失敗: {e}")
-        for name in symbols:
+                market_data[name] = f"{price:.2f}" if isinstance(price, (int, float)) else str(price)
+        except Exception as e:
+            print(f"[{sym}] 報價抓取失敗: {e}")
             market_data[name] = "Data Unavailable"
-    
+            
     # 格式化輸出
     output = ""
     for k, v in market_data.items():
@@ -311,10 +295,11 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
 }}
 """
     
-    # 使用者指定：只使用最新的 3.x 世代模型
+    # 使用者指定：嘗試 3.x 世代模型，若失敗則退回到最穩定且強大的 1.5 Pro 與 2.0 Flash
     strategies = [
         ("v1beta", "gemini-3.1-pro-preview"), 
-        ("v1beta", "gemini-3.0-pro") # 將原本無效的 2.5 改為合理的 3.0 或維持原樣 (若存在的話)
+        ("v1beta", "gemini-2.0-flash-exp"),
+        ("v1beta", "gemini-1.5-pro-latest")
     ]
     
     import time
