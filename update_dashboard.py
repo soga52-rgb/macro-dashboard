@@ -534,9 +534,21 @@ def update_dashboard(ai_response, news_list, today_str):
                         <span>事件分類: {cat}</span>
                     </div>
                     <div class="nd-directions">
-                        <div class="nd-dir-box"><div class="nd-dir-label">物價方向</div><div class="nd-dir-value">{price_dir}</div></div>
-                        <div class="nd-dir-box"><div class="nd-dir-label">利率方向</div><div class="nd-dir-value">{rate_dir}</div></div>
-                        <div class="nd-dir-box"><div class="nd-dir-label">美元指數方向</div><div class="nd-dir-value">{usd_dir}</div></div>
+                        <div class="nd-dir-box">
+                            <div class="nd-dir-label">物價方向</div>
+                            <div class="nd-dir-value">{price_dir}</div>
+                            <div style="margin-top:0.8rem; font-size:0.95rem; color:#475569; font-weight:normal; line-height:1.5;">{price_rsn}</div>
+                        </div>
+                        <div class="nd-dir-box">
+                            <div class="nd-dir-label">利率方向</div>
+                            <div class="nd-dir-value">{rate_dir}</div>
+                            <div style="margin-top:0.8rem; font-size:0.95rem; color:#475569; font-weight:normal; line-height:1.5;">{rate_rsn}</div>
+                        </div>
+                        <div class="nd-dir-box">
+                            <div class="nd-dir-label">美元指數方向</div>
+                            <div class="nd-dir-value">{usd_dir}</div>
+                            <div style="margin-top:0.8rem; font-size:0.95rem; color:#475569; font-weight:normal; line-height:1.5;">{usd_rsn}</div>
+                        </div>
                     </div>
                     <div class="nd-conclusion">
                         <div class="nd-box-title">一句話結論</div>
@@ -550,18 +562,6 @@ def update_dashboard(ai_response, news_list, today_str):
                         <div class="nd-grid-box">
                             <div class="nd-box-title">傳導路徑</div>
                             <p>{trans_path}</p>
-                        </div>
-                        <div class="nd-grid-box">
-                            <div class="nd-box-title">物價原因</div>
-                            <p>{price_rsn}</p>
-                        </div>
-                        <div class="nd-grid-box">
-                            <div class="nd-box-title">利率原因</div>
-                            <p>{rate_rsn}</p>
-                        </div>
-                        <div class="nd-grid-box">
-                            <div class="nd-box-title">美元原因</div>
-                            <p>{usd_rsn}</p>
                         </div>
                         <div class="nd-grid-box">
                             <div class="nd-box-title">原始重點</div>
