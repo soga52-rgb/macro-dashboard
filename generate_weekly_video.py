@@ -227,12 +227,11 @@ if os.path.exists(bg_music_path):
 print("正在使用動態背景合成最終影片...")
 
 # 優先順序：sunset -> night -> fallback(深藍背景)
-bg_video = None
-for bg_name in ["bg_market_sunset.mp4", "bg_ticker_night.mp4"]:
-    path = os.path.join(WORKSPACE_DIR, bg_name)
-    if os.path.exists(path):
-        bg_video = path
-        break
+import random
+bg_images = ["bg_tech.png", "bg_macro.png", "bg_bull_bear.png", "bg_market_sunset.mp4", "bg_ticker_night.mp4"]
+available_bgs = [os.path.join(WORKSPACE_DIR, f) for f in bg_images if os.path.exists(os.path.join(WORKSPACE_DIR, f))]
+bg_input = random.choice(available_bgs) if available_bgs else None
+is_image_bg = bg_input and bg_input.endswith(".png")
 
 video_filename = f"weekly_video_{timestamp_str}.mp4"
 video_path = os.path.join(WORKSPACE_DIR, video_filename)
@@ -298,51 +297,56 @@ def create_transparent_slide(text, output_name, title, slide_index, total_slides
         font_name = ImageFont.load_default()
         font_page = ImageFont.load_default()
 
-    # 標題
-    draw.text((70, 100), title, font=font_title, fill=(125, 211, 252, 255))
-    draw.line((70, 180, 650, 180), fill=(241, 245, 249, 80), width=3)
+    # 【新聞台版型設計】
     
-    # 頁碼
-    draw.text((530, 120), f"Slide {slide_index}/{total_slides}", font=font_page, fill=(148, 163, 184, 255))
+    # 1. 頂部標題區 (小且精緻)
+    draw.rectangle([(0, 0), (720, 100)], fill=(15, 23, 42, 210))
+    draw.text((30, 25), f"🔴 LIVE | 總經戰情快報", font=font_title, fill=(239, 68, 68, 255))
+    draw.text((550, 45), f"Slide {slide_index}/{total_slides}", font=font_page, fill=(148, 163, 184, 255))
     
-    # 內容文字 (顯示當前發言者的文字)
-    y = 220
-    # 加入引號特效
-    draw.text((70, y), "「", font=font_title, fill=(56, 189, 248, 255))
-    y += 50
-    for i in range(0, len(text), 14):
-        chunk = text[i:i+14]
-        draw.text((80, y), chunk, font=font_body, fill=(241, 245, 249, 255))
-        y += 60
-    draw.text((580, y), "」", font=font_title, fill=(56, 189, 248, 255))
-        
-    # 加入虛擬主播頭像 (發言者放大且亮，非發言者縮小)
-    tom_size = (140, 140) if active_speaker == "Tom" else (100, 100)
-    mark_size = (140, 140) if active_speaker == "Miranda" else (100, 100)
-    tom_y = 1040 if active_speaker == "Tom" else 1070
-    mark_y = 1040 if active_speaker == "Miranda" else 1070
+    # 2. 底部 Lower Third 新聞字卡區
+    # 半透明深色底框
+    draw.rectangle([(0, 880), (720, 1280)], fill=(15, 23, 42, 240))
+    draw.rectangle([(0, 880), (720, 885)], fill=(56, 189, 248, 255)) # 頂部藍色細線
+    
+    # 加入虛擬主播頭像 (放置在字卡區左上方與右上方)
+    tom_size = (120, 120) if active_speaker == "Tom" else (90, 90)
+    mark_size = (120, 120) if active_speaker == "Miranda" else (90, 90)
+    tom_y = 920
+    mark_y = 920
     
     tom_avatar = make_circle_avatar(os.path.join(WORKSPACE_DIR, "tom.png"), tom_size)
     mark_avatar = make_circle_avatar(os.path.join(WORKSPACE_DIR, "miranda.png"), mark_size)
     
     if tom_avatar:
-        # 如果不是發言者，降低透明度
         if active_speaker != "Tom":
             alpha = tom_avatar.getchannel('A')
             tom_avatar.putalpha(alpha.point(lambda i: int(i * 0.4)))
-        image.paste(tom_avatar, (70, tom_y), tom_avatar)
+        image.paste(tom_avatar, (40, tom_y), tom_avatar)
         
         color = (125, 211, 252, 255) if active_speaker == "Tom" else (148, 163, 184, 255)
-        draw.text((100, 1190), "Tom", font=font_name, fill=color)
+        draw.text((60, tom_y + tom_size[1] + 10), "Tom", font=font_name, fill=color)
         
     if mark_avatar:
         if active_speaker != "Miranda":
             alpha = mark_avatar.getchannel('A')
             mark_avatar.putalpha(alpha.point(lambda i: int(i * 0.4)))
-        image.paste(mark_avatar, (530, mark_y), mark_avatar)
+        image.paste(mark_avatar, (560, mark_y), mark_avatar)
         
         color = (125, 211, 252, 255) if active_speaker == "Miranda" else (148, 163, 184, 255)
-        draw.text((550, 1190), "Miranda", font=font_name, fill=color)
+        draw.text((570, mark_y + mark_size[1] + 10), "Miranda", font=font_name, fill=color)
+
+    # 3. 播報文字 (放在主播頭像之間，精簡顯示)
+    # 限制文字長度，避免疲勞，改為兩行大標題形式
+    display_text = text[:60] + "..." if len(text) > 60 else text
+    
+    y = 940
+    draw.text((180, y), f"【{active_speaker} 觀點】", font=font_page, fill=(56, 189, 248, 255))
+    y += 50
+    for i in range(0, len(display_text), 12):
+        chunk = display_text[i:i+12]
+        draw.text((180, y), chunk, font=font_body, fill=(241, 245, 249, 255))
+        y += 50
     
     image.save(output_name)
 
@@ -370,14 +374,18 @@ for i, (speaker, content) in enumerate(dialogue_parts):
 print(f"音軌總長: {cumulative_time:.1f} 秒, 共 {len(slide_files)} 張動態簡報")
 
 # FFmpeg 合成邏輯
-ffmpeg_cmd = ['ffmpeg', '-y', '-stream_loop', '-1', '-i', bg_video]
+ffmpeg_cmd = ['ffmpeg', '-y']
+if is_image_bg:
+    ffmpeg_cmd += ['-loop', '1', '-framerate', '30', '-i', bg_input]
+else:
+    ffmpeg_cmd += ['-stream_loop', '-1', '-i', bg_input if bg_input else ""]
 for sf in slide_files:
     ffmpeg_cmd += ['-loop', '1', '-i', sf]
 
 ffmpeg_cmd += ['-i', final_audio]
 
 # 加入動態聲波濾鏡 (適合直式的尺寸)
-filter_complex = f"[{len(slide_files)+1}:a]asplit=2[wave_in][a_out];[wave_in]showwaves=s=280x100:mode=cline:colors=0x38bdf8[wave];"
+filter_complex = f"[{len(slide_files)+1}:a]asplit=2[wave_in][a_out];[wave_in]showwaves=s=720x80:mode=cline:colors=0x38bdf8[wave];"
 current_input = "[0:v]"
 for i in range(len(slide_files)):
     start, end = slide_timings[i]
@@ -386,7 +394,7 @@ for i in range(len(slide_files)):
     current_input = f"[tmp{i}]"
 
 # 最後把聲波疊加在兩位主播中間
-filter_complex += f"{current_input}[wave]overlay=220:1060[overlaid];[overlaid]scale=720:1280[final_v]"
+filter_complex += f"{current_input}[wave]overlay=0:1150[overlaid];[overlaid]scale=720:1280[final_v]"
 
 # 最終合成指令 (加入壓縮參數，讓輸出影片小於 50MB，符合 GitHub 限制)
 ffmpeg_cmd += [
