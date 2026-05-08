@@ -856,7 +856,7 @@ def update_dashboard(ai_response, news_list, today_str):
         .news-item a {{ text-decoration: none; color: var(--accent-color); font-size: 0.95rem; font-weight: 500; transition: color 0.2s; }}
         .news-item a:hover {{ text-decoration: underline; color: #1e3a8a; }}
 
-        .podcast-container {{ margin-top: 1.5rem; background: #f8fafc; padding: 1rem 1.5rem; border-radius: 50px; display: inline-flex; align-items: center; gap: 1rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; max-width: 100%; }}
+        .podcast-container {{ margin-top: 1.5rem; background: #f8fafc; padding: 1rem 1.5rem; border-radius: 50px; display: inline-flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 1rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; max-width: 100%; }}
         .podcast-icon {{ font-size: 2rem; flex-shrink: 0; }}
         .podcast-text {{ text-align: left; line-height: 1.3; }}
         .podcast-title {{ font-weight: 700; font-size: 1.1rem; color: #1e293b; }}
@@ -873,8 +873,7 @@ def update_dashboard(ai_response, news_list, today_str):
             tr {{ margin-bottom: 1.5rem; border: 1px solid #edf2f7; padding: 1rem; }}
             td {{ padding: 0.5rem 0; border: none; }}
             td::before {{ content: attr(data-label); font-weight: 600; color: #94a3b8; display: block; font-size: 0.8rem; }}
-            .podcast-container {{ flex-direction: column; border-radius: 20px; padding: 1.5rem 1rem; gap: 0.8rem; }}
-            .podcast-text {{ text-align: center; }}
+            .podcast-container {{ border-radius: 30px; padding: 0.8rem 1rem; gap: 0.5rem; }}
             .podcast-audio-element {{ margin-left: 0; width: 100%; }}
         }}
 
@@ -900,7 +899,7 @@ def update_dashboard(ai_response, news_list, today_str):
             <div class="podcast-container">
                 <span class="podcast-icon">🎙️</span>
                 <div class="podcast-text">
-                    <div class="podcast-title">全域總經戰情室廣播</div>
+                    <div class="podcast-title">全域總經 Podcast</div>
                     <div class="podcast-subtitle">AI 主播 | 每日精準解析</div>
                 </div>
                 <audio id="podcast-audio" class="podcast-audio-element" controls>
