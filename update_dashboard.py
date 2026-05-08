@@ -130,6 +130,46 @@ def fetch_realtime_data():
     return output
 
 # ==============================================================================
+# 1.6 抓取權威總經數據 (FRED API)
+# ==============================================================================
+def fetch_fred_data():
+    fred_api_key = os.environ.get("FRED_API_KEY")
+    if not fred_api_key or fred_api_key == "YOUR_FRED_API_KEY_HERE":
+        return "FRED API 尚未配置，目前僅使用 Yahoo Finance 市場報價。"
+
+    print("正在抓取 FRED 核心總經數據...")
+    # 核心追蹤指標
+    series_ids = {
+        "Core PCE (美國核心個人消費支出物價指數)": "PCEPILFE",
+        "Unemployment Rate (美國失業率, %)": "UNRATE",
+        "Real GDP (美國實質GDP)": "GDPC1"
+    }
+    
+    fred_data = {}
+    for name, sid in series_ids.items():
+        url = f"https://api.stlouisfed.org/fred/series/observations?series_id={sid}&api_key={fred_api_key}&file_type=json&sort_order=desc&limit=1"
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            response = urllib.request.urlopen(req, timeout=10)
+            data = json.loads(response.read())
+            observations = data.get('observations', [])
+            if observations:
+                latest = observations[0]
+                date = latest.get('date', '')
+                value = latest.get('value', '')
+                fred_data[name] = f"{value} (發布時間: {date})"
+            else:
+                fred_data[name] = "Data Unavailable"
+        except Exception as e:
+            print(f"[{sid}] FRED 抓取失敗: {e}")
+            fred_data[name] = "Data Unavailable"
+            
+    output = "\n【FRED 官方總經核心指標】\n"
+    for k, v in fred_data.items():
+        output += f"- {k}: {v}\n"
+    return output
+
+# ==============================================================================
 # 2. 呼叫 Gemini REST API 進行總經分析 (具備自動修復功能的版本)
 # ==============================================================================
 def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"):
@@ -152,6 +192,27 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
     except Exception as e:
         print(f"讀取歷史數據失敗: {e}")
         
+    # 嘗試讀取昨日的市場記憶 (Market Memory State)
+    market_memory = "尚無昨日市場記憶"
+    try:
+        if os.path.exists(HISTORY_FILE):
+            with open(HISTORY_FILE, 'r', encoding='utf-8') as f:
+                hist_data = json.load(f)
+                if hist_data and isinstance(hist_data, list) and len(hist_data) > 0:
+                    last_entry = hist_data[0]
+                    last_date = last_entry.get("date", "未知日期")
+                    last_narrative = last_entry.get("weekly_narrative", "")
+                    
+                    market_memory = f"【前次分析時間】: {last_date}\n【前次主旋律敘事】: {last_narrative}\n"
+                    
+                    import re
+                    risk_html = last_entry.get("risk_html", "")
+                    risk_texts = re.findall(r'<p class="risk-content">(.*?)</p>', risk_html)
+                    if risk_texts:
+                        market_memory += "【前次風險預警】: " + " / ".join(risk_texts)
+    except Exception as e:
+        print(f"讀取昨日市場記憶失敗: {e}")
+        
     # 定義輸出的 JSON Schema 確保 AI 回傳的結構百分之百合法
     # 🚨 關鍵修正：警告 AI 絕不可在 HTML 內使用雙引號
     prompt = f"""你現在是一位資深的全球總經策略分析師。請根據以下數據與新聞連結進行邏輯推演。
@@ -167,13 +228,16 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
 ### 歷史數據參考:
 {macro_history}
 
+### 🧠 昨日市場記憶 (Market Memory State - 敘事追蹤):
+{market_memory}
+
 ### 最新新聞頭條:
 {news_text}
 
 ### 撰寫指令 (三部曲核心邏輯):
 🚨【新聞時效規定】`focus_items` 中每則新聞的 `publish_date` **必須在今日 ({today_str}) 起算的過去 72 小時以內**。若找不到 72 小時內的新聞，請改用 Search Grounding 搜尋最新的相關報導。絕對禁止引用超過 3 天前的舊新聞。
 1. **Phase 1 新聞解析 (News Parsing)**: 解析 Fed 利率路徑、通膨 (CPI/PCE) 與就業數據。運用 Search Grounding 補充新聞背後的脈絡。
-2. **Phase 2 走勢研判 (Trend Analysis)**: **【核心要求】請詳細研判「十年期公債殖利率」、「美元指數」、「亞洲貨幣 (台幣/日圓)」、「黃金」與「原油」等資產在過去一週（或最近數日）的變化狀況與其背後的驅動邏輯。**
+2. **Phase 2 走勢研判與敘事經濟學 (Narrative Economics)**: **【核心要求】請詳細研判「十年期公債殖利率」、「美元指數」、「亞洲貨幣 (台幣/日圓)」、「黃金」與「原油」等資產背後的驅動邏輯。請務必比較當前狀態與上方【昨日市場記憶】，明確指出市場的主軸敘事 (Market Narrative) 發生了什麼轉變（例如：從交易「軟著陸」變成「通膨復燃」），或是延續了什麼趨勢。**
 3. **Phase 3 圖表驗證 (Chart Verification)**: 產出結論以對照網頁下方的即時走勢圖。確保你的推論方向符合【最新市場即時報價】的水位。
 
 ### 精確報價與防範幻覺 (Data Accuracy): 
@@ -1066,7 +1130,12 @@ if __name__ == "__main__":
             # 呼叫正確的週報抓取函式
             news_list = fetch_weekly_news()
             realtime_data = fetch_realtime_data()
-            ai_response = analyze_with_gemini(news_list, today_str, realtime_data)
+            
+            # 加入 FRED 總經數據 (如果有設定金鑰的話)
+            fred_data_str = fetch_fred_data()
+            combined_data = realtime_data + "\n" + fred_data_str
+            
+            ai_response = analyze_with_gemini(news_list, today_str, combined_data)
             
             # 安全性檢查：確保 AI 回傳內容正確
             if ai_response and isinstance(ai_response, dict) and 'analysis' in ai_response:
