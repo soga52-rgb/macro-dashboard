@@ -93,39 +93,34 @@ def fetch_realtime_data():
     }
     market_data = {}
     import urllib.parse
-    for name, symbol in symbols.items():
-        try:
-            # 加入 URL 編碼與 range=15d 防呆機制
-            encoded_symbol = urllib.parse.quote(symbol)
-            url = f"https://query1.finance.yahoo.com/v8/finance/chart/{encoded_symbol}?interval=1d&range=15d"
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            response = urllib.request.urlopen(req, timeout=15)
-            data = json.loads(response.read())
-            
-            result = data.get('chart', {}).get('result', [])
-            if not result:
-                raise ValueError("No result data")
-                
-            meta = result[0].get('meta', {})
-            live_price = meta.get('regularMarketPrice')
-            
-            # 若無即時報價，則往前尋找最近一個有效收盤價
-            if live_price is not None:
-                price = live_price
-            else:
-                closes = result[0].get('indicators', {}).get('quote', [{}])[0].get('close', [])
-                valid_closes = [c for c in closes if c is not None]
-                if valid_closes:
-                    price = valid_closes[-1]
+    
+    # 使用 YFinance Quote 批次 API 來加速抓取
+    symbol_str = ",".join(symbols.values())
+    encoded_symbols = urllib.parse.quote(symbol_str)
+    url = f"https://query1.finance.yahoo.com/v7/finance/quote?symbols={encoded_symbols}"
+    
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        response = urllib.request.urlopen(req, timeout=15)
+        data = json.loads(response.read())
+        results = data.get('quoteResponse', {}).get('result', [])
+        
+        # 建立 Symbol -> Price 映射表
+        res_map = {r['symbol']: r.get('regularMarketPrice', 'Data Unavailable') for r in results}
+        
+        for name, symbol in symbols.items():
+            price = res_map.get(symbol, 'Data Unavailable')
+            if price != 'Data Unavailable':
+                if symbol == "^TNX":
+                    market_data[name] = f"{price:.3f} 殖利率%"
                 else:
-                    raise ValueError("No valid close price found")
-
-            if symbol == "^TNX":
-                market_data[name] = f"{price:.3f} 殖利率%"
+                    market_data[name] = f"{price:.2f}" if isinstance(price, (int, float)) else str(price)
             else:
-                market_data[name] = f"{price:.2f}" if isinstance(price, (int, float)) else str(price)
-        except Exception as e:
-            print(f"[{symbol}] 抓取失敗: {e}")
+                market_data[name] = "Data Unavailable"
+                
+    except Exception as e:
+        print(f"批次報價抓取失敗: {e}")
+        for name in symbols:
             market_data[name] = "Data Unavailable"
     
     # 格式化輸出
@@ -274,6 +269,9 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
                             "googleSearch": {}
                         }
                     ],
+                    "generationConfig": {
+                        "responseMimeType": "application/json"
+                    },
                     "safetySettings": [
                         {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
                         {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
@@ -362,8 +360,15 @@ def update_dashboard(ai_response, news_list, today_str):
         with open(temp_txt, "w", encoding="utf-8") as f:
             f.write(podcast_script)
         print(f"正在生成 Podcast 語音檔 ({podcast_filename})...")
-        subprocess.run(['edge-tts', '-f', temp_txt, '--voice', 'zh-TW-HsiaoChenNeural', '--write-media', podcast_path], check=True)
-        print("🔈 Podcast 語音生成完畢！")
+        try:
+            subprocess.run(['edge-tts', '-f', temp_txt, '--voice', 'zh-TW-HsiaoChenNeural', '--write-media', podcast_path], check=True, timeout=60)
+            print("🔈 Podcast 語音生成完畢！")
+        except subprocess.TimeoutExpired:
+            print("⚠️ Podcast 語音生成超時 (超過 60 秒)！跳過以避免腳本卡死。")
+            if os.path.exists(podcast_path):
+                os.remove(podcast_path)
+        except Exception as e:
+            print(f"⚠️ edge-tts 執行錯誤: {e}")
         if os.path.exists(temp_txt):
             os.remove(temp_txt)
             
@@ -420,24 +425,25 @@ def update_dashboard(ai_response, news_list, today_str):
         return str(pubdate_str)
 
     # 準備焦點事件 HTML
+    import html
     focus_html = ""
     for idx, item in enumerate(focus_items):
-        cat = item.get('category', '總經動態')
-        title = item.get('title', '無標題')
-        source = item.get('source', '網路新聞')
-        pubdate = format_publish_date(item.get('publish_date', today_str), today_str)
-        price_dir = item.get('price_direction', '中性')
-        rate_dir = item.get('rate_direction', '中性')
-        usd_dir = item.get('usd_direction', '中性')
-        short_sum = item.get('short_summary', '')
-        orig_sum = item.get('original_summary', '')
-        one_sent = item.get('one_sentence_conclusion', '')
-        news_sum = item.get('news_summary', '')
-        trans_path = item.get('transmission_path', '')
-        price_rsn = item.get('price_reason', '')
-        rate_rsn = item.get('rate_reason', '')
-        usd_rsn = item.get('usd_reason', '')
-        orig_focus = item.get('original_focus', '')
+        cat = html.escape(item.get('category', '總經動態'))
+        title = html.escape(item.get('title', '無標題'))
+        source = html.escape(item.get('source', '網路新聞'))
+        pubdate = html.escape(format_publish_date(item.get('publish_date', today_str), today_str))
+        price_dir = html.escape(item.get('price_direction', '中性'))
+        rate_dir = html.escape(item.get('rate_direction', '中性'))
+        usd_dir = html.escape(item.get('usd_direction', '中性'))
+        short_sum = html.escape(item.get('short_summary', ''))
+        orig_sum = html.escape(item.get('original_summary', ''))
+        one_sent = html.escape(item.get('one_sentence_conclusion', ''))
+        news_sum = html.escape(item.get('news_summary', ''))
+        trans_path = html.escape(item.get('transmission_path', ''))
+        price_rsn = html.escape(item.get('price_reason', ''))
+        rate_rsn = html.escape(item.get('rate_reason', ''))
+        usd_rsn = html.escape(item.get('usd_reason', ''))
+        orig_focus = html.escape(item.get('original_focus', ''))
         orig_link = item.get('original_link', '#')
         
         focus_html += f"""

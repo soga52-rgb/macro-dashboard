@@ -188,8 +188,13 @@ for i, (speaker, content) in enumerate(dialogue_parts):
     if not os.path.exists(edge_tts_path):
         edge_tts_path = "edge-tts"
         
-    subprocess.run([edge_tts_path, '--file', text_file_path, '--voice', voice, '--write-media', seg_path], check=True)
-    audio_segments.append(seg_path)
+    try:
+        subprocess.run([edge_tts_path, '--file', text_file_path, '--voice', voice, '--write-media', seg_path], check=True, timeout=60)
+        audio_segments.append(seg_path)
+    except subprocess.TimeoutExpired:
+        print(f"⚠️ {speaker} 的配音生成超時！跳過此段落。")
+    except Exception as e:
+        print(f"⚠️ {speaker} 配音發生錯誤: {e}")
 
 # 合併音軌
 timestamp_str = now_tw.strftime("%Y%m%d_%H%M%S")
