@@ -911,11 +911,11 @@ def update_dashboard(ai_response, news_list, today_str):
             
             <!-- 每週回顧影片 (若存在) -->
             <div id="weekly-video-container" style="margin-top: 1.5rem; display: {'block' if weekly_video_filename else 'none'};">
-                <div style="background: #fffcf0; padding: 1rem; border-radius: 12px; border: 1px solid #fef3c7; box-shadow: var(--shadow-md);">
-                    <h3 style="font-size: 1.1rem; color: #92400e; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <div style="background: #fffcf0; padding: 1.5rem; border-radius: 12px; border: 1px solid #fef3c7; box-shadow: var(--shadow-md); text-align: center;">
+                    <h3 style="font-size: 1.2rem; color: #92400e; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 700;">
                         <span>🎬</span> 本週總經動態回顧影片
                     </h3>
-                    <video id="weekly-video-player" controls style="width: 100%; border-radius: 8px; max-height: 400px; background: #000;">
+                    <video id="weekly-video-player" controls style="width: 100%; max-width: 360px; aspect-ratio: 9/16; border-radius: 12px; background: #000; margin: 0 auto; display: block; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);">
                         <source src="{weekly_video_filename}" type="video/mp4">
                         您的瀏覽器不支援影片元素。
                     </video>
