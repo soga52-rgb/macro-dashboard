@@ -541,9 +541,19 @@ def create_transparent_slide(text, output_name, title, current_topic_idx, active
     avatar = make_circle_avatar(os.path.join(WORKSPACE_DIR, avatar_img), avatar_size)
     
     if avatar:
-        # 微微發光效果
-        draw.ellipse([20-3, avatar_y-3, 20+avatar_size[0]+3, avatar_y+avatar_size[1]+3], fill=(56, 189, 248, 100))
+        # 多層發光環：模擬「說話中」的脈衝光暈效果
+        # Tom = 天藍色, Miranda = 紫藍色
+        glow_color = (56, 189, 248) if active_speaker == "Tom" else (139, 92, 246)
+        ax, ay = 20, avatar_y
+        aw, ah = avatar_size
+        # 外層暈（最透明）
+        draw.ellipse([ax-10, ay-10, ax+aw+10, ay+ah+10], fill=(*glow_color, 35))
+        # 中層暈
+        draw.ellipse([ax-6,  ay-6,  ax+aw+6,  ay+ah+6],  fill=(*glow_color, 70))
+        # 內層亮邊
+        draw.ellipse([ax-3,  ay-3,  ax+aw+3,  ay+ah+3],  fill=(*glow_color, 140))
         image.paste(avatar, (20, avatar_y), avatar)
+
         
         # 主播名字標籤
         name_bg_color = (2, 132, 199, 255) if active_speaker == "Tom" else (71, 85, 105, 255)

@@ -291,7 +291,7 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
     }}
   ],
   "next_week_forecast_html": "<details class='analysis-container'><summary>📢 下週預測：[主旋律]</summary><div class='analysis-content'><strong>⛓️ 市場邏輯傳導：</strong><p>[因子] ➔ 影響<strong>通膨/利率預期</strong> ➔ 最終定價<strong>美元走勢</strong>。</p><hr><strong>📉 資產動態預測：</strong><ul><li><strong>亞洲貨幣 (TWD/JPY/KRW)：</strong>...</li><li><strong>避險成本與鋼鐵業：</strong>...</li></ul></div></details>",
-  "podcast_script": "(約 800 字) 這是一個高品質財經 Podcast 的每日精華播報腳本，以 Miranda（資深總經策略師）為主播。播出風格對標 Bloomberg Macro / Real Vision，不是電視新聞稿。\n\n【角色定位】Miranda 是 hedge fund macro strategist，不是新聞主播。她談的是市場在「相信什麼故事」、資金部位如何移動、narrative 正在轉變哪個方向——而不只是唸數字。\n\n【開場】自然口語開場，例如：「今天市場最值得關注的，其實是...」，而非「各位聽眾大家好，歡迎回到...」這種播報腔。\n\n【寫作規則】\n- 語氣口語自然，允許句子不完整，允許停頓感\n- 加入不確定性語氣：「市場看起來像是...」「資金似乎正在...」「這可能意味著...」\n- 加入市場情緒層：交易 desk 的感受、避險需求、positioning 變化\n- 數字要有脈絡，單段不超過兩組數字，其餘用定性描述\n- 禁止說出投資建議或具體買賣點位\n- 結尾保留模糊空間，不要給出過度確定的結論\n- 最後一句簡短提醒：本節目為市場趨勢觀察，不構成投資建議。"
+  "podcast_script": "(約 800-1000 字) 高品質財經 Podcast 每日精華，雙主持人對談格式。每行嚴格遵循：[Tom]: (台詞) 或 [Miranda]: (台詞)。\\n\\n【角色設定】\\n[Tom]：主持人，Bloomberg Odd Lots 風格，有觀點，負責開場 + Hook 轉場，不喊段落名稱。\\n[Miranda]：資深總經策略師，hedge fund macro strategist 語氣，談 narrative / positioning / 情緒面，保留不確定空間。\\n\\n【禁止事項】禁止段落標題、編號、Markdown、播報式開場、Miranda 主動介紹話題。\\n\\n【開場要求】Tom 第一句：今日日期 + 市場氛圍一句話定調 (2-3句)，自然邀 Miranda 展開。\\n\\n【敘事邊界——每段只講一個核心問題】\\n§1 全球市場主旋律：盤面情緒、risk appetite、市場在交易什麼 narrative。Hook: Tom 引出通膨疑問。\\n§2 物價通膨趨勢：CPI/PCE、能源/薪資通膨、市場通膨預期。Hook: Tom 引出央行難題。\\n§3 央行利率動向：Fed/ECB 政策訊號、殖利率、鷹鴿。Hook: Tom 引出資產定價。\\n§4 美元與關鍵資產：美元、黃金、原油、亞幣、資金流。Hook: Tom 帶出風險。\\n§5 今日風險展望：今明兩日需關注的關鍵訊號，Miranda 自然收尾帶一句免責。\\n\\n【寫作規則】口語自然，允許不完整句；不確定性語氣「市場看起來像是...」；單段不超過兩組具體數字。"
 }}
 """
     
@@ -894,16 +894,20 @@ def update_dashboard(ai_response, news_list, today_str):
             
             <!-- 每週回顧影片 (若存在) -->
             <div id="weekly-video-container" style="margin-top: 1.5rem; display: {'block' if weekly_video_filename else 'none'};">
-                <div style="background: #fffcf0; padding: 1.5rem; border-radius: 12px; border: 1px solid #fef3c7; box-shadow: var(--shadow-md); text-align: center;">
-                    <h3 style="font-size: 1.2rem; color: #92400e; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 700;">
-                        <span>🎬</span> 本週總經動態回顧影片
-                    </h3>
-                    <video id="weekly-video-player" controls style="width: 100%; max-width: 360px; aspect-ratio: 9/16; border-radius: 12px; background: #000; margin: 0 auto; display: block; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);">
+                <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 1.5rem; border-radius: 16px; border: 1px solid rgba(56,189,248,0.3); box-shadow: 0 0 30px rgba(56,189,248,0.08), 0 10px 40px rgba(0,0,0,0.4); text-align: center;">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 1rem;">
+                        <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#ef4444; box-shadow:0 0 8px #ef4444; animation: pulse 1.5s infinite;"></span>
+                        <h3 style="font-size: 1rem; color: #38bdf8; margin: 0; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">本週總經戰情回顧</h3>
+                    </div>
+                    <video id="weekly-video-player" controls playsinline
+                        style="width: 100%; max-width: 340px; aspect-ratio: 9/16; border-radius: 12px; background: #000; margin: 0 auto; display: block; box-shadow: 0 0 20px rgba(56,189,248,0.15), 0 15px 40px rgba(0,0,0,0.5); border: 1px solid rgba(56,189,248,0.2);">
                         <source src="{weekly_video_filename}" type="video/mp4">
                         您的瀏覽器不支援影片元素。
                     </video>
+                    <p style="color: #64748b; font-size: 0.75rem; margin-top: 0.75rem;">Tom × Miranda｜AI 雙主播｜每週四更新</p>
                 </div>
             </div>
+
 
             <div style="margin-top: 1.5rem;" class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>{{"symbols": [ {{"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}}, {{"proName": "FOREXCOM:NSXUSD", "title": "Nasdaq 100"}}, {{"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}}, {{"proName": "FX:USDJPY", "title": "USD/JPY"}}, {{"proName": "FX_IDC:USDTWD", "title": "USD/TWD"}}, {{"proName": "NYSE:CLF", "title": "Cleveland-Cliffs"}}, {{"proName": "OTC:NPSCY", "title": "Nippon Steel"}}, {{"proName": "NYSE:NUE", "title": "Nucor"}}, {{"proName": "FRED:DGS10", "title": "US10Y"}} ], "showSymbolLogo": true, "colorTheme": "light", "isTransparent": true, "displayMode": "adaptive", "locale": "zh_TW"}}</script></div>
         </header>
