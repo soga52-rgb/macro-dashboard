@@ -14,7 +14,7 @@ if r"D:\Lib\site-packages" not in sys.path:
 os.environ["PYTHONPATH"] = r"D:\Lib\site-packages"
 
 try:
-    from PIL import Image, ImageDraw, ImageFont
+    from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageEnhance
 except ImportError:
     print("請先安裝 pillow: pip install pillow")
     sys.exit(1)
@@ -83,24 +83,110 @@ today_str = now_tw.strftime("%Y-%m-%d")
 # ==============================================================================
 print("正在請 AI 撰寫 Tom 與 Miranda 的雙主播回顧腳本...")
 
-prompt = f"""你現在是兩位專業的財經 Podcast 主持人：
-1. [Tom]：親切、擅長引導話題、會代表觀眾提問的主持人。
-2. [Miranda]：專業、理性、數據導向的資深總經首席分析師。
+prompt = f"""你現在要為一個高品質財經 Podcast 撰寫「Voice-first 純語音腳本」。
 
-請根據以下「過去一週每日重點摘要」，撰寫一份約 5 分鐘的對話腳本。
+這個腳本是為「耳朵」設計的，不是為「眼睛」設計的。
+
+━━━━━━━━━━━━━━━━━━━━
+【角色設定】
+━━━━━━━━━━━━━━━━━━━━
+[Tom]：節目主持人，風格接近 Bloomberg Odd Lots 的 Tracy Alloway。
+  - 有自己的觀點，不是提問機器
+  - 負責開場 + 每個話題之間的自然轉場
+  - 轉場靠追問或感想，不靠喊段落名稱
+  - 範例轉場：「不過講到這裡，如果油價一直維持高檔，接下來最麻煩的還是通膨問題吧？」
+  - 範例轉場：「既然通膨壓力還在，那央行現在應該很頭痛？」
+  - 範例轉場：「如果市場開始重新定價利率，那資產價格接下來怎麼看？」
+
+[Miranda]：資深總經策略師，風格接近 Macro Voices / Real Vision 的分析師受訪者。
+  - hedge fund macro strategist 語氣
+  - 談市場在信什麼 narrative、資金 positioning、情緒變化
+  - 保留不確定空間，不說「市場一定會...」
+  - 數字要有脈絡，不直接列數字清單
+
+━━━━━━━━━━━━━━━━━━━━
+【本期素材】
+━━━━━━━━━━━━━━━━━━━━
 日期：{today_str}
 
-【過去一週每日重點摘要】：
+過去一週市場摘要：
 {history_text}
 
-【撰寫要求】：
-1. 語氣要生動、像 NotebookLM 的 Podcast 對談，有互動感（例如：Tom 會說「哇，這真的很驚人」）。
-2. 長度約 1500 字，確保對話自然且包含深度分析。
-3. 腳本格式嚴格遵循：
-   [Tom]: (口白內容)
-   [Miranda]: (口白內容)
-4. 結構包含：(1) 週報開場 (2) 關鍵新聞串聯與剖析 (3) 指標走勢解讀 (4) 下週風險預警。
-5. **絕對禁止任何具體的投資建議、買賣點位預測或推薦。請專注於「總經趨勢分析」與「市場現象解讀」，並適度加上免責聲明提醒。**
+━━━━━━━━━━━━━━━━━━━━
+【🚨 VOICE-FIRST 絕對禁止清單 🚨】
+━━━━━━━━━━━━━━━━━━━━
+以下內容「絕對不能」出現在腳本的任何角色台詞中：
+
+✗ 禁止輸出段落標題或編號（例：(1)、（一）、第一點）
+✗ 禁止讓任何角色唸出章節名稱（例：「全球市場主旋律」「物價與通膨趨勢」「央行與利率動向」「美元與匯率走勢」「關鍵風險與展望」）
+✗ 禁止 Markdown 符號（** # ## ---）
+✗ 禁止旁白式結構標記（例：[場景切換]、[第二段]）
+✗ 禁止免責聲明長段（末尾一句即可）
+✗ 禁止播報式開場（例：「各位聽眾大家好，歡迎回到...」）
+
+★ 開場要求（必須）：
+Tom 的第一句話必須簡短交代「今天是幾月幾日」+「這週整體市場氛圍一句話定調」，約 2-3 句，
+然後自然帶出今天最核心的議題，再邀請 Miranda 展開分析。
+範例開場風格：「這週的市場，老實說比我預期的更複雜。Miranda，你怎麼看這週整體的市場情緒？」
+
+━━━━━━━━━━━━━━━━━━━━
+【敘事邊界許可表（Narrative Architecture）】
+━━━━━━━━━━━━━━━━━━━━
+每個段落只負責「回答一個核心問題」。下一段的核心內容必須留到下一段才講。
+
+§1 全球市場主旋律
+  ✅ 可談：本週盤面情緒、資金風險偏好、市場在交易什麼 narrative、恐慌/貪婪指標
+  ❌ 不可深入：具體通膨數字、央行決策、匯率走勢
+  🔗 段尾 Hook：Tom 以一句話引出通膨疑問（「但如果這種情緒是對通膨重燃的恐懼，那接下來最直接的問題就是...」）
+
+§2 物價與通膨趨勢
+  ✅ 可談：能源/食品通膨、CPI/PCE數據、薪資通膨、市場通膨預期
+  ❌ 不可深入：Fed/ECB 的利率決策、政策利率走向（可「點到為止」提一句，但不展開）
+  🔗 段尾 Hook：Tom 以一句話引出央行難題（「那央行現在面對這個數字，應該很頭痛吧？」）
+
+§3 央行與利率動向
+  ✅ 可談：Fed/ECB/BOJ 的政策訊號、利率路徑、殖利率曲線、鷹鴿之爭
+  ❌ 不可深入：美元指數走勢、黃金原油具體表現
+  🔗 段尾 Hook：Tom 以一句話引出資產定價（「如果市場開始重新定價利率，那資產端接下來會怎麼反應？」）
+
+§4 美元與關鍵資產走勢
+  ✅ 可談：美元指數、黃金、原油、台幣/日圓/亞幣、資金流向
+  ❌ 不可深入：下週具體事件預告
+  🔗 段尾 Hook：Tom 以一句話帶出下週風險（「那接下來有哪些數據或事件是真正需要盯緊的？」）
+
+§5 下週風險預警與展望
+  ✅ 可談：下週重要數據/事件、尾部風險、市場需觀察的關鍵訊號
+  ✅ 結尾：Miranda 自然收尾並帶出免責一句
+
+━━━━━━━━━━━━━━━━━━━━
+【寫作準則】
+━━━━━━━━━━━━━━━━━━━━
+- 市場情緒層：談交易 desk 感受、避險需求、positioning 變化
+- 不確定性語氣：「市場看起來像是...」「資金似乎正在...」「這可能意味著...」
+- 數字密度：單段不超過兩組具體數字，其餘用「高位震盪」「大幅回落」等定性詞
+- 每段結尾由 Tom 拋出 Hook 問題，Miranda 在下一段開頭自然接起
+
+━━━━━━━━━━━━━━━━━━━━
+【輸出格式（唯一允許格式）】
+━━━━━━━━━━━━━━━━━━━━
+每行嚴格遵循：
+[Tom]: (台詞)
+[Miranda]: (台詞)
+
+★ Section 路標（必須嵌入，每個只用一次）：
+在對話自然轉入下一個主題的那一行「之前」，獨立插入一個路標行：
+[SECTION:1]   ← 開場與全球市場主旋律開始時插入（第一行之前）
+[SECTION:2]   ← 對話自然進入通膨/物價主題時插入
+[SECTION:3]   ← 對話自然進入央行/利率主題時插入
+[SECTION:4]   ← 對話自然進入美元/匯率/資產主題時插入
+[SECTION:5]   ← 對話自然進入下週展望/風險主題時插入
+
+路標規則：
+- 路標是獨立的一行，不是對白的一部分
+- 每個數字只能出現一次，且必須按 1→2→3→4→5 順序
+- 路標本身不會被唸出，只是程式辨識用的隱藏標記
+
+總長約 1500 字。輸出的每一行都必須是可以直接 TTS 朗讀的自然語句。
 """
 
 script_text = ""
@@ -143,21 +229,67 @@ if not success:
     sys.exit(1)
 
 # ==============================================================================
-# 2. 處理雙聲道配音 (Tom: YunJhe, Miranda: HsiaoMin)
+# 2. 解析腳本 → 提取 [SECTION:N] 路標 + 組建 dialogue_parts
 # ==============================================================================
+print("正在解析腳本與 Section 路標...")
+
+# ── Step A：從腳本行掃描 [SECTION:N] 路標，建立對話索引 → section 的映射 ──
+section_marker_re = re.compile(r'^\[SECTION:(\d)\]\s*$')
+dialogue_line_re  = re.compile(r'^(?:\*{0,2}\[?(Tom|Miranda)\]?\*{0,2}[:：])')
+
+current_marker = 0          # 預設 section 0（全球市場主旋律）
+raw_lines = script_text.splitlines()
+dialogue_section_map = []   # 每一條 dialogue 對應的 section idx (0-based)
+
+for line in raw_lines:
+    m = section_marker_re.match(line.strip())
+    if m:
+        current_marker = int(m.group(1)) - 1   # 轉為 0-based
+    elif dialogue_line_re.match(line.strip()):
+        dialogue_section_map.append(current_marker)
+
+print(f"   ✅ 路標解析完成，共 {len(dialogue_section_map)} 條對話，section 分佈: { {i: dialogue_section_map.count(i) for i in range(5)} }")
+
+# ── Step B：清除腳本中的路標行，再進行 TTS 配音解析 ──
+clean_script = re.sub(r'\[SECTION:\d\]\n?', '', script_text)
 print("正在處理雙人聲配音 (Tom & Miranda)...")
 
 # 解析腳本為片段
 dialogue_parts = []
-# 匹配 [Tom]: 或 **[Tom]**: 或 Tom： 開頭的內容
 pattern = r'(?:\*?\*?\[?(Tom|Miranda)\]?\*?\*?[:：])\s*(.*?)(?=\s*(?:\*?\*?\[?(?:Tom|Miranda)\]?\*?\*?[:：])|$)'
-matches = re.findall(pattern, script_text, re.DOTALL)
+matches = re.findall(pattern, clean_script, re.DOTALL)
 
 if not matches:
     print("⚠️ 腳本格式不符，改用單人配音。")
-    dialogue_parts = [("Tom", script_text)]
+    dialogue_parts = [("Tom", script_text.replace("*", "").replace("#", ""))]
 else:
-    dialogue_parts = matches
+    # 移除 Markdown 符號，避免 TTS 唸出「星號」；並移除 (1)~(5) 段落標記，保持對話自然流暢
+    clean_re = re.compile(r'[（(][1-5][)）]\s*')
+    dialogue_parts = [(s, clean_re.sub('', c).replace("*", "").replace("#", "")) for s, c in matches]
+
+# ★ 後處理強制修正：只有當 Miranda 的句子「一開頭」就是段落引言標記
+#   才代表她在搶 Tom 的帶入角色，才需要強制換成 Tom 說出
+#   (若標記在句子中間，是正常的分析引用，不應干涉)
+section_intro_pattern = re.compile(r'^\s*[（(][1-5][)）]')
+corrected_parts = []
+for speaker, content in dialogue_parts:
+    if speaker == "Miranda" and section_intro_pattern.search(content.strip()):
+        print(f"   ⚠️ 修正角色：Miranda 試圖帶入段落引言，已強制改為 Tom 播報。")
+        corrected_parts.append(("Tom", content))
+    else:
+        corrected_parts.append((speaker, content))
+dialogue_parts = corrected_parts
+
+# ★ 移除「純粹宣告段落名稱」的孤立句子 (例如 Tom 說了一句「全球市場主旋律」就沒了)
+#   因為螢幕藍圖已呈現段落資訊，對話中不應生硬地喊出段落名稱
+bp_title_re = re.compile(r'^[\s　]*(?:好[，,]？？|接下來[，,]？？)?(?:我們|讓我們)?(?:來|來到|進入|討論)?[\s　]*(?:第[一二三四五]個?[點部分主題]|[第]?[1-5][點部份])?[\s　]*(全球市場主旋律|物價與通膨趨勢|央行與利率動向|美元與匯率走勢|關鍵風險與展望)[。！!，,]?[\s　]*$')
+filtered_parts = []
+for speaker, content in dialogue_parts:
+    if bp_title_re.match(content.strip()):
+        print(f"   ⚠️ 移除孤立段落宣告: [{speaker}] {content.strip()[:30]}")
+        continue
+    filtered_parts.append((speaker, content))
+dialogue_parts = filtered_parts
 
 audio_segments = []
 voices = {
@@ -227,10 +359,10 @@ if os.path.exists(bg_music_path):
 print("正在使用動態背景合成最終影片...")
 
 # 優先順序：sunset -> night -> fallback(深藍背景)
-import random
-bg_images = ["bg_tech.png", "bg_macro.png", "bg_bull_bear.png", "bg_market_sunset.mp4", "bg_ticker_night.mp4"]
+# 取消隨機，固定使用我們專門產製的「資訊圖表結構底圖」
+bg_images = ["bg_infographic.png"]
 available_bgs = [os.path.join(WORKSPACE_DIR, f) for f in bg_images if os.path.exists(os.path.join(WORKSPACE_DIR, f))]
-bg_input = random.choice(available_bgs) if available_bgs else None
+bg_input = available_bgs[0] if available_bgs else None
 is_image_bg = bg_input and bg_input.endswith(".png")
 
 video_filename = f"weekly_video_{timestamp_str}.mp4"
@@ -261,16 +393,81 @@ def get_audio_duration(file_path):
         print(f"無法取得音檔長度，預設為 300 秒: {e}")
         return 300.0
 
-def create_transparent_slide(text, output_name, title, slide_index, total_slides, active_speaker):
+# ★ 關鍵字驅動的藍圖段落偵測器
+TOPIC_KEYWORDS = [
+    # 0: 全球市場主旋律 — 廣義市場情緒、盤面氛圍
+    ['全球市場', '市場主旋律', '風險情緒', '避險情緒', 'narrative', '市場敘事',
+     '市場波動', '股市', '恐慌', '盤面', '市場氛圍', '多空', '情緒面', '資金面'],
+    # 1: 物價與通膨趨勢 — 需要明確通膨語境
+    ['通膨預期', 'CPI', 'PCE', '停滯性通膨', 'stagflation', '通膨壓力',
+     '通膨數據', '薪資通膨', '能源通膨', '核心通膨'],
+    # 2: 央行與利率動向
+    ['央行', 'Fed', '聯準會', '利率', '升息', '降息', '歐洲央行', 'ECB',
+     'RBA', '澳洲聯準', '日銀', 'BOJ', '貨幣政策', 'higher for longer',
+     '殖利率', '政策利率', '緊縮', '寬鬆', '鷹派', '鴿派', 'FOMC'],
+    # 3: 美元與匯率走勢
+    ['美元指數', 'DXY', '台幣', '日圓', '黃金', '原油', '亞幣', '外匯',
+     '匯率走勢', '商品價格', '美元強勢', '美元弱勢'],
+    # 4: 關鍵風險與展望
+    ['下週', '下一週', '展望', '風險預警', '前景', '不確定性',
+     '需要關注', '值得關注', '風險因素', '接下來要觀察', '風險事件'],
+]
+
+def detect_topic(text, current_idx=0):
+    """
+    關鍵字偵測 + 單調推進（只進不退）
+    - 需要 >= 2 個關鍵字命中才能推進到下一個主題
+    - 候選主題的得分必須高於當前主題才能推進
+    - 永遠不會倒退到更早的主題
+    """
+    scores = [0] * len(TOPIC_KEYWORDS)
+    text_lower = text.lower()
+    for idx, keywords in enumerate(TOPIC_KEYWORDS):
+        for kw in keywords:
+            if kw.lower() in text_lower:
+                scores[idx] += 1
+
+    # 找出 > current_idx 且得分 >= 2 的最高分主題
+    best = current_idx
+    for idx in range(current_idx + 1, len(TOPIC_KEYWORDS)):
+        if scores[idx] >= 2 and scores[idx] > scores[best]:
+            best = idx
+
+    print(f"   [topic] scores={scores} current={current_idx} → {best}")
+    return best
+
+def create_transparent_slide(text, output_name, title, current_topic_idx, active_speaker):
     # 720x1280 直式版面
     width, height = 720, 1280
-    image = Image.new('RGBA', (width, height), (0, 0, 0, 0))
+    
+    # 藍圖主題清單
+    blueprint_topics = [
+        "全球市場主旋律",
+        "物價與通膨趨勢",
+        "央行與利率動向",
+        "美元與匯率走勢",
+        "關鍵風險與展望"
+    ]
+    # current_topic_idx 現在直接從外部傳入（由關鍵字偵測計算）
+
+    # 根據段落動態載入對應的 B-Roll 底圖，並全域暗化處理
+    broll_files = ["broll_1_macro.png", "broll_2_inflation.png", "broll_3_rates.png", "broll_4_dollar.png", "broll_5_risk.png"]
+    broll_path = os.path.join(WORKSPACE_DIR, broll_files[current_topic_idx])
+    
+    try:
+        bg_img = Image.open(broll_path).convert('RGBA')
+        bg_img = ImageOps.fit(bg_img, (width, height))
+        # ★ 關鍵修正：先轉 RGB 再暸光，避免 Brightness 把 Alpha 也乘以 0.4
+        #    （RGBA 暸光會讓整張圖透明度變 40%，導致 FFmpeg 輸出全黑画面）
+        bg_rgb = ImageEnhance.Brightness(bg_img.convert('RGB')).enhance(0.4)
+        image = bg_rgb.convert('RGBA')   # 轉回 RGBA，並且所有像素 alpha=255
+    except Exception as e:
+        print(f"無法載入 B-Roll {broll_path}: {e}")
+        image = Image.new('RGBA', (width, height), (15, 23, 42, 255))
+        
     draw = ImageDraw.Draw(image)
     
-    # 繪製全螢幕的簡報卡片
-    draw.rounded_rectangle([40, 60, 680, 1220], radius=30, fill=(15, 23, 42, 230))
-    # 頂部裝飾線
-    draw.rounded_rectangle([40, 60, 680, 75], radius=10, fill=(56, 189, 248, 255))
+    # 移除全螢幕的簡報卡片，讓底圖可以完美呈現
     
     font_paths = [
         "msjh.ttc",  # Windows JhengHei
@@ -299,116 +496,144 @@ def create_transparent_slide(text, output_name, title, slide_index, total_slides
 
     # 【新聞台版型設計】
     
-    # 1. 頂部標題區 (小且精緻)
-    draw.rectangle([(0, 0), (720, 100)], fill=(15, 23, 42, 210))
-    draw.text((30, 25), f"🔴 LIVE | 總經戰情快報", font=font_title, fill=(239, 68, 68, 255))
-    draw.text((550, 45), f"Slide {slide_index}/{total_slides}", font=font_page, fill=(148, 163, 184, 255))
-    
-    # 2. 底部 Lower Third 新聞字卡區
-    # 半透明深色底框
-    draw.rectangle([(0, 880), (720, 1280)], fill=(15, 23, 42, 240))
-    draw.rectangle([(0, 880), (720, 885)], fill=(56, 189, 248, 255)) # 頂部藍色細線
-    
-    # 加入虛擬主播頭像 (放置在字卡區左上方與右上方)
-    tom_size = (120, 120) if active_speaker == "Tom" else (90, 90)
-    mark_size = (120, 120) if active_speaker == "Miranda" else (90, 90)
-    tom_y = 920
-    mark_y = 920
-    
-    tom_avatar = make_circle_avatar(os.path.join(WORKSPACE_DIR, "tom.png"), tom_size)
-    mark_avatar = make_circle_avatar(os.path.join(WORKSPACE_DIR, "miranda.png"), mark_size)
-    
-    if tom_avatar:
-        if active_speaker != "Tom":
-            alpha = tom_avatar.getchannel('A')
-            tom_avatar.putalpha(alpha.point(lambda i: int(i * 0.4)))
-        image.paste(tom_avatar, (40, tom_y), tom_avatar)
-        
-        color = (125, 211, 252, 255) if active_speaker == "Tom" else (148, 163, 184, 255)
-        draw.text((60, tom_y + tom_size[1] + 10), "Tom", font=font_name, fill=color)
-        
-    if mark_avatar:
-        if active_speaker != "Miranda":
-            alpha = mark_avatar.getchannel('A')
-            mark_avatar.putalpha(alpha.point(lambda i: int(i * 0.4)))
-        image.paste(mark_avatar, (560, mark_y), mark_avatar)
-        
-        color = (125, 211, 252, 255) if active_speaker == "Miranda" else (148, 163, 184, 255)
-        draw.text((570, mark_y + mark_size[1] + 10), "Miranda", font=font_name, fill=color)
+    # 1. 頂部標題：無框、無 LIVE，純文字
+    #    用微透明陰影矩形讓文字可讀，但不做明顯的框
+    draw.rectangle([(0, 0), (720, 80)], fill=(10, 18, 36, 120))
+    draw.text((30, 20), "總經快報", font=font_title, fill=(239, 68, 68, 230))
 
-    # 3. 播報文字 (放在主播頭像之間，精簡顯示)
-    # 限制文字長度，避免疲勞，改為兩行大標題形式
-    display_text = text[:60] + "..." if len(text) > 60 else text
+    # 畫一個完全透明的藍圖 (因為背景已經全域暗化了，不需要底框)
+    bp_x = 120
+    bp_y = 250
     
-    y = 940
-    draw.text((180, y), f"【{active_speaker} 觀點】", font=font_page, fill=(56, 189, 248, 255))
-    y += 50
-    for i in range(0, len(display_text), 12):
-        chunk = display_text[i:i+12]
-        draw.text((180, y), chunk, font=font_body, fill=(241, 245, 249, 255))
-        y += 50
+    for i, topic in enumerate(blueprint_topics):
+        row_y = bp_y + i * 90
+        if i == current_topic_idx:
+            # 正在講：天藍色文字，大字體，最醒目
+            draw.text((bp_x, row_y), topic, font=font_body, fill=(56, 189, 248, 255))
+            draw.ellipse([bp_x - 22, row_y + 10, bp_x - 6, row_y + 26], fill=(56, 189, 248, 255))
+        elif i < current_topic_idx:
+            # 已完成：灰色文字，小點，低調
+            draw.text((bp_x, row_y), topic, font=font_body, fill=(148, 163, 184, 180))
+            draw.ellipse([bp_x - 19, row_y + 12, bp_x - 9, row_y + 22], fill=(148, 163, 184, 160))
+        else:
+            # 未到：白色文字，偏暗，等待被點亮
+            draw.text((bp_x, row_y), topic, font=font_body, fill=(255, 255, 255, 110))
+            draw.ellipse([bp_x - 17, row_y + 13, bp_x - 11, row_y + 19], fill=(255, 255, 255, 80))
     
-    image.save(output_name)
+    # 2. 底部字幕條：漸層淡入，避免硬切邊
+    bar_top = 1120
+    bar_bottom = 1280
+    # 用多個漸層矩形模擬由透明到深色的淡入效果
+    steps = 12
+    for s in range(steps):
+        alpha = int(20 + (210 * s / (steps - 1)))  # 20 → 230
+        y0 = bar_top + int(s * (bar_bottom - bar_top) / steps)
+        y1 = bar_top + int((s + 1) * (bar_bottom - bar_top) / steps)
+        draw.rectangle([(0, y0), (720, y1)], fill=(15, 23, 42, alpha))
+    # 頂部裝飾亮線
+    draw.rectangle([(0, bar_top), (720, bar_top + 3)], fill=(56, 189, 248, 200))
+    
+    # 3. 加入迷你虛擬主播頭像 (放置在左下角)
+    avatar_size = (100, 100)
+    avatar_y = bar_top + 20
+    
+    avatar_img = "tom.png" if active_speaker == "Tom" else "miranda.png"
+    avatar = make_circle_avatar(os.path.join(WORKSPACE_DIR, avatar_img), avatar_size)
+    
+    if avatar:
+        # 微微發光效果
+        draw.ellipse([20-3, avatar_y-3, 20+avatar_size[0]+3, avatar_y+avatar_size[1]+3], fill=(56, 189, 248, 100))
+        image.paste(avatar, (20, avatar_y), avatar)
+        
+        # 主播名字標籤
+        name_bg_color = (2, 132, 199, 255) if active_speaker == "Tom" else (71, 85, 105, 255)
+        draw.rounded_rectangle([(25, avatar_y + 85), (115, avatar_y + 115)], radius=10, fill=name_bg_color)
+        draw.text((45, avatar_y + 88), active_speaker, font=font_name, fill=(255, 255, 255, 255))
+
+    # 4. 播報文字 (兩行跑馬燈字幕，每行 18 字)
+    y = bar_top + 30
+    chars_per_line = 18
+    for ln in range(0, len(text), chars_per_line):
+        draw.text((140, y), text[ln:ln+chars_per_line], font=font_page, fill=(241, 245, 249, 255))
+        y += 45
+
+    # 轉為 RGB 再存檔，避免 FFmpeg 處理 RGBA 時 alpha 合成出錯
+    image.convert('RGB').save(output_name)
 
 slide_files = []
 slide_timings = []
 cumulative_time = 0.0
+max_chars = 36  # 最多 36 字，分兩行每行 18 字
 
-# 每句話生成一張大字報，達到 100% 完美影音同步
+
+# section_map 可能因 AI 輸出不完整而比 dialogue_parts 短，補齊以最後已知值
+while len(dialogue_section_map) < len(dialogue_parts):
+    dialogue_section_map.append(dialogue_section_map[-1] if dialogue_section_map else 0)
+
 for i, (speaker, content) in enumerate(dialogue_parts):
-    fname = f"overlay_{i}.png"
-    # 取前 150 字作為大字報核心台詞
-    display_text = content[:150]
-    if len(content) > 150: display_text += "..."
-    
-    create_transparent_slide(display_text, fname, "總經焦點對談", i+1, len(dialogue_parts), speaker)
-    slide_files.append(fname)
-    
-    # 取得這段音檔的精準長度
+    chunks = [content[j:j+max_chars] for j in range(0, len(content), max_chars)]
+
+    # ★ 直接從 AI 路標映射取得 section，不再猜語意
+    seg_topic_idx = dialogue_section_map[i] if i < len(dialogue_section_map) else 0
+    seg_topic_idx = max(0, min(seg_topic_idx, 4))  # 夾在合法範圍
     seg_path = audio_segments[i]
     dur = get_audio_duration(seg_path)
-    # 微調避免浮點數誤差導致畫面閃爍
-    slide_timings.append((cumulative_time, cumulative_time + dur + 0.1))
-    cumulative_time += dur
+    total_chars = sum(len(c) for c in chunks)
+    
+    for c_idx, chunk_text in enumerate(chunks):
+        chunk_ratio = len(chunk_text) / total_chars if total_chars > 0 else 1.0
+        chunk_dur = max(dur * chunk_ratio, 0.2)
+        
+        fname = f"overlay_{i}_{c_idx}.png"
+        out_path = os.path.join(WORKSPACE_DIR, fname)
+        create_transparent_slide(chunk_text, out_path, "總經焦點對談",
+                                 seg_topic_idx, speaker)
+        slide_files.append(out_path)
+        slide_timings.append((cumulative_time, cumulative_time + chunk_dur))
+        cumulative_time += chunk_dur
 
 print(f"音軌總長: {cumulative_time:.1f} 秒, 共 {len(slide_files)} 張動態簡報")
 
-# FFmpeg 合成邏輯
-ffmpeg_cmd = ['ffmpeg', '-y']
-if is_image_bg:
-    ffmpeg_cmd += ['-loop', '1', '-framerate', '30', '-i', bg_input]
-else:
-    ffmpeg_cmd += ['-stream_loop', '-1', '-i', bg_input if bg_input else ""]
-for sf in slide_files:
-    ffmpeg_cmd += ['-loop', '1', '-i', sf]
+# FFmpeg 合成邏輯：使用高效 concat demuxer
+slides_txt_path = os.path.join(WORKSPACE_DIR, "slides.txt")
+with open(slides_txt_path, "w", encoding="utf-8") as f:
+    for i, sf in enumerate(slide_files):
+        # 注意路徑處理，避免反斜線逸出問題
+        safe_sf = sf.replace("\\", "/")
+        f.write(f"file '{safe_sf}'\n")
+        duration = slide_timings[i][1] - slide_timings[i][0]
+        f.write(f"duration {duration:.3f}\n")
+    # 最後一幀需要補上
+    f.write(f"file '{slide_files[-1].replace('\\', '/')}'\n")
 
-ffmpeg_cmd += ['-i', final_audio]
+ffmpeg_cmd = [
+    'ffmpeg', '-y',
+    '-f', 'concat', '-safe', '0', '-i', slides_txt_path,  # VFR 輸入（尊重 slides.txt 的 duration）
+    '-i', final_audio
+]
 
-# 加入動態聲波濾鏡 (適合直式的尺寸)
-filter_complex = f"[{len(slide_files)+1}:a]asplit=2[wave_in][a_out];[wave_in]showwaves=s=720x80:mode=cline:colors=0x38bdf8[wave];"
-current_input = "[0:v]"
-for i in range(len(slide_files)):
-    start, end = slide_timings[i]
-    # 疊加每張簡報，根據精準時間軸切換
-    filter_complex += f"{current_input}[{i+1}:v]overlay=0:0:enable='between(t,{start:.3f},{end:.3f})'[tmp{i}];"
-    current_input = f"[tmp{i}]"
+# 先用 fps=30 把 VFR 轉成 CFR，再疊加聲波濾鏡
+# 注意：-r 30 不能加在 input 前，否則會覆蓋 duration 讓每張只顯示 1/30 秒
+filter_complex = (
+    "[0:v]fps=30[v30];"
+    "[1:a]asplit=2[wave_in][a_out];"
+    # 音波縮小至 560x38，貼齊字幕條右下角（x=160, y=1242），不遮擋文字
+    "[wave_in]showwaves=s=560x38:mode=cline:colors=0x38bdf8:rate=30[wave];"
+    "[v30][wave]overlay=160:1242[final_v]"
+)
 
-# 最後把聲波疊加在兩位主播中間
-filter_complex += f"{current_input}[wave]overlay=0:1150[overlaid];[overlaid]scale=720:1280[final_v]"
-
-# 最終合成指令 (加入壓縮參數，讓輸出影片小於 50MB，符合 GitHub 限制)
 ffmpeg_cmd += [
     '-filter_complex', filter_complex,
     '-map', '[final_v]',
     '-map', '[a_out]',
     '-c:v', 'libx264',
-    '-preset', 'fast',        # 編碼速度/壓縮率平衡
-    '-crf', '28',             # 品質 (18=高品質大檔, 28=中等品質小檔, 35=低品質極小檔)
+    '-preset', 'fast',
+    '-crf', '28',
     '-c:a', 'aac',
-    '-b:a', '96k',            # 音訊碼率 96k (語音足夠)
+    '-b:a', '96k',
     '-pix_fmt', 'yuv420p',
     '-shortest',
-    '-movflags', '+faststart', # 讓瀏覽器可以邊下載邊播放
+    '-movflags', '+faststart',
     video_path
 ]
 

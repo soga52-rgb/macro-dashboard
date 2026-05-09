@@ -291,7 +291,7 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
     }}
   ],
   "next_week_forecast_html": "<details class='analysis-container'><summary>📢 下週預測：[主旋律]</summary><div class='analysis-content'><strong>⛓️ 市場邏輯傳導：</strong><p>[因子] ➔ 影響<strong>通膨/利率預期</strong> ➔ 最終定價<strong>美元走勢</strong>。</p><hr><strong>📉 資產動態預測：</strong><ul><li><strong>亞洲貨幣 (TWD/JPY/KRW)：</strong>...</li><li><strong>避險成本與鋼鐵業：</strong>...</li></ul></div></details>",
-  "podcast_script": "(約 800 字) 以『各位聽眾大家好，歡迎回到全球總經戰情室...』開場。🚨【嚴格規定】1. 必須分為雙階段播報：第一階段「摘要 CNBC/Reuters 等全網新聞重點」，第二階段「解析市場客觀情緒與走勢研判」。 2. 播報中『絕對不要』提及任何投資建議，也『絕對不要』提及具體的價格或點位數值，以免與網頁產生落差。"
+  "podcast_script": "(約 800 字) 這是一個高品質財經 Podcast 的每日精華播報腳本，以 Miranda（資深總經策略師）為主播。播出風格對標 Bloomberg Macro / Real Vision，不是電視新聞稿。\n\n【角色定位】Miranda 是 hedge fund macro strategist，不是新聞主播。她談的是市場在「相信什麼故事」、資金部位如何移動、narrative 正在轉變哪個方向——而不只是唸數字。\n\n【開場】自然口語開場，例如：「今天市場最值得關注的，其實是...」，而非「各位聽眾大家好，歡迎回到...」這種播報腔。\n\n【寫作規則】\n- 語氣口語自然，允許句子不完整，允許停頓感\n- 加入不確定性語氣：「市場看起來像是...」「資金似乎正在...」「這可能意味著...」\n- 加入市場情緒層：交易 desk 的感受、避險需求、positioning 變化\n- 數字要有脈絡，單段不超過兩組數字，其餘用定性描述\n- 禁止說出投資建議或具體買賣點位\n- 結尾保留模糊空間，不要給出過度確定的結論\n- 最後一句簡短提醒：本節目為市場趨勢觀察，不構成投資建議。"
 }}
 """
     
