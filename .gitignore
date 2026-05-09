@@ -1,4 +1,9 @@
 
+# Python 編譯快取（永遠不追蹤）
+__pycache__/
+*.pyc
+*.pyo
+
 # 排除本機暫存測試目錄
 scratch/
 # 排除暫存文字檔 (temp_podcast.txt, audio_list.txt 等)
