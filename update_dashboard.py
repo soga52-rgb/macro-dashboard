@@ -50,7 +50,7 @@ def fetch_weekly_news():
     # 自動將關鍵字組合成標準字串 (以空白與雙引號分隔)
     query_str = " OR ".join([f'"{k}"' if ' ' in k else k for k in macro_keywords])
     # 添加指定媒體
-    source_str = "site:bloomberg.com OR site:cnbc.com OR site:investing.com OR site:benzinga.com OR site:cnyes.com"
+    source_str = "site:bloomberg.com OR site:cnbc.com OR site:reuters.com OR site:wsj.com OR site:ft.com OR site:marketwatch.com OR site:investing.com"
     # 用標準的 urllib 進行編碼，確保 Google News 伺服器絕對不漏接 when:2d 指令 (移除 AND 讓 site 條件生效)
     encoded_q = urllib.parse.quote(f"({query_str}) ({source_str}) when:2d")
     url = f"https://news.google.com/rss/search?q={encoded_q}&hl=en-US&gl=US&ceid=US:en"
@@ -60,8 +60,8 @@ def fetch_weekly_news():
         xml_data = response.read()
         root = ET.fromstring(xml_data)
         headlines = []
-        # 改為嚴格挑選最新 3 則，並篩選指定媒體
-        for item in root.findall('.//item')[:3]:
+        # 改為嚴格挑選最新 6 則，並篩選指定媒體
+        for item in root.findall('.//item')[:6]:
             title_node = item.find('title')
             link_node = item.find('link')
             title = title_node.text if title_node is not None else "新聞標題"
@@ -202,7 +202,7 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
     prompt = f"""你現在是一位資深的全球總經策略分析師。請根據以下數據與新聞連結進行邏輯推演。
 
 ### 🌐 代理人搜尋指令 (Search Grounding):
-本次任務中，我們為你啟用了 Google Search Grounding。請務必優先使用該工具，點擊下方【最新新聞頭條】中的 URL，特別鎖定 CNBC, Reuters, 與 Bloomberg 等來源，去閱讀「新聞的全文內容」，而非只依賴標題。這將幫助你取得最新的 Fed 動向與就業/通膨細節。請不要自己寫程式爬網頁，直接利用內建的 Search Grounding 檢索內容。
+本次任務中，我們為你啟用了 Google Search Grounding。請務必優先使用該工具，點擊下方【最新新聞頭條】中的 URL，特別鎖定 CNBC, Reuters, Bloomberg, WSJ 與 Financial Times 等權威來源，去閱讀「新聞的全文內容」，而非只依賴標題。這將幫助你取得最新的 Fed 動向與就業/通膨細節。請不要自己寫程式爬網頁，直接利用內建的 Search Grounding 檢索內容。
 
 ### 今日日期: {today_str}
 
@@ -220,7 +220,7 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
 
 ### 撰寫指令 (三部曲核心邏輯):
 🚨【新聞時效規定】`focus_items` 中每則新聞的 `publish_date` **必須在今日 ({today_str}) 起算的過去 72 小時以內**。若找不到 72 小時內的新聞，請改用 Search Grounding 搜尋最新的相關報導。絕對禁止引用超過 3 天前的舊新聞。
-1. **Phase 1 新聞解析 (News Parsing)**: 解析 Fed 利率路徑、通膨 (CPI/PCE) 與就業數據。運用 Search Grounding 補充新聞背後的脈絡。
+1. **Phase 1 新聞解析 (News Parsing)**: 請從下方【最新新聞頭條】提供的 6 則新聞中，**挑選「最重要、最具市場影響力」的 3 則新聞進行深入解析即可（嚴格限制只輸出 3 則 `focus_items`）**。解析 Fed 利率路徑、通膨 (CPI/PCE) 與就業數據。運用 Search Grounding 補充這 3 則新聞背後的脈絡。
 2. **Phase 2 走勢研判與敘事經濟學 (Narrative Economics)**: **【核心要求】請詳細研判「十年期公債殖利率」、「美元指數」、「亞洲貨幣 (台幣/日圓)」、「黃金」與「原油」等資產背後的驅動邏輯。請務必比較當前狀態與上方【昨日市場記憶】，明確指出市場的主軸敘事 (Market Narrative) 發生了什麼轉變（例如：從交易「軟著陸」變成「通膨復燃」），或是延續了什麼趨勢。**
 3. **Phase 3 圖表驗證 (Chart Verification)**: 產出結論以對照網頁下方的即時走勢圖。確保你的推論方向符合【最新市場即時報價】的水位。
 
