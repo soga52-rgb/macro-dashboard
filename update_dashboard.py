@@ -257,6 +257,8 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
     "original_link": "新聞原始連結網址"
   }} ],
   "fx_rates_linkage": "(120 字) Phase 2 走勢研判，拆解利率與匯率的實際傳導。",
+  "market_regime": "當前市場主要的定價敘事，以 5-10 個英文字精準命名（例: Higher for Longer、Stagflation Risk、Risk-Off / Flight to Safety、Soft Landing Trade、Rate Cut Euphoria）。僅輸出敘事標籤，不含其他說明文字。",
+  "anomaly_signals": ["若存在與傳統理論相悖的資產定價現象，請以 '資產A↑資產B↑(異常)' 格式列出，例如 '美元↑黃金↑'、'殖利率↑科技股↑'；若無明顯異常則輸出空陣列 []"],
   "outlook_risks": [ {{ "title": "...", "content": "..." }}, {{ "title": "...", "content": "..." }} ],
   "analysis": [
     {{ 
@@ -392,6 +394,8 @@ def update_dashboard(ai_response, news_list, today_str):
     weekly_narrative = ai_response.get('weekly_narrative') or '本週尚無綜合摘要。'
     focus_items = ai_response.get('focus_items') or []
     fx_rates_linkage = ai_response.get('fx_rates_linkage') or '尚無傳導分析。'
+    market_regime = ai_response.get('market_regime') or ''
+    anomaly_signals = ai_response.get('anomaly_signals') or []
     outlook_risks = ai_response.get('outlook_risks') or []
     next_week_forecast_html = ai_response.get('next_week_forecast_html') or ''
     podcast_script = ai_response.get('podcast_script') or '本日尚無語音戰情腳本。'
@@ -708,6 +712,20 @@ def update_dashboard(ai_response, news_list, today_str):
         except:
             pass
             
+    # ── 產生 Regime Bar HTML ──
+    regime_bar_html = ""
+    if market_regime:
+        anomaly_tags_html = "".join(
+            f'<span class="anomaly-tag">{sig}</span>'
+            for sig in anomaly_signals if sig
+        )
+        regime_bar_html = f"""
+        <div class="regime-bar" id="regime-bar">
+            <span class="regime-label">CURRENT MARKET REGIME</span>
+            <span class="regime-badge" id="regime-badge">{market_regime}</span>
+            <div class="anomaly-tags" id="anomaly-tags">{anomaly_tags_html}</div>
+        </div>"""
+
     today_pack = {
         "date": today_str,
         "weekly_narrative": weekly_narrative,
@@ -718,7 +736,10 @@ def update_dashboard(ai_response, news_list, today_str):
         "risk_html": risk_html,
         "news_html": news_html,
         "podcast_file": podcast_filename,
-        "weekly_video": weekly_video_filename
+        "weekly_video": weekly_video_filename,
+        "market_regime": market_regime,
+        "anomaly_signals": anomaly_signals,
+        "regime_bar_html": regime_bar_html
     }
     
     # 若當日(取日期前綴)已存在則更新，否則新增於最前面
@@ -792,6 +813,32 @@ def update_dashboard(ai_response, news_list, today_str):
         .section-h2::after {{ content: ""; height: 2px; flex: 1; background: #f1f5f9; }}
 
         .narrative-box {{ font-size: 1.15rem; color: #334155; text-align: justify; margin-bottom: 2.5rem; }}
+
+        /* ── Market Regime Engine ── */
+        .regime-bar {{
+            display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem;
+            margin-bottom: 2rem; padding: 1rem 1.4rem;
+            background: #0f172a; border-radius: 10px;
+            border: 1px solid rgba(56,189,248,0.25);
+            box-shadow: 0 0 20px rgba(56,189,248,0.06);
+        }}
+        .regime-label {{
+            font-size: 0.72rem; font-weight: 700; color: #64748b;
+            letter-spacing: 0.12em; text-transform: uppercase; white-space: nowrap;
+        }}
+        .regime-badge {{
+            font-size: 0.95rem; font-weight: 800; color: #38bdf8;
+            letter-spacing: 0.04em; text-transform: uppercase;
+            border-left: 3px solid #38bdf8; padding-left: 0.8rem;
+        }}
+        .anomaly-tags {{ display: flex; flex-wrap: wrap; gap: 0.5rem; margin-left: auto; }}
+        .anomaly-tag {{
+            background: rgba(239,68,68,0.12); color: #fca5a5;
+            border: 1px solid rgba(239,68,68,0.3);
+            padding: 0.2rem 0.7rem; border-radius: 20px;
+            font-size: 0.78rem; font-weight: 600; white-space: nowrap;
+        }}
+        .anomaly-tag::before {{ content: '⚠ '; }}
         
         .trend-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 3rem; }}
         .trend-card {{ background: #fff; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; box-shadow: var(--shadow-md); min-height: 550px; display: flex; flex-direction: column; }}
@@ -991,6 +1038,8 @@ def update_dashboard(ai_response, news_list, today_str):
             <div style="margin-top: 1.5rem;" class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>{{"symbols": [ {{"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}}, {{"proName": "FOREXCOM:NSXUSD", "title": "Nasdaq 100"}}, {{"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}}, {{"proName": "FX:USDJPY", "title": "USD/JPY"}}, {{"proName": "FX_IDC:USDTWD", "title": "USD/TWD"}}, {{"proName": "NYSE:CLF", "title": "Cleveland-Cliffs"}}, {{"proName": "OTC:NPSCY", "title": "Nippon Steel"}}, {{"proName": "NYSE:NUE", "title": "Nucor"}}, {{"proName": "FRED:DGS10", "title": "US10Y"}} ], "showSymbolLogo": true, "colorTheme": "light", "isTransparent": true, "displayMode": "adaptive", "locale": "zh_TW"}}</script></div>
         </header>
 
+        {regime_bar_html}
+
         <section>
             <h2 class="section-h2">🎯 新聞剖析</h2>
             <div class="focus-grid" id="focus-grid">
@@ -1137,6 +1186,20 @@ def update_dashboard(ai_response, news_list, today_str):
                 document.getElementById('tbody-html').innerHTML = selectedItem.tbody_html;
                 document.getElementById('risk-grid').innerHTML = selectedItem.risk_html;
                 document.getElementById('news-list').innerHTML = selectedItem.news_html;
+
+                // 動態更新 Regime Bar
+                const regimeBar = document.getElementById('regime-bar');
+                if (regimeBar) {{
+                    const badge = document.getElementById('regime-badge');
+                    const tags = document.getElementById('anomaly-tags');
+                    if (badge) badge.textContent = selectedItem.market_regime || '';
+                    if (tags) {{
+                        tags.innerHTML = (selectedItem.anomaly_signals || []).map(
+                            s => `<span class="anomaly-tag">${{s}}</span>`
+                        ).join('');
+                    }}
+                    regimeBar.style.display = selectedItem.market_regime ? 'flex' : 'none';
+                }}
                 
                 // 動態更新 Podcast 音訊來源
                 const audioPlayer = document.getElementById('podcast-audio');
