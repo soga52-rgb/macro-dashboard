@@ -396,36 +396,114 @@ def update_dashboard(ai_response, news_list, today_str):
     next_week_forecast_html = ai_response.get('next_week_forecast_html') or ''
     podcast_script = ai_response.get('podcast_script') or '本日尚無語音戰情腳本。'
     
-    # 產生 podcast mp3 (使用 edge-tts)
+    # ══════════════════════════════════════════════════════════
+    # 產生 podcast mp3 — Multi-Speaker TTS Pipeline
+    #   1. Regex 解析 [Tom] / [Miranda] 角色標籤
+    #   2. 各角色使用各自的 edge-tts 聲音分段生成
+    #   3. ffmpeg concat 合併為單一 podcast mp3
+    # ══════════════════════════════════════════════════════════
     podcast_filename = "podcast.mp3"
     try:
         import subprocess
+        import re as _re
+        import shutil as _shutil
         from datetime import datetime
+
         curr_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
         podcast_filename = f"podcast_{curr_time_str}.mp3"
         podcast_path = os.path.join(WORKSPACE_DIR, podcast_filename)
-        temp_txt = os.path.join(WORKSPACE_DIR, "temp_podcast.txt")
-        with open(temp_txt, "w", encoding="utf-8") as f:
-            f.write(podcast_script)
+
+        # ── Step 1：解析角色台詞 ────────────────────────────
+        # 支援 [Tom]: / [Miranda]: 格式，台詞可跨多字
+        dialogue_pattern = _re.compile(
+            r'\[(Tom|Miranda)\]\s*[:：]\s*(.*?)(?=\s*\[(?:Tom|Miranda)\]\s*[:：]|$)',
+            _re.DOTALL
+        )
+        dialogue_parts = [
+            (speaker.strip(), content.strip())
+            for speaker, content in dialogue_pattern.findall(podcast_script)
+            if content.strip()
+        ]
+
+        if not dialogue_parts:
+            # 沒有找到角色標籤 → fallback 單人
+            print("⚠️ 未偵測到 [Tom]/[Miranda] 標籤，改用單人配音。")
+            dialogue_parts = [("Miranda", podcast_script)]
+
+        print(f"✅ 解析完成：共 {len(dialogue_parts)} 段對話 "
+              f"(Tom: {sum(1 for s,_ in dialogue_parts if s=='Tom')}, "
+              f"Miranda: {sum(1 for s,_ in dialogue_parts if s=='Miranda')})")
+
+        # ── Step 2：voice mapping ────────────────────────────
+        # Tom  → 台灣男聲 (YunJhe)，Miranda → 台灣女聲 (HsiaoChen)
+        VOICE_MAP = {
+            "Tom":     "zh-TW-YunJheNeural",
+            "Miranda": "zh-TW-HsiaoChenNeural",
+        }
+
+        # edge-tts 執行路徑（本機優先，找不到再 fallback PATH）
+        edge_tts_path = r"C:\Users\soga52\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\Scripts\edge-tts.exe"
+        if not os.path.exists(edge_tts_path):
+            edge_tts_path = "edge-tts"
+
+        # ── Step 3：建立暫存目錄，逐段生成 ──────────────────
+        temp_audio_dir = os.path.join(WORKSPACE_DIR, f"temp_podcast_{curr_time_str}")
+        os.makedirs(temp_audio_dir, exist_ok=True)
+
+        audio_segments = []
         print(f"正在生成 Podcast 語音檔 ({podcast_filename})...")
+        for i, (speaker, content) in enumerate(dialogue_parts):
+            seg_path = os.path.join(temp_audio_dir, f"seg_{i:03d}.mp3")
+            text_path = os.path.join(temp_audio_dir, f"text_{i:03d}.txt")
+            voice = VOICE_MAP.get(speaker, "zh-TW-HsiaoChenNeural")
+
+            # 將台詞寫入暫存 txt（避免 shell 特殊字元問題）
+            with open(text_path, "w", encoding="utf-8") as f:
+                f.write(content)
+
+            print(f"   [{i+1:02d}/{len(dialogue_parts)}] {speaker} ({voice[:20]}…)")
+            try:
+                subprocess.run(
+                    [edge_tts_path, '--file', text_path, '--voice', voice, '--write-media', seg_path],
+                    check=True, timeout=90
+                )
+                audio_segments.append(seg_path)
+            except subprocess.TimeoutExpired:
+                print(f"   ⚠️ {speaker} 第{i+1}段配音超時，跳過。")
+            except Exception as tts_err:
+                print(f"   ⚠️ {speaker} 第{i+1}段配音失敗: {tts_err}")
+
+        # ── Step 4：ffmpeg concat 合併所有片段 ───────────────
+        if audio_segments:
+            concat_list = os.path.join(temp_audio_dir, "concat_list.txt")
+            with open(concat_list, "w", encoding="utf-8") as f:
+                for seg in audio_segments:
+                    safe = seg.replace("\\", "/")
+                    f.write(f"file '{safe}'\n")
+            try:
+                subprocess.run(
+                    ['ffmpeg', '-y', '-f', 'concat', '-safe', '0',
+                     '-i', concat_list, '-c', 'copy', podcast_path],
+                    check=True, timeout=120
+                )
+                print(f"🔈 Podcast 雙人語音合併完畢！({len(audio_segments)} 段)")
+            except Exception as merge_err:
+                print(f"⚠️ ffmpeg 合併失敗: {merge_err}")
+        else:
+            print("⚠️ 所有音軌片段均生成失敗，跳過 podcast 產製。")
+            podcast_filename = "podcast.mp3"  # 回退為預設值，避免 HTML 出錯
+
+        # ── Step 5：清理暫存目錄 ─────────────────────────────
         try:
-            subprocess.run(['edge-tts', '-f', temp_txt, '--voice', 'zh-TW-HsiaoChenNeural', '--write-media', podcast_path], check=True, timeout=60)
-            print("🔈 Podcast 語音生成完畢！")
-        except subprocess.TimeoutExpired:
-            print("⚠️ Podcast 語音生成超時 (超過 60 秒)！跳過以避免腳本卡死。")
-            if os.path.exists(podcast_path):
-                os.remove(podcast_path)
-        except Exception as e:
-            print(f"⚠️ edge-tts 執行錯誤: {e}")
-        if os.path.exists(temp_txt):
-            os.remove(temp_txt)
-            
-        # 清理超過 7 天前產生的 podcast_{timestamp}.mp3 檔案
+            _shutil.rmtree(temp_audio_dir)
+        except Exception:
+            pass
+
+        # ── Step 6：清理超過 7 天的舊 podcast 檔 ─────────────
         current_time = datetime.now()
         for f_name in os.listdir(WORKSPACE_DIR):
             if f_name.startswith("podcast_") and f_name.endswith(".mp3"):
                 file_path = os.path.join(WORKSPACE_DIR, f_name)
-                # 取得檔案最後修改時間
                 file_mtime = datetime.fromtimestamp(os.path.getmtime(file_path))
                 if (current_time - file_mtime).days > 7:
                     try:
@@ -433,8 +511,9 @@ def update_dashboard(ai_response, news_list, today_str):
                         print(f"清理過期語音檔: {f_name}")
                     except Exception as ex:
                         print(f"清理過期語音檔失敗: {ex}")
+
     except Exception as e:
-        print(f"⚠️ Podcast 語音生成失敗 (請確認是否安裝 edge-tts): {e}")
+        print(f"⚠️ Podcast 語音生成失敗 (請確認是否安裝 edge-tts 與 ffmpeg): {e}")
     
     # 更新 CSV (維持基本數據結構)
     csv_content = "變數與項目,當前狀態,短期趨勢,主要驅動因素,全球經濟交互影響\n"
