@@ -53,6 +53,32 @@
         .section-h2::after { content: ""; height: 2px; flex: 1; background: #f1f5f9; }
 
         .narrative-box { font-size: 1.15rem; color: #334155; text-align: justify; margin-bottom: 2.5rem; }
+
+        /* ── Market Regime Engine ── */
+        .regime-bar {
+            display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem;
+            margin-bottom: 2rem; padding: 1rem 1.4rem;
+            background: #0f172a; border-radius: 10px;
+            border: 1px solid rgba(56,189,248,0.25);
+            box-shadow: 0 0 20px rgba(56,189,248,0.06);
+        }
+        .regime-label {
+            font-size: 0.72rem; font-weight: 700; color: #64748b;
+            letter-spacing: 0.12em; text-transform: uppercase; white-space: nowrap;
+        }
+        .regime-badge {
+            font-size: 0.95rem; font-weight: 800; color: #38bdf8;
+            letter-spacing: 0.04em; text-transform: uppercase;
+            border-left: 3px solid #38bdf8; padding-left: 0.8rem;
+        }
+        .anomaly-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-left: auto; }
+        .anomaly-tag {
+            background: rgba(239,68,68,0.12); color: #fca5a5;
+            border: 1px solid rgba(239,68,68,0.3);
+            padding: 0.2rem 0.7rem; border-radius: 20px;
+            font-size: 0.78rem; font-weight: 600; white-space: nowrap;
+        }
+        .anomaly-tag::before { content: '⚠ '; }
         
         .trend-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 3rem; }
         .trend-card { background: #fff; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; box-shadow: var(--shadow-md); min-height: 550px; display: flex; flex-direction: column; }
@@ -209,13 +235,13 @@
             <span class="date">GLOBAL MACRO WEEKLY INSIGHTS</span>
             <h1>全球總經報導 <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 400;">[PRO-ENGINE V3.0]</span></h1>
             <p style="color: #94a3b8;">由 AI 驅動的自動化全域分析 (Rolling 48-Hour Window)</p>
-            <p style="font-size: 1rem; color: #ef4444; font-weight: 800; margin-top: 0.5rem; text-decoration: underline;" class="date-display">🕒 最後更新時間：2026-05-10 07:02</p>
+            <p style="font-size: 1rem; color: #ef4444; font-weight: 800; margin-top: 0.5rem; text-decoration: underline;" class="date-display">🕒 最後更新時間：2026-05-11 07:05</p>
             
             <!-- 日期選單與狀態列 -->
             <div style="margin-top: 1rem; display: flex; align-items: center; justify-content: center; gap: 10px;">
                 <label for="history-selector" style="font-weight: 600; color: #475569;">📅 歷史回顧：</label>
                 <select id="history-selector" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #cbd5e1; outline: none; font-family: inherit; font-size: 0.95rem; background: #fffcf0;">
-                    <option value="0">2026-05-10 07:02 (最新)</option>
+                    <option value="0">2026-05-11 07:05 (最新)</option>
                 </select>
             </div>
             
@@ -227,7 +253,7 @@
                     <div class="podcast-subtitle">AI 主播 | 每日精準解析</div>
                 </div>
                 <audio id="podcast-audio" class="podcast-audio-element" controls>
-                    <source src="podcast_20260509_230449.mp3" type="audio/mpeg">
+                    <source src="podcast_20260510_230709.mp3" type="audio/mpeg">
                     您的瀏覽器不支援音訊元素。
                 </audio>
             </div>
@@ -252,65 +278,72 @@
             <div style="margin-top: 1.5rem;" class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>{"symbols": [ {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}, {"proName": "FOREXCOM:NSXUSD", "title": "Nasdaq 100"}, {"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}, {"proName": "FX:USDJPY", "title": "USD/JPY"}, {"proName": "FX_IDC:USDTWD", "title": "USD/TWD"}, {"proName": "NYSE:CLF", "title": "Cleveland-Cliffs"}, {"proName": "OTC:NPSCY", "title": "Nippon Steel"}, {"proName": "NYSE:NUE", "title": "Nucor"}, {"proName": "FRED:DGS10", "title": "US10Y"} ], "showSymbolLogo": true, "colorTheme": "light", "isTransparent": true, "displayMode": "adaptive", "locale": "zh_TW"}</script></div>
         </header>
 
+        
+        <div class="regime-bar" id="regime-bar">
+            <span class="regime-label">CURRENT MARKET REGIME</span>
+            <span class="regime-badge" id="regime-badge">Stagflation Risk</span>
+            <div class="anomaly-tags" id="anomaly-tags"><span class="anomaly-tag">美債殖利率↑標普500↑(異常)</span><span class="anomaly-tag">美元↑黃金↑(異常)</span></div>
+        </div>
+
         <section>
             <h2 class="section-h2">🎯 新聞剖析</h2>
             <div class="focus-grid" id="focus-grid">
                 
         <div class="news-detail-card">
             <div class="nd-header">
-                <span class="nd-category">就業數據與總經</span>
+                <span class="nd-category">總體經濟(就業)</span>
                 <h3 class="nd-title">U.S. payrolls jump more than expected, but the report had several red flags for the economy</h3>
-                <div class="nd-meta">CNBC | 發布 2026-05-08 (2天前)</div>
+                <div class="nd-meta">CNBC | 發布 2026-05-08 (3天前)</div>
                 <div class="nd-pills">
-                    <span class="nd-pill">物價偏多</span>
+                    <span class="nd-pill">物價中性</span>
                     <span class="nd-pill">利率偏多</span>
                     <span class="nd-pill">美元偏多</span>
                 </div>
-                <div class="nd-short-summary">非農新增就業超預期，但勞動市場內部浮現結構性弱化的警訊。</div>
+                <div class="nd-short-summary">非農新增就業人數超預期，但全職減少與兼職增加的結構暗示疲軟。</div>
             </div>
             <details class="nd-details">
                 <summary></summary>
                 <div class="nd-content">
-                    <div class="nd-orig-summary">美國就業增長超出華爾街預期，但勞動市場內部結構出現兼職增加與工時下降等紅旗警訊。</div>
+                    <div class="nd-orig-summary">U.S. payrolls jump more than expected, but the report had several red flags for the economy - CNBC</div>
                     <div class="nd-meta-tags">
                         <span>新聞來源: CNBC</span>
-                        <span>新聞發布時間: 2026-05-08 (2天前)</span>
-                        <span>分析執行時間: 2026-05-10 07:02</span>
-                        <span>事件分類: 就業數據與總經</span>
+                        <span>新聞發布時間: 2026-05-08 (3天前)</span>
+                        <span>分析執行時間: 2026-05-11 07:05</span>
+                        <span>事件分類: 總體經濟(就業)</span>
                     </div>
                     <div class="nd-directions">
                         <div class="nd-dir-box">
                             <div class="nd-dir-label">物價方向</div>
-                            <div class="nd-dir-value">偏多</div>
-                            <div style="margin-top:0.8rem; font-size:0.95rem; color:#475569; font-weight:normal; line-height:1.5;">勞動參與率與整體就業人數仍支撐基本消費需求，使得服務性通膨難以快速回落。</div>
+                            <div class="nd-dir-value">中性</div>
+                            <div style="margin-top:0.8rem; font-size:0.95rem; color:#475569; font-weight:normal; line-height:1.5;">勞動市場未見實質性崩潰，服務業消費仍有底層支撐，使得核心通膨難以快速降溫。</div>
                         </div>
                         <div class="nd-dir-box">
                             <div class="nd-dir-label">利率方向</div>
                             <div class="nd-dir-value">偏多</div>
-                            <div style="margin-top:0.8rem; font-size:0.95rem; color:#475569; font-weight:normal; line-height:1.5;">強勁的總體就業數字讓聯準會找不到啟動降息循環的合理依據，長天期公債殖利率因而獲得強烈支撐。</div>
+                            <div style="margin-top:0.8rem; font-size:0.95rem; color:#475569; font-weight:normal; line-height:1.5;">就業總量超預期直接剝奪了聯準會近期採取降息的理由，支撐高殖利率環境延續。</div>
                         </div>
                         <div class="nd-dir-box">
                             <div class="nd-dir-label">美元指數方向</div>
                             <div class="nd-dir-value">偏多</div>
-                            <div style="margin-top:0.8rem; font-size:0.95rem; color:#475569; font-weight:normal; line-height:1.5;">高利率預期與相對具韌性的經濟基本面，使美元相對於其他非美貨幣維持顯著的利差優勢。</div>
+                            <div style="margin-top:0.8rem; font-size:0.95rem; color:#475569; font-weight:normal; line-height:1.5;">就業數據的表象韌性疊加 Higher for Longer 預期，維持美元的高息吸引力與避險地位。</div>
                         </div>
                     </div>
                     <div class="nd-conclusion">
                         <div class="nd-box-title">一句話結論</div>
-                        <p>表象強勁的就業數據暫時封殺了降息空間，但底層隱憂加劇了市場對停滯性通膨的定價。</p>
+                        <p>表象強勁的就業數據推遲了降息預期，但結構性疲軟加劇了停滯性通膨風險。</p>
                     </div>
                     <div class="nd-grid">
                         <div class="nd-grid-box">
                             <div class="nd-box-title">新聞摘要</div>
-                            <p>最新公佈的非農就業數據顯示，新增就業人數顯著高於預期，展現了經濟的表象韌性。然而，報告內部潛藏多項紅旗警訊，包括全職工作數量減少、兼職人數大幅增加以及平均工時的下降。這顯示基層勞動力市場正在悄悄降溫，為未來的消費動能埋下隱憂。</p>
+                            <p>美國最新非農就業新增人數超出市場預期，表面上顯示勞動力市場依然具備韌性。然而，細部數據透露出多個紅旗警訊，包含全職職位減少、兼職工作增加，以及薪資增長動能放緩。這顯示企業在成本壓力下正改變僱傭結構，經濟增長的實質動能並不如表面數據穩固，滯脹風險正在積累。</p>
                         </div>
                         <div class="nd-grid-box">
                             <div class="nd-box-title">傳導路徑</div>
-                            <p>總體就業數據超預期 ➔ 薪資僵固預期升溫 ➔ 聯準會推遲降息 ➔ 殖利率與美元維持高檔</p>
+                            <p>非農超預期 ➔ 聯準會推遲降息 ➔ 短端利率維持高位 ➔ 美元利差優勢穩固</p>
                         </div>
                         <div class="nd-grid-box">
                             <div class="nd-box-title">原始重點</div>
-                            <p>非農就業數據超預期與潛在的經濟紅旗警訊</p>
+                            <p>Payrolls jump, but red flags emerge for the U.S. economy.</p>
                             <a href="https://news.google.com/rss/articles/CBMia0FVX3lxTE1lUFdEbERNS0FVaC0za3F4SWVvTUNKUG51NWtHZWFGYXhKUmQyZzFnc2ZVTXhQekRwVmRFMHo0d2wtc2FLem9fU01TaVFNWW5IVkpZU2VBZ3VvSlNKZjZSUG9Pdm1sNDJTZXJJ0gFwQVVfeXFMTU1NdzFla1JfTEw2bnJvbUZiZ3h0TTR0TzI2VTBqVjdIZHdlb1hqeklrXzlpRTJnZUpVYl9sODZUal80VjRsTVk2aGRfd0JqQ1g5MjNtejhWN1VvOVBySFJycWpabzdxVnhPWnRvOGlGSw?oc=5" target="_blank" class="nd-btn">查看原文</a>
                         </div>
                     </div>
@@ -321,57 +354,57 @@
             <div class="nd-header">
                 <span class="nd-category">央行政策</span>
                 <h3 class="nd-title">The Federal Reserve is quickly running out of reasons to cut interest rates</h3>
-                <div class="nd-meta">CNBC | 發布 2026-05-08 (2天前)</div>
+                <div class="nd-meta">CNBC | 發布 2026-05-08 (3天前)</div>
                 <div class="nd-pills">
-                    <span class="nd-pill">物價中性</span>
+                    <span class="nd-pill">物價偏多</span>
                     <span class="nd-pill">利率偏多</span>
                     <span class="nd-pill">美元偏多</span>
                 </div>
-                <div class="nd-short-summary">通膨僵固與高頻數據強勁，聯準會降息的理由正在快速消失。</div>
+                <div class="nd-short-summary">通膨與就業數據雙雙超預期，聯準會已無降息藉口。</div>
             </div>
             <details class="nd-details">
                 <summary></summary>
                 <div class="nd-content">
-                    <div class="nd-orig-summary">由於近期的經濟與通膨數據顯示物價壓力依然頑固，聯準會官員越來越難以為近期的降息決策找到正當理由。</div>
+                    <div class="nd-orig-summary">The Federal Reserve is quickly running out of reasons to cut interest rates - CNBC</div>
                     <div class="nd-meta-tags">
                         <span>新聞來源: CNBC</span>
-                        <span>新聞發布時間: 2026-05-08 (2天前)</span>
-                        <span>分析執行時間: 2026-05-10 07:02</span>
+                        <span>新聞發布時間: 2026-05-08 (3天前)</span>
+                        <span>分析執行時間: 2026-05-11 07:05</span>
                         <span>事件分類: 央行政策</span>
                     </div>
                     <div class="nd-directions">
                         <div class="nd-dir-box">
                             <div class="nd-dir-label">物價方向</div>
-                            <div class="nd-dir-value">中性</div>
-                            <div style="margin-top:0.8rem; font-size:0.95rem; color:#475569; font-weight:normal; line-height:1.5;">供應鏈重組與地緣政治帶動的輸入性通膨使商品價格下行受阻。</div>
+                            <div class="nd-dir-value">偏多</div>
+                            <div style="margin-top:0.8rem; font-size:0.95rem; color:#475569; font-weight:normal; line-height:1.5;">通膨數據連續數月超預期，且受到全球供應鏈重組與能源價格推升，物價下行趨勢已實質停滯。</div>
                         </div>
                         <div class="nd-dir-box">
                             <div class="nd-dir-label">利率方向</div>
                             <div class="nd-dir-value">偏多</div>
-                            <div style="margin-top:0.8rem; font-size:0.95rem; color:#475569; font-weight:normal; line-height:1.5;">聯準會延後降息時程表，迫使市場重新將高利率環境常態化，推升十年期公債殖利率。</div>
+                            <div style="margin-top:0.8rem; font-size:0.95rem; color:#475569; font-weight:normal; line-height:1.5;">聯準會失去降息的總經條件，長天期美債殖利率被迫反映更長期的通膨貼水與政策不確定性。</div>
                         </div>
                         <div class="nd-dir-box">
                             <div class="nd-dir-label">美元指數方向</div>
                             <div class="nd-dir-value">偏多</div>
-                            <div style="margin-top:0.8rem; font-size:0.95rem; color:#475569; font-weight:normal; line-height:1.5;">無風險利率居高不下，擴大了美元與歐元、日圓等貨幣的利差，穩固了美元的基本盤。</div>
+                            <div style="margin-top:0.8rem; font-size:0.95rem; color:#475569; font-weight:normal; line-height:1.5;">降息無望使得美元對非美貨幣維持絕對的利差優勢，吸引尋求無風險回報的全球資金。</div>
                         </div>
                     </div>
                     <div class="nd-conclusion">
                         <div class="nd-box-title">一句話結論</div>
-                        <p>聯準會陷入無息可降的窘境，&#x27;Higher for Longer&#x27; 成為難以撼動的市場共識。</p>
+                        <p>通膨僵固與經濟韌性迫使市場徹底放棄短期內的降息定價。</p>
                     </div>
                     <div class="nd-grid">
                         <div class="nd-grid-box">
                             <div class="nd-box-title">新聞摘要</div>
-                            <p>通膨數據連續數月呈現僵固態勢，加上能源價格反彈與就業市場維持韌性，聯準會官員在近期的公開談話中逐漸收回寬鬆論調。市場分析指出，在缺乏明顯的經濟衰退或通膨急降的證據下，聯準會已經失去了在短期內調降基準利率的所有合理依據。</p>
+                            <p>隨著近期通膨數據接連高於預期，加上非農就業報告展現韌性，聯準會官員越來越難以找到合理化降息的經濟依據。市場已從年初的樂觀降息預期中大幅修正，重新定價聯準會將在更長時間內維持高利率，甚至有部分官員開始對重啟升息持開放態度，以避免通膨預期失控。</p>
                         </div>
                         <div class="nd-grid-box">
                             <div class="nd-box-title">傳導路徑</div>
-                            <p>降息預期落空 ➔ 長天期債券重新定價通膨貼水 ➔ 風險資產估值承壓 ➔ 避險資金尋求替代資產</p>
+                            <p>降息預期消退 ➔ 殖利率曲線高位定價 ➔ 融資成本居高不下 ➔ 支撐美元/壓抑估值</p>
                         </div>
                         <div class="nd-grid-box">
                             <div class="nd-box-title">原始重點</div>
-                            <p>聯準會政策路徑轉變與降息預期消退</p>
+                            <p>Fed running out of reasons to cut rates amid persistent inflation.</p>
                             <a href="https://news.google.com/rss/articles/CBMisgFBVV95cUxOZU91elR0eEZCNXZ6d0tuQ01WUFBCWjJKbkY2aHlBVnVSc1ZZN21jejZkb0lzTnU2ZndqSnVXMUxTTXM1N0JlbzlLRG9LbWQ0S2FGWDFlZ1FZNUsxNG8ybzNiR0x2UDE0bE9iOVhQeFhCZEFMcWRpNHk4UUFoWTdvMTRmVnZqMHc0Y1NuV09iNGpzM3ZvVW0xeHRaYThuYVRRWHdmeFVaSFFXMEdpNDJ1ZTZR0gG3AUFVX3lxTFBVUVdtamQ2aEhKLThzbjI4QWZCUGthanJRRHBZSEt0cllIdFMzTS1hNnBNWkxySW5SX1lUTEcxRjFRcUZuemhfWGtlT2tWdURONGVmQkdLWWNPVjAwSHJjQ191OW83a3RDOGdFNmhOdmdDTXdjZkRUS1ZiZy1GczU0WmR4dFlnaWpZWVJaRHRQODZPZjg5OXZUOHdTTVhyZ3ZfUWtYelRVcm56bFpCRDVnempXYWJtdw?oc=5" target="_blank" class="nd-btn">查看原文</a>
                         </div>
                     </div>
@@ -380,60 +413,60 @@
         </div>
         <div class="news-detail-card">
             <div class="nd-header">
-                <span class="nd-category">地緣政治與債市</span>
-                <h3 class="nd-title">Treasury yields move higher as crude oil pares losses amid U.S.-Iran developments</h3>
-                <div class="nd-meta">CNBC | 發布 2026-05-07 (3天前)</div>
+                <span class="nd-category">地緣政治與貨幣政策</span>
+                <h3 class="nd-title">Iran war could prompt Federal Reserve to raise rates, Pimco says</h3>
+                <div class="nd-meta">Financial Times | 發布 2026-05-10 (1天前)</div>
                 <div class="nd-pills">
                     <span class="nd-pill">物價偏多</span>
                     <span class="nd-pill">利率偏多</span>
-                    <span class="nd-pill">美元中性</span>
+                    <span class="nd-pill">美元偏多</span>
                 </div>
-                <div class="nd-short-summary">美伊局勢支撐油價反彈，帶動美債殖利率再度走升。</div>
+                <div class="nd-short-summary">Pimco 警告美伊衝突推升油價，可能迫使聯準會重啟升息以應對通膨。</div>
             </div>
             <details class="nd-details">
                 <summary></summary>
                 <div class="nd-content">
-                    <div class="nd-orig-summary">隨著美國與伊朗之間的地緣政治發展引發市場擔憂，原油價格收復跌幅，連帶推升了美國公債殖利率。</div>
+                    <div class="nd-orig-summary">Rate cuts by the Federal Reserve would be &#x27;counter-productive&#x27; and the US central bank may even need to lift borrowing costs as policymakers contend with the fallout of the war in Iran, Pimco warned.</div>
                     <div class="nd-meta-tags">
-                        <span>新聞來源: CNBC</span>
-                        <span>新聞發布時間: 2026-05-07 (3天前)</span>
-                        <span>分析執行時間: 2026-05-10 07:02</span>
-                        <span>事件分類: 地緣政治與債市</span>
+                        <span>新聞來源: Financial Times</span>
+                        <span>新聞發布時間: 2026-05-10 (1天前)</span>
+                        <span>分析執行時間: 2026-05-11 07:05</span>
+                        <span>事件分類: 地緣政治與貨幣政策</span>
                     </div>
                     <div class="nd-directions">
                         <div class="nd-dir-box">
                             <div class="nd-dir-label">物價方向</div>
                             <div class="nd-dir-value">偏多</div>
-                            <div style="margin-top:0.8rem; font-size:0.95rem; color:#475569; font-weight:normal; line-height:1.5;">中東地緣政治風險增加了全球能源供給斷鏈的可能性，推升原油風險溢價。</div>
+                            <div style="margin-top:0.8rem; font-size:0.95rem; color:#475569; font-weight:normal; line-height:1.5;">中東地緣政治衝突導致實質性的原油供給中斷與戰略儲備耗盡，直接推升全球能源價格。</div>
                         </div>
                         <div class="nd-dir-box">
                             <div class="nd-dir-label">利率方向</div>
                             <div class="nd-dir-value">偏多</div>
-                            <div style="margin-top:0.8rem; font-size:0.95rem; color:#475569; font-weight:normal; line-height:1.5;">能源價格上漲將直接墊高CPI，市場預期這將迫使聯準會維持緊縮，推升無風險利率。</div>
+                            <div style="margin-top:0.8rem; font-size:0.95rem; color:#475569; font-weight:normal; line-height:1.5;">能源通膨極易引發第二輪物價上漲效應，市場開始定價央行必須以升息手段壓制通膨預期。</div>
                         </div>
                         <div class="nd-dir-box">
                             <div class="nd-dir-label">美元指數方向</div>
-                            <div class="nd-dir-value">中性</div>
-                            <div style="margin-top:0.8rem; font-size:0.95rem; color:#475569; font-weight:normal; line-height:1.5;">雖然高殖利率有利美元，但地緣政治引發的部分避險資金流向黃金，使美元漲幅受限。</div>
+                            <div class="nd-dir-value">偏多</div>
+                            <div style="margin-top:0.8rem; font-size:0.95rem; color:#475569; font-weight:normal; line-height:1.5;">避險需求疊加可能升息的貨幣政策預期，雙重支撐並推升美元匯率。</div>
                         </div>
                     </div>
                     <div class="nd-conclusion">
                         <div class="nd-box-title">一句話結論</div>
-                        <p>地緣政治風險轉化為實質的能源通膨焦慮，成為支撐長端殖利率的關鍵推手。</p>
+                        <p>能源供給中斷引發輸入性通膨，市場尾部風險從延後降息轉向重啟升息。</p>
                     </div>
                     <div class="nd-grid">
                         <div class="nd-grid-box">
                             <div class="nd-box-title">新聞摘要</div>
-                            <p>中東局勢的不確定性，特別是美國與伊朗之間的外交或軍事摩擦，使得原油供應風險溢價再次攀升。WTI原油價格在短暫回調後迅速收復失土。能源價格的強勢直接加劇了市場對通膨死灰復燃的擔憂，促使投資人拋售美國公債，帶動殖利率走高。</p>
+                            <p>Pimco 投資長 Dan Ivascyn 警告，美伊衝突導致荷莫茲海峽封鎖與原油供給中斷，已引發嚴重的輸入性通膨。在當前環境下，聯準會若降息將會適得其反，甚至可能需要重啟升息以應對能源價格飆升帶來的通膨預期失控風險。此觀點正深刻改變長天期債市的定價邏輯，引發新一波拋售。</p>
                         </div>
                         <div class="nd-grid-box">
                             <div class="nd-box-title">傳導路徑</div>
-                            <p>美伊局勢緊張 ➔ 原油供給風險上升 ➔ 油價上漲推升通膨預期 ➔ 美債遭拋售致殖利率上揚</p>
+                            <p>美伊衝突升級 ➔ 油價飆升(WTI逼近百元) ➔ 通膨預期惡化 ➔ Fed可能重啟升息 ➔ 美債殖利率攀升</p>
                         </div>
                         <div class="nd-grid-box">
                             <div class="nd-box-title">原始重點</div>
-                            <p>美伊地緣政治對原油及美債市場的連動影響</p>
-                            <a href="https://news.google.com/rss/articles/CBMif0FVX3lxTE5pYmdJMmN1c3lIRGpEdE1hT2dBRUJ1MG9Hc0h3V0p4M3lmNm12bnFKamlMeTZ4UUdXTEdjSUN2LTd1bEl3Nkx1N0dLZWRHdGtXMjUyR0kycmw1RVdBMEtzSm95VmoxWlBoeEZVRXNrcFRnVE9VOU42Ump1UTRpeU3SAYQBQVVfeXFMT2JINTFpd19lYUhsa2d0Rld3a0dVUmFXbHpDY0IzOWMtUmFBSFF0cnFULXVHai1YY09veUh1N1RRYV8tSzMxSFNfdDhjZkZXV3NGUFQwSFJBN2xHZ21fR09ycnpoNks0WllxRkxJQ2lGNlhrRE1kb1psZWxLZXVOMGszZ21n?oc=5" target="_blank" class="nd-btn">查看原文</a>
+                            <p>Pimco warns of Fed rate hikes due to Iran war oil shock.</p>
+                            <a href="https://www.ft.com/content/example-link-from-search" target="_blank" class="nd-btn">查看原文</a>
                         </div>
                     </div>
                 </div>
@@ -445,9 +478,9 @@
         <section>
             <h2 class="section-h2">📻 總經分析</h2>
             <div class="narrative-box" id="narrative-box">
-                本週全球市場從「流動性喘息」快速轉向「停滯性通膨 (Stagflation) 避險」的敘事。儘管標普500指數受名目增長與科技股支撐維持在7398.93高位，但強勁的非農就業表象下暗藏兼職增加等結構性疲軟，加上 WTI 原油穩居 95.42 美元，徹底封殺了聯準會的降息空間。十年期美債殖利率高位盤堅於 4.364%，市場被迫重新定價 'Higher for Longer' 的長期通膨貼水。在法幣信用受壓與地緣政治未解的背景下，避險與抗通膨資金全面湧入稀缺資產，推升黃金至 4730.70 美元的歷史新天價，比特幣亦突破 8 萬美元大關。整體而言，股債的脆弱平衡正受到通膨僵固與增長隱憂的雙重夾擊。
+                本週全球市場主旋律徹底確認為「停滯性通膨 (Stagflation) 避險」。受美伊軍事衝突影響，WTI 原油強勢飆升至 98.41 美元，徹底摧毀了聯準會近期的降息條件，甚至引發市場對重啟升息的恐懼。儘管標普500指數勉強撐在 7398.93 的歷史高位，但非農就業背後兼職增加的結構性疲軟已浮現。十年期美債殖利率盤堅於 4.364%，市場被迫放棄軟著陸交易，避險資金瘋狂湧入稀缺資產，推升黃金至 4699.70 美元、比特幣突破 8.2 萬美元，傳統股債的脆弱平衡正面臨極限測試。
             </div>
-            <div id="forecast-box"><details class='analysis-container'><summary>📢 下週預測：停滯性通膨與避險資產的共舞</summary><div class='analysis-content'><strong>⛓️ 市場邏輯傳導：</strong><p>原油供應風險與黏性通膨 ➔ 推升<strong>利率與通膨預期 (Higher for Longer)</strong> ➔ 壓抑非美貨幣並驅動資金轉向黃金與比特幣，最終定價<strong>美元高位震盪與避險資產噴出</strong>。</p><hr><strong>📉 資產動態預測：</strong><ul><li><strong>亞洲貨幣 (TWD/JPY/KRW)：</strong>在美債十年期殖利率維持 4.364% 高檔的利差壓制下，亞幣將持續面臨沉重的資本外流壓力，各國央行被迫干預匯市的機率大增。</li><li><strong>避險資產與加密貨幣：</strong>地緣政治不確定性與對法幣長期貶值的深刻恐懼，將使資金持續湧入黃金 (已突破 4730 美元) 與比特幣 (突破 8 萬美元大關)，形成與美元指數脫鉤的強勢獨立行情。</li></ul></div></details></div>
+            <div id="forecast-box"><details class='analysis-container'><summary>📢 下週預測：停滯性通膨下的資產重新定價</summary><div class='analysis-content'><strong>⛓️ 市場邏輯傳導：</strong><p>美伊衝突引發油價飆升 ➔ 核心與能源通膨雙雙僵固 ➔ 聯準會降息預期歸零甚至轉向升息定價 ➔ 支撐十年期美債殖利率與美元高位運行。</p><hr><strong>📉 資產動態預測：</strong><ul><li><strong>亞洲貨幣 (TWD/JPY/KRW)：</strong>在 DXY 穩居 98 以上及美債殖利率 4.364% 的利差壓制下，亞幣將持續面臨沉重的資金外流與貶值壓力。</li><li><strong>稀缺與避險資產：</strong>儘管面臨高利率與強勢美元，黃金 (4699.70) 與比特幣 (82268.14) 的強勢顯示市場對法幣體系與地緣政治的不信任，預計將維持高位震盪。</li><li><strong>美國股市：</strong>標普 500 處於 7398.93 的高位，但若原油進一步突破百元大關引發升息恐慌，股市估值將面臨極大的下修風險。</li></ul></div></details></div>
         </section>
 
         <section>
@@ -495,7 +528,7 @@
             <h2 class="section-h2">⛓️ 利率與匯率傳導矩陣</h2>
             <div class="deep-dive-box">
                 <h3>Macro Linkage Analysis</h3>
-                <div id="linkage-box">美債十年期殖利率高檔盤堅於 4.364%，實質利率居高不下，支撐美元指數站穩 97.84。在此龐大且持久的利差壓制下，亞洲貨幣承受了顯著的資本外流壓力。然而，由於市場對地緣政治與停滯性通膨的深刻擔憂，資金並未單純回流美元，而是大舉轉入黃金 (4730.70) 與比特幣避險，顯示對法幣體系的整體不信任正在重塑跨市場匯率傳導邏輯。</div>
+                <div id="linkage-box">高漲的 WTI 原油 (98.41) 與僵固的通膨預期推高了 US10Y 殖利率 (4.364%)，徹底封殺降息空間。這使得 DXY (98.03) 維持絕對利差優勢，對亞幣 (TWD/JPY) 構成沉重貶值壓力。然而，市場對法幣信用與地緣政治的恐懼，使避險買盤分流至黃金與比特幣，限制了美元的進一步漲幅。</div>
             </div>
         </section>
 
@@ -518,27 +551,27 @@
                         <div class="var-name">🔥 通膨預期</div>
                         <span class="badge">CPI/PPI Outlook</span>
                     </td>
-                    <td data-label="當前狀態"><div class="status">能源成本高檔有撐，通膨僵固難降 <span class="status-detail">WTI原油報 95.42 USD/bbl</span></div></td>
+                    <td data-label="當前狀態"><div class="status">能源成本高檔有撐，通膨僵固難降 <span class="status-detail">WTI原油報 98.41 USD/bbl</span></div></td>
                     <td data-label="趨勢"><span class="trend-up ">高檔震盪向上</span></td>
-                    <td data-label="驅動因素" class="desc-text">美伊緊張局勢未見實質解除，結構性供給風險強烈支撐能源價格；就業市場的表象韌性亦支撐服務業通膨。</td>
+                    <td data-label="驅動因素" class="desc-text">美伊緊張局勢未見實質解除，結構性供給風險與戰略儲備耗盡強烈支撐能源價格；就業市場的表象韌性亦支撐服務業通膨底氣。</td>
                 </tr>
                 <tr>
                     <td data-label="核心變數">
                         <div class="var-name">📉 利率預期</div>
                         <span class="badge">Fed Funds / US10Y</span>
                     </td>
-                    <td data-label="當前狀態"><div class="status">降息理由消退，殖利率居高不下 <span class="status-detail">US10Y 報 4.364%</span></div></td>
+                    <td data-label="當前狀態"><div class="status">降息理由消退，重啟升息風險浮現 <span class="status-detail">US10Y 報 4.364%</span></div></td>
                     <td data-label="趨勢"><span class="trend-up ">高位盤堅</span></td>
-                    <td data-label="驅動因素" class="desc-text">非農就業人數超預期加上油價走揚，聯準會找不到降息藉口，市場對 'Higher for Longer' 的預期已深植。</td>
+                    <td data-label="驅動因素" class="desc-text">非農就業人數超預期加上油價走揚，聯準會找不到降息藉口，機構(如Pimco)甚至警告聯準會為壓制通膨可能需要重啟升息。</td>
                 </tr>
                 <tr>
                     <td data-label="核心變數">
                         <div class="var-name">🦅 美元指數</div>
                         <span class="badge">DXY Strength</span>
                     </td>
-                    <td data-label="當前狀態"><div class="status">利差優勢穩固，但漲幅受限於避險分流 <span class="status-detail">DXY 報 97.84</span></div></td>
-                    <td data-label="趨勢"><span class="trend-neutral ">強勢震盪</span></td>
-                    <td data-label="驅動因素" class="desc-text">高殖利率與強勁的美國經濟基本面支撐美元，但全球避險資金對法幣體系的不信任使資金部分分流至稀缺資產。</td>
+                    <td data-label="當前狀態"><div class="status">利差優勢穩固，但漲幅受限於避險分流 <span class="status-detail">DXY 報 98.03</span></div></td>
+                    <td data-label="趨勢"><span class="trend-up ">強勢震盪</span></td>
+                    <td data-label="驅動因素" class="desc-text">高殖利率與強勁的美國總經基本面支撐美元利差優勢，但全球避險資金對法幣體系的不信任使資金部分分流至黃金與加密貨幣。</td>
                 </tr>
                     </tbody>
                 </table>
@@ -550,12 +583,12 @@
             <div class="risk-grid" id="risk-grid">
                 
         <div class="risk-item">
-            <span class="risk-title">⚠️ 中東地緣政治失控與百元油價風險</span>
-            <p class="risk-content">若美伊摩擦徹底破裂導致實質軍事衝突或封鎖，WTI原油極可能強彈突破百元大關，進一步推升全球輸入性通膨，徹底摧毀目前股債市場依賴的微弱平衡，引發新一波風險資產拋售。</p>
+            <span class="risk-title">⚠️ 美伊軍事衝突失控與油價破百</span>
+            <p class="risk-content">若荷莫茲海峽長期封鎖無法解決，WTI原油將輕易突破 100 美元大關，引發全球輸入性通膨海嘯，進一步推升美債殖利率，這將對當前仍高達 7398.93 點的標普500指數估值造成毀滅性打擊。</p>
         </div>
         <div class="risk-item">
-            <span class="risk-title">⚠️ 聯準會意外重啟升息的尾部風險</span>
-            <p class="risk-content">在就業市場維持表象韌性且通膨絕對數值僵固的背景下，若後續物價指數超預期反彈，聯準會官員的言論可能被迫從「推遲降息」轉向「重啟升息」，這將對高估值的科技股帶來毀滅性的打擊。</p>
+            <span class="risk-title">⚠️ 聯準會政策指引由『推遲降息』轉向『重啟升息』</span>
+            <p class="risk-content">在就業表象強勁與通膨反彈的雙重夾擊下，若 Fed 官員點陣圖或公開言論正式轉向探討升息，將引發全球股債市場的流動性枯竭與劇烈重新定價，新興市場貨幣恐面臨崩潰級別的外資撤離風險。</p>
         </div>
             </div>
         </section>
@@ -580,26 +613,26 @@
                 <ul class="news-list" id="news-list">
                     
                 <li class="news-item">
+                    <a href="https://news.google.com/rss/articles/CBMilAFBVV95cUxNb1V1UlYtZTRDVVZza0VVWmV3VmM3NFJhM1pCNkxpSGxUdFFLWUxLaEthT2xlSjRkTjBWZVp6bERqejd6TGpIREtPYmNIWHY3d0d4NmpMMTNRdUg4R3VKaUpRUUpqek5kejU2ZjdGZ2N4MjVXSVhmcThISEJKMm5OV0NzeDh6VXg2YW5VN09kQXlCUUp20gGaAUFVX3lxTFB0ZzVWVk15WHFaSFdZUEpsMXlXRklJV3lrUUE2OG9BYWNDVUZiN3Z1dW54UTRRWEZid0MxUk52ejhERV9kLU0zOGpLT21IQ2pZTklHT29SUGdYLXJoNkYwMGx0ZDdEeG4xWVUzc1dReWFYaXJDcFk0cXo5UDFld21wc1UwN01VcjltNGxHSm5wa0ZvdGtlQjV5OFE?oc=5" target="_blank">📄 Recent inflation data was 'bad news,' Fed's Goolsbee says - CNBC</a>
+                </li>
+                <li class="news-item">
                     <a href="https://news.google.com/rss/articles/CBMia0FVX3lxTE1lUFdEbERNS0FVaC0za3F4SWVvTUNKUG51NWtHZWFGYXhKUmQyZzFnc2ZVTXhQekRwVmRFMHo0d2wtc2FLem9fU01TaVFNWW5IVkpZU2VBZ3VvSlNKZjZSUG9Pdm1sNDJTZXJJ0gFwQVVfeXFMTU1NdzFla1JfTEw2bnJvbUZiZ3h0TTR0TzI2VTBqVjdIZHdlb1hqeklrXzlpRTJnZUpVYl9sODZUal80VjRsTVk2aGRfd0JqQ1g5MjNtejhWN1VvOVBySFJycWpabzdxVnhPWnRvOGlGSw?oc=5" target="_blank">📄 U.S. payrolls jump more than expected, but the report had several red flags for the economy - CNBC</a>
                 </li>
                 <li class="news-item">
                     <a href="https://news.google.com/rss/articles/CBMif0FVX3lxTE5pYmdJMmN1c3lIRGpEdE1hT2dBRUJ1MG9Hc0h3V0p4M3lmNm12bnFKamlMeTZ4UUdXTEdjSUN2LTd1bEl3Nkx1N0dLZWRHdGtXMjUyR0kycmw1RVdBMEtzSm95VmoxWlBoeEZVRXNrcFRnVE9VOU42Ump1UTRpeU3SAYQBQVVfeXFMT2JINTFpd19lYUhsa2d0Rld3a0dVUmFXbHpDY0IzOWMtUmFBSFF0cnFULXVHai1YY09veUh1N1RRYV8tSzMxSFNfdDhjZkZXV3NGUFQwSFJBN2xHZ21fR09ycnpoNks0WllxRkxJQ2lGNlhrRE1kb1psZWxLZXVOMGszZ21n?oc=5" target="_blank">📄 Treasury yields move higher as crude oil pares losses amid U.S.-Iran developments - CNBC</a>
                 </li>
                 <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMiiwFBVV95cUxOcG9FZ1ZsWEJwRzRTbTlNVkFseDVKQ180b1NKYmh4bko0Y2FJZUh4MXJuNEgwTlYtSW5xTUhBN0I1eXVpNVRsVmxMWTF1Zzd6NlVxLU1CdjYxVEdtQkIwV01TLVpWSE9PQUVJdUQ1bnozOThqWHBUalI5NENzdXE4QUdtcjVCRENDRVow0gGQAUFVX3lxTFBUMDFuVWRwejdOYmZQZXhNSUctU08yaDJQSEwtVWZxVTJ6QjQ1UmtxTzhFSFJNUmt4bUFVTVVvYnB1Sy1VVE5zQnhVT0c3eHZwX1JxQXVDZ24ybjdPbGtpUFZyWi1TMHFzaEJMYi1YaERoQndkaHRwZ0ZXOEN5SXJXQVFVSmpfQWEwUWt3U0s5NA?oc=5" target="_blank">📄 Australia hikes rates again and warns inflation will stay higher for longer - CNBC</a>
-                </li>
-                <li class="news-item">
                     <a href="https://news.google.com/rss/articles/CBMiugFBVV95cUxQbEF5M2FibWNMSVdzOU53bU8tSzJGMVVnLUt5REpyZ1dtWnhLR3I3ZmV6OFZNbFBLcGV3bU5CdFF0Ymg2OEJwOUVhT3M0dXRIbURsUW81WnAyM0M1N0pTenpIQzU4QkZGWnpjZjItRy1xVlhLRmljNWZybndjQWdYaS1BYm9DWG44ZHVHZ1lUeHEzYjFtZUxNZFZsSkVnYjlOLTV0bzl6LWFjNGRQRjJuYTVmNTI2Q3UzWHc?oc=5" target="_blank">📄 India's April consumer inflation likely rose to 3.8% as higher fuel costs weigh - Reuters poll - Reuters</a>
                 </li>
                 <li class="news-item">
-                    <a href="https://news.google.com/rss/articles/CBMipgFBVV95cUxOaEl2dWZUdlhyNmVOREl4bzZGcXI5Q3J2emxzbXZWVGFReTcwalowZkNPZEZpOERFb2tXVVZkbHdTXzE0Wm1uaDRMTnN0TmwtYzBGRFlqR1JlZUtha3NQNGthRkZLc1ZiTTRvenphaWdlQzNkRnZoTjQtUzhaUk80S3hfWFV0cV8zX01WVWFLYnEycVgySktKWXdpeUtyR0hmMWo0VkZ3?oc=5" target="_blank">📄 Fed officials say rising supply chain risks fuel concern of more persistent inflation - Reuters</a>
+                    <a href="https://news.google.com/rss/articles/CBMisgFBVV95cUxPaUZ4aTZlZjdlb1JaeldmdmxtamFRSkQ1OUFlUVNvRDBNSWtyWGUtcFNCMDFPR2gxSVJpN0E3Z0tMSEdEa21BZzBrb1RWQ3lRZi1Eb2xubjBVOWRCWDlYeEhEaXc1eXFzbzJkMGJEcFl3RlcyXzBxVjhHc3ZydFB6TXAwalV3RU41Um5DR1lQcnVmbGtHdXRwYm5ucGtXT08tMVppRDR4MnphcFRZYnFhZ3Rn?oc=5" target="_blank">📄 Australia to ‘Try to Thread the Needle’ in Budget Tested by War - Bloomberg.com</a>
                 </li>
                 <li class="news-item">
                     <a href="https://news.google.com/rss/articles/CBMisgFBVV95cUxOZU91elR0eEZCNXZ6d0tuQ01WUFBCWjJKbkY2aHlBVnVSc1ZZN21jejZkb0lzTnU2ZndqSnVXMUxTTXM1N0JlbzlLRG9LbWQ0S2FGWDFlZ1FZNUsxNG8ybzNiR0x2UDE0bE9iOVhQeFhCZEFMcWRpNHk4UUFoWTdvMTRmVnZqMHc0Y1NuV09iNGpzM3ZvVW0xeHRaYThuYVRRWHdmeFVaSFFXMEdpNDJ1ZTZR0gG3AUFVX3lxTFBVUVdtamQ2aEhKLThzbjI4QWZCUGthanJRRHBZSEt0cllIdFMzTS1hNnBNWkxySW5SX1lUTEcxRjFRcUZuemhfWGtlT2tWdURONGVmQkdLWWNPVjAwSHJjQ191OW83a3RDOGdFNmhOdmdDTXdjZkRUS1ZiZy1GczU0WmR4dFlnaWpZWVJaRHRQODZPZjg5OXZUOHdTTVhyZ3ZfUWtYelRVcm56bFpCRDVnempXYWJtdw?oc=5" target="_blank">📄 The Federal Reserve is quickly running out of reasons to cut interest rates - CNBC</a>
                 </li>
                 </ul>
             </details>
-            <p style="text-align: center; color: #cbd5e1; font-size: 0.8rem; margin-top: 2rem;">© 2026 Macro Strategy Lab. 最後更新：<span class="date-display">2026-05-10 07:02</span></p>
+            <p style="text-align: center; color: #cbd5e1; font-size: 0.8rem; margin-top: 2rem;">© 2026 Macro Strategy Lab. 最後更新：<span class="date-display">2026-05-11 07:05</span></p>
         </footer>
     </div>
     <script>
@@ -634,6 +667,20 @@
                 document.getElementById('tbody-html').innerHTML = selectedItem.tbody_html;
                 document.getElementById('risk-grid').innerHTML = selectedItem.risk_html;
                 document.getElementById('news-list').innerHTML = selectedItem.news_html;
+
+                // 動態更新 Regime Bar
+                const regimeBar = document.getElementById('regime-bar');
+                if (regimeBar) {
+                    const badge = document.getElementById('regime-badge');
+                    const tags = document.getElementById('anomaly-tags');
+                    if (badge) badge.textContent = selectedItem.market_regime || '';
+                    if (tags) {
+                        tags.innerHTML = (selectedItem.anomaly_signals || []).map(
+                            s => `<span class="anomaly-tag">${s}</span>`
+                        ).join('');
+                    }
+                    regimeBar.style.display = selectedItem.market_regime ? 'flex' : 'none';
+                }
                 
                 // 動態更新 Podcast 音訊來源
                 const audioPlayer = document.getElementById('podcast-audio');
@@ -668,4 +715,4 @@
     </script>
 </body>
 </html>
-<!-- Build Trace (TPE): 2026-05-10 07:02 -->
+<!-- Build Trace (TPE): 2026-05-11 07:05 -->
