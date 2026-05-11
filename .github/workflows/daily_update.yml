@@ -17,33 +17,35 @@ permissions:
 jobs:
   run-and-deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: 📥 下載最新版程式碼 (Checkout Repo)
         uses: actions/checkout@v4
-        
+
       - name: 🐍 準備 Python 環境 (Setup Python)
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
           cache: 'pip'
-          
+
       - name: 📦 安裝必要套件與系統依賴 (Install dependencies)
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg fonts-wqy-microhei
           pip install -r requirements.txt
-          
+
       - name: 🧠 呼叫 AI 生成今日戰情報告 (Run AI Dashboard Generation)
         env:
-          # 最高機密！從 GitHub 保險箱中拿出 Gemini API Key
+          # 最高機密！從 GitHub 保險箱中拿出 API Key
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: |
           python update_dashboard.py
-          
+
       - name: 🎥 自動產製每週總經影音 (僅週四執行)
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: |
           TW_DAY=$(TZ='Asia/Taipei' date +%u)
           if [ "$TW_DAY" -eq 4 ] || [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
@@ -52,28 +54,45 @@ jobs:
           else
             echo "今天不是週四 (星期 $TW_DAY)，跳過影片產製，僅保留每日 Podcast。"
           fi
-          
-      - name: 📦 上傳網頁產物 (Upload Artifact)
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: '.'
-          
+
       - name: 🔍 檢查檔案狀態 (Debug Listing)
         run: |
           echo "當前目錄檔案列表："
-          ls -a
-          
+          ls -al
+          echo ""
+          echo "Macro Skills / Causal Graph 規則庫："
+          ls -al macro_skills.json macro_causal_graphs.json 2>/dev/null || echo "No macro rule library files"
+          echo ""
+          echo "近期產生的 Podcast 檔案："
+          ls -al podcast_*.mp3 2>/dev/null || echo "No podcast files"
+          echo ""
+          echo "近期產生的 Weekly Video 檔案："
+          ls -al weekly_video_*.mp4 2>/dev/null || echo "No weekly video files"
+
       - name: 💾 儲存並推送到 GitHub (Commit & Push)
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add index.html macro_analysis.csv historical_data.json
+
+          # ✅ 核心程式與網頁產物
+          # 注意：新版程式碼請將 txt 改名為 update_dashboard.py 後放入 repo
+          git add update_dashboard.py index.html macro_analysis.csv historical_data.json
+
+          # ✅ Macro Skills / Causal Graph 規則庫
+          # v3.6 會產生 macro_skills.json
+          # v3.7 會產生 macro_causal_graphs.json
+          git add macro_skills.json macro_causal_graphs.json 2>/dev/null || true
+
+          # ✅ 影片產製相關檔案（若存在才加入）
           git add generate_weekly_video.py tom.png miranda.png 2>/dev/null || true
-          
-          # ✅ 加入 Podcast 音訊檔 (mp3 通常 1-3MB，在 GitHub 100MB 限制內)
+
+          # ✅ 加入 Podcast 音訊檔
           git add podcast_*.mp3 2>/dev/null || echo "No new podcast files to add"
-          
-          # ✅ 加入週報影片 (僅限小於 80MB 的檔案，避免超過 GitHub 100MB 硬限制)
+
+          # ✅ 若程式已刪除 7 天前 podcast，這行會把刪除狀態也記錄進 Git
+          git add -u podcast_*.mp3 2>/dev/null || true
+
+          # ✅ 加入週報影片（僅限小於 80MB 的檔案，避免超過 GitHub 100MB 硬限制）
           for f in weekly_video_*.mp4; do
             if [ -f "$f" ]; then
               SIZE=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f" 2>/dev/null || echo 0)
@@ -86,10 +105,17 @@ jobs:
               fi
             fi
           done
-          
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update: Dashboard generated on $(date +'%Y-%m-%d %H:%M')" && git push)
-          
-  # 新的部署任務：直接發布到 GitHub Pages
+
+          # ✅ 若沒有任何變更則不 commit；若有變更則以台灣時間寫入 commit message
+          git diff --quiet && git diff --staged --quiet || \
+          (git commit -m "Auto-update: Dashboard generated on $(TZ='Asia/Taipei' date +'%Y-%m-%d %H:%M')" && git push)
+
+      - name: 📦 上傳網頁產物 (Upload Artifact)
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+  # 直接發布到 GitHub Pages
   deploy:
     environment:
       name: github-pages

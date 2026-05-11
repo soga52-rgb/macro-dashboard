@@ -7,9 +7,13 @@ os.environ["PYTHONPATH"] = r"D:\Lib\site-packages"
 try:
     import json
     import urllib.request
+    import urllib.error
+    import urllib.parse
     import xml.etree.ElementTree as ET
     from datetime import datetime, timedelta
+    from zoneinfo import ZoneInfo
     import csv
+    import html
 except Exception as e:
     import traceback
     print("=============================================================")
@@ -18,7 +22,8 @@ except Exception as e:
     print("=============================================================")
     print("這通常是因為您尚未在本機安裝必要的套件。")
     print("請關閉此視窗，開啟命令提示字元 (cmd) 並輸入以下指令：")
-    print("pip install google-generativeai")
+    print("pip install google-generativeai edge-tts")
+    print("並確認已安裝 ffmpeg 且加入 PATH。")
     print("=============================================================")
     sys.exit(1)
 
@@ -28,61 +33,311 @@ except Exception as e:
 # 安全宣告區：優先從系統環境變數讀取
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-# 檔案路徑設定 (改用支援雲端主機的跨平台相對路徑)
+# 檔案路徑設定
 WORKSPACE_DIR = os.path.dirname(os.path.abspath(__file__))
 CSV_PATH = os.path.join(WORKSPACE_DIR, "macro_analysis.csv")
 HTML_PATH = os.path.join(WORKSPACE_DIR, "index.html")
 HISTORY_FILE = os.path.join(WORKSPACE_DIR, "historical_data.json")
 
+MACRO_SKILLS_FILE = os.path.join(WORKSPACE_DIR, "macro_skills.json")
+
 # ==============================================================================
-# 1. 抓取週度新聞 (Google News RSS - 滾動 7 天視窗)
+# 0.5 Macro Skills Library
+# ==============================================================================
+# 參考概念：
+# Garry Tan / ABMedia: Meta-Meta-Prompting 與可複利 AI 工作流
+# https://abmedia.io/garry-tan-meta-meta-prompting
+#
+# 設計目的：
+# 這裡不是新增另一個大型 AI 流程，而是提供「可重複、可組合、可測試」
+# 的總經分析 skill templates。
+#
+# 原則：
+# 1. 不改變原有主流程：新聞 → 市場數據 → Gemini → Dashboard。
+# 2. 不取代 AI 判斷：macro_skills 只是提供市場 regime 與 transmission 的參考模板。
+# 3. 不硬套模板：若今日市場不符合，AI 應自行判斷並說明偏離原因。
+# 4. 成本幾乎不增加：只多讀取一份小型 JSON，放入 prompt 供模型參考。
+DEFAULT_MACRO_SKILLS = {
+    "higher_for_longer": {
+        "label": "Higher for Longer",
+        "description": "通膨或就業韌性使市場延後降息預期，長端殖利率與美元通常偏強。",
+        "typical_triggers": ["US10Y↑", "DXY↑", "Fed cut odds↓", "Inflation sticky", "Payrolls resilient"],
+        "default_transmission": ["通膨/就業韌性", "降息預期收斂", "美債殖利率上升", "美元獲得利差支撐", "風險資產估值承壓"],
+        "visual_template": "rate_dollar_chain"
+    },
+    "stagflation_risk": {
+        "label": "Stagflation Risk",
+        "description": "供給衝擊或能源上漲推升通膨，同時成長動能轉弱。",
+        "typical_triggers": ["Oil↑", "Inflation↑", "Growth↓", "Real income pressure", "Yield volatility↑"],
+        "default_transmission": ["能源/供給衝擊", "通膨預期升溫", "實質購買力下滑", "央行政策兩難", "股債波動放大"],
+        "visual_template": "oil_inflation_yield_chain"
+    },
+    "risk_off_flight_to_safety": {
+        "label": "Risk-Off / Flight to Safety",
+        "description": "市場避險需求升溫，資金偏向美元、黃金與高流動性資產。",
+        "typical_triggers": ["VIX↑", "Gold↑", "DXY↑", "Equities↓", "Geopolitical risk↑"],
+        "default_transmission": ["風險事件升溫", "避險需求增加", "美元/黃金獲支撐", "股票與高風險資產承壓"],
+        "visual_template": "risk_off_flow"
+    },
+    "dollar_squeeze": {
+        "label": "Dollar Squeeze",
+        "description": "美元流動性偏緊或美國利差優勢擴大，壓迫非美貨幣與新興市場資產。",
+        "typical_triggers": ["DXY↑", "US yield↑", "Asia FX↓", "EM stress↑"],
+        "default_transmission": ["美國利差擴大", "美元需求升溫", "亞洲貨幣承壓", "外幣負債與進口成本壓力上升"],
+        "visual_template": "dxy_asia_fx_pressure"
+    }
+}
+
+
+def ensure_macro_skills_file():
+    """確保 macro_skills.json 存在；若不存在就建立一份預設模板。"""
+    if not os.path.exists(MACRO_SKILLS_FILE):
+        try:
+            with open(MACRO_SKILLS_FILE, "w", encoding="utf-8") as f:
+                json.dump(DEFAULT_MACRO_SKILLS, f, ensure_ascii=False, indent=2)
+            print(f"[OK] 已建立預設 Macro Skills Library: {MACRO_SKILLS_FILE}")
+        except Exception as e:
+            print(f"[WARN] 建立 macro_skills.json 失敗: {e}")
+
+
+def load_macro_skills():
+    """讀取可複利總經分析模板，作為 Narrative / Regime / Transmission 的參考。"""
+    ensure_macro_skills_file()
+    try:
+        with open(MACRO_SKILLS_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else DEFAULT_MACRO_SKILLS
+    except Exception as e:
+        print(f"[WARN] 讀取 macro_skills.json 失敗，改用預設模板: {e}")
+        return DEFAULT_MACRO_SKILLS
+
+# ==============================================================================
+# 0.6 Macro Causal Engine Lite
+# ==============================================================================
+# 這是 v3.7 的「低風險」總經因果規則庫。
+# 目的不是建立複雜 Graph DB，而是把最常見的 5 條機構級總經傳導鏈
+# 轉成可重複、可檢查、可視覺化的 JSON template。
+#
+# 設計原則：
+# 1. 不改變主流程，只作為 Gemini 的推理參考層。
+# 2. 後台保留 5 條核心 graph，但每天只要求 AI 選 Top 1-3 條 selected_graphs。
+# 3. Dashboard 只呈現被啟動的傳導鏈，避免畫面過度複雜。
+# 4. 這一層與 Macro Skills Library 互補：
+#    - macro_skills.json：偏市場 regime / workflow template
+#    - macro_causal_graphs.json：偏事件 → 中介變數 → 資產價格的因果傳導
+MACRO_CAUSAL_GRAPHS_FILE = os.path.join(WORKSPACE_DIR, "macro_causal_graphs.json")
+
+DEFAULT_MACRO_CAUSAL_GRAPHS = {
+    "fed_policy_transmission": {
+        "label": "Fed Policy Transmission Graph",
+        "category": "rates_driven_regime",
+        "core_logic": "央行政策語氣會先影響利率預期，再透過金融條件影響風險資產。",
+        "trigger": "Fed Hawkish / Dovish Tone",
+        "default_nodes": [
+            "Fed policy tone changes",
+            "Rate expectations reprice",
+            "Financial conditions adjust",
+            "Risk assets respond"
+        ],
+        "asset_impacts": {
+            "US10Y": "hawkish_up / dovish_down",
+            "DXY": "hawkish_up / dovish_down",
+            "Equity": "hawkish_down / dovish_up",
+            "Gold": "hawkish_down_or_mixed"
+        },
+        "visual_template": "fed_rates_financial_conditions",
+        "best_used_when": [
+            "Fed 官員發言明顯改變市場預期",
+            "利率期貨或市場降息定價改變",
+            "美債殖利率與美元同步反應"
+        ]
+    },
+    "real_yield_transmission": {
+        "label": "Real Yield Transmission Graph",
+        "category": "rates_driven_regime",
+        "core_logic": "名目利率與通膨預期共同決定實質利率，進而影響美元、黃金與股票估值。",
+        "trigger": "Nominal Yield ↑ with inflation expectations stable or lower",
+        "default_nodes": [
+            "Nominal yield rises",
+            "Real yield rises",
+            "USD strengthens",
+            "Gold faces opportunity cost pressure",
+            "Equity valuation compresses"
+        ],
+        "asset_impacts": {
+            "US10Y": "up",
+            "Real Yield": "up",
+            "DXY": "up",
+            "Gold": "down_or_mixed",
+            "Tech": "down"
+        },
+        "visual_template": "real_yield_usd_gold_equity",
+        "best_used_when": [
+            "美債殖利率上升但黃金或股市反應不一致",
+            "市場討論實質利率與估值折現",
+            "美元與利率同步偏強"
+        ]
+    },
+    "usd_anchor_graph": {
+        "label": "USD Anchor Graph",
+        "category": "cross_asset_linkage",
+        "core_logic": "美元是全球定價錨。DXY 上升通常壓迫非美貨幣、新興市場與美元計價商品。",
+        "trigger": "DXY ↑",
+        "default_nodes": [
+            "DXY strengthens",
+            "EM / Asia FX weakens",
+            "Dollar-priced commodities face pressure",
+            "Global liquidity tightens",
+            "US equities show mixed reaction"
+        ],
+        "asset_impacts": {
+            "DXY": "up",
+            "Asia FX": "down",
+            "Commodities": "down_or_mixed",
+            "Gold": "down_or_safe_haven_mixed",
+            "US Equity": "mixed"
+        },
+        "visual_template": "dxy_global_pricing_anchor",
+        "best_used_when": [
+            "美元指數成為市場主軸",
+            "台幣、日圓、韓元等亞洲貨幣同步承壓",
+            "商品與新興市場受到美元流動性壓力"
+        ]
+    },
+    "energy_inflation_chain": {
+        "label": "Energy → Inflation Chain",
+        "category": "inflation_regime",
+        "core_logic": "能源價格透過 CPI 與通膨預期影響利率預期、美元與風險資產。",
+        "trigger": "Oil ↑",
+        "default_nodes": [
+            "Oil price rises",
+            "Headline CPI pressure increases",
+            "Rate expectations move higher",
+            "USD strengthens short-term",
+            "Equity valuation faces pressure"
+        ],
+        "asset_impacts": {
+            "Oil": "up",
+            "Inflation Expectations": "up",
+            "US10Y": "up",
+            "DXY": "up_short_term",
+            "Equity": "down"
+        },
+        "visual_template": "oil_cpi_yield_equity",
+        "best_used_when": [
+            "原油或能源價格是新聞主軸",
+            "市場重新擔心通膨復燃",
+            "利率與油價方向一致"
+        ]
+    },
+    "vix_risk_off_cascade": {
+        "label": "VIX Risk-Off Cascade",
+        "category": "risk_sentiment_regime",
+        "core_logic": "波動率上升通常引發風險資產去槓桿，並推動避險資產輪動。",
+        "trigger": "VIX ↑ / risk sentiment deteriorates",
+        "default_nodes": [
+            "Volatility rises",
+            "Equities sell off",
+            "Safe-haven demand increases",
+            "Gold and defensive FX strengthen",
+            "Liquidity preference rises"
+        ],
+        "asset_impacts": {
+            "VIX": "up",
+            "Equity": "down",
+            "Gold": "up",
+            "JPY": "up_safe_haven",
+            "USD": "up_or_mixed"
+        },
+        "visual_template": "vix_risk_off_safe_haven",
+        "best_used_when": [
+            "市場風險情緒急轉弱",
+            "VIX 或避險資產同步上升",
+            "股市下跌且黃金/美元/日圓獲支撐"
+        ]
+    }
+}
+
+
+def ensure_macro_causal_graphs_file():
+    """確保 macro_causal_graphs.json 存在；若不存在就建立 5 條核心傳導鏈。"""
+    if not os.path.exists(MACRO_CAUSAL_GRAPHS_FILE):
+        try:
+            with open(MACRO_CAUSAL_GRAPHS_FILE, "w", encoding="utf-8") as f:
+                json.dump(DEFAULT_MACRO_CAUSAL_GRAPHS, f, ensure_ascii=False, indent=2)
+            print(f"[OK] 已建立預設 Macro Causal Graph Library: {MACRO_CAUSAL_GRAPHS_FILE}")
+        except Exception as e:
+            print(f"[WARN] 建立 macro_causal_graphs.json 失敗: {e}")
+
+
+def load_macro_causal_graphs():
+    """讀取總經因果傳導鏈模板，作為 selected_graphs 與 Visual Scene 的參考。"""
+    ensure_macro_causal_graphs_file()
+    try:
+        with open(MACRO_CAUSAL_GRAPHS_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else DEFAULT_MACRO_CAUSAL_GRAPHS
+    except Exception as e:
+        print(f"[WARN] 讀取 macro_causal_graphs.json 失敗，改用預設模板: {e}")
+        return DEFAULT_MACRO_CAUSAL_GRAPHS
+
+# ==============================================================================
+# 1. 抓取週度新聞 Google News RSS - 滾動 48 小時視窗
 # ==============================================================================
 def fetch_weekly_news():
-    print("正在抓取過去 48 小時全球總經深度新聞 (滾動日度視窗)...")
-    # 核心追蹤事件區 (為避免 Google News 查詢過長導致忽略來源過濾，精簡關鍵字)
+    print("正在抓取過去 48 小時全球總經深度新聞（滾動日度視窗）...")
+
     macro_keywords = [
-        "Federal Reserve", "interest rate", "rate cut", 
-        "CPI", "inflation", "unemployment", 
+        "Federal Reserve", "interest rate", "rate cut",
+        "CPI", "inflation", "unemployment",
         "GDP", "macroeconomic", "Treasury yields"
     ]
-    
-    import urllib.parse
-    # 自動將關鍵字組合成標準字串 (以空白與雙引號分隔)
+
     query_str = " OR ".join([f'"{k}"' if ' ' in k else k for k in macro_keywords])
-    # 添加指定媒體
-    source_str = "site:bloomberg.com OR site:cnbc.com OR site:reuters.com OR site:wsj.com OR site:ft.com OR site:marketwatch.com OR site:investing.com"
-    # 用標準的 urllib 進行編碼，確保 Google News 伺服器絕對不漏接 when:2d 指令 (移除 AND 讓 site 條件生效)
+    source_str = (
+        "site:bloomberg.com OR site:cnbc.com OR site:reuters.com OR "
+        "site:wsj.com OR site:ft.com OR site:marketwatch.com OR site:investing.com"
+    )
     encoded_q = urllib.parse.quote(f"({query_str}) ({source_str}) when:2d")
     url = f"https://news.google.com/rss/search?q={encoded_q}&hl=en-US&gl=US&ceid=US:en"
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+
     try:
         response = urllib.request.urlopen(req, timeout=15)
         xml_data = response.read()
         root = ET.fromstring(xml_data)
         headlines = []
-        # 改為嚴格挑選最新 6 則，並篩選指定媒體
-        for item in root.findall('.//item')[:6]:
-            title_node = item.find('title')
-            link_node = item.find('link')
+
+        for item in root.findall(".//item")[:6]:
+            title_node = item.find("title")
+            link_node = item.find("link")
+            source_node = item.find("source")
+            pubdate_node = item.find("pubDate")
+
             title = title_node.text if title_node is not None else "新聞標題"
             link = link_node.text if link_node is not None else "#"
-            
-            source_node = item.find('source')
-            pubdate_node = item.find('pubDate')
             source = source_node.text if source_node is not None else "新聞媒體"
-            pubdate = pubdate_node.text if pubdate_node is not None else datetime.now().strftime("%Y/%m/%d %H:%M:%S")
-            
-            headlines.append({"title": title, "link": link, "source": source, "pubdate": pubdate})
+            pubdate = pubdate_node.text if pubdate_node is not None else datetime.now(ZoneInfo("Asia/Taipei")).strftime("%Y/%m/%d %H:%M:%S")
+
+            headlines.append({
+                "title": title,
+                "link": link,
+                "source": source,
+                "pubdate": pubdate
+            })
+
         return headlines
+
     except Exception as e:
         print(f"新聞抓取失敗: {e}")
         return []
 
 # ==============================================================================
-# 1.5 抓取即時金融數據 (Yahoo Finance API)
+# 1.5 抓取即時金融數據 Yahoo Finance chart API
 # ==============================================================================
 def fetch_realtime_data():
     print("正在抓取最新市場報價...")
+
     symbols = {
         "DXY (美元指數)": "DX-Y.NYB",
         "US10Y (美國十年期公債殖利率, %)": "^TNX",
@@ -91,30 +346,40 @@ def fetch_realtime_data():
         "S&P 500 (標普500)": "^GSPC",
         "BTC (比特幣, USD)": "BTC-USD"
     }
+
     market_data = {}
+
     for name, sym in symbols.items():
-        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}?range=1d&interval=1d"
+        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{urllib.parse.quote(sym)}?range=1d&interval=1d"
         try:
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
             response = urllib.request.urlopen(req, timeout=10)
             data = json.loads(response.read())
-            price = data['chart']['result'][0]['meta']['regularMarketPrice']
+
+            result = data.get("chart", {}).get("result", [])
+            if not result:
+                raise ValueError("Yahoo chart result empty")
+
+            price = result[0].get("meta", {}).get("regularMarketPrice")
+            if price is None:
+                raise ValueError("regularMarketPrice missing")
+
             if sym == "^TNX":
-                market_data[name] = f"{price:.3f} 殖利率%"
+                market_data[name] = f"{float(price):.3f} 殖利率%"
             else:
-                market_data[name] = f"{price:.2f}" if isinstance(price, (int, float)) else str(price)
+                market_data[name] = f"{float(price):.2f}" if isinstance(price, (int, float)) else str(price)
+
         except Exception as e:
             print(f"[{sym}] 報價抓取失敗: {e}")
             market_data[name] = "Data Unavailable"
-            
-    # 格式化輸出
+
     output = ""
     for k, v in market_data.items():
         output += f"- {k}: {v}\n"
     return output
 
 # ==============================================================================
-# 1.6 抓取權威總經數據 (FRED API)
+# 1.6 抓取權威總經數據 FRED API
 # ==============================================================================
 def fetch_fred_data():
     fred_api_key = os.environ.get("FRED_API_KEY")
@@ -122,73 +387,87 @@ def fetch_fred_data():
         return "FRED API 尚未配置，目前僅使用 Yahoo Finance 市場報價。"
 
     print("正在抓取 FRED 核心總經數據...")
-    # 核心追蹤指標
+
     series_ids = {
         "Core PCE (美國核心個人消費支出物價指數)": "PCEPILFE",
         "Unemployment Rate (美國失業率, %)": "UNRATE",
         "Real GDP (美國實質GDP)": "GDPC1"
     }
-    
+
     fred_data = {}
+
     for name, sid in series_ids.items():
-        url = f"https://api.stlouisfed.org/fred/series/observations?series_id={sid}&api_key={fred_api_key}&file_type=json&sort_order=desc&limit=1"
+        url = (
+            "https://api.stlouisfed.org/fred/series/observations"
+            f"?series_id={sid}&api_key={fred_api_key}&file_type=json&sort_order=desc&limit=1"
+        )
         try:
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
             response = urllib.request.urlopen(req, timeout=10)
             data = json.loads(response.read())
-            observations = data.get('observations', [])
+            observations = data.get("observations", [])
+
             if observations:
                 latest = observations[0]
-                date = latest.get('date', '')
-                value = latest.get('value', '')
+                date = latest.get("date", "")
+                value = latest.get("value", "")
                 fred_data[name] = f"{value} (發布時間: {date})"
             else:
                 fred_data[name] = "Data Unavailable"
+
         except Exception as e:
             print(f"[{sid}] FRED 抓取失敗: {e}")
             fred_data[name] = "Data Unavailable"
-            
+
     output = "\n【FRED 官方總經核心指標】\n"
     for k, v in fred_data.items():
         output += f"- {k}: {v}\n"
     return output
 
 # ==============================================================================
-# 2. 呼叫 Gemini REST API 進行總經分析 (具備自動修復功能的版本)
+# 2. 呼叫 Gemini REST API 進行總經分析
 # ==============================================================================
 def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"):
-    print(f"正在呼叫 Gemini API 進行智能推論 (今日日期: {today_str})...")
-    
+    print(f"正在呼叫 Gemini API 進行智能推論（今日日期: {today_str}）...")
+
     if isinstance(news_data, list) and len(news_data) > 0:
-        news_text = "\n".join([f"[{item.get('source', '新聞媒體')} | {item.get('pubdate', '')}] {item['title']} (URL: {item['link']})" for item in news_data])
+        news_text = "\n".join([
+            f"[{item.get('source', '新聞媒體')} | {item.get('pubdate', '')}] {item['title']} (URL: {item['link']})"
+            for item in news_data
+        ])
     else:
         news_text = "未能抓取新聞，請基於目前全球總體經濟狀況直接進行推論。"
 
-    # 嘗試讀取現有的 CSV 數據提供給 AI 作為參考 (Context)
     macro_history = "尚無歷史數據"
     try:
         if os.path.exists(CSV_PATH):
-            with open(CSV_PATH, 'r', encoding='utf-8') as f:
+            with open(CSV_PATH, "r", encoding="utf-8") as f:
                 reader = csv.reader(f)
                 rows = list(reader)
                 if len(rows) > 1:
-                    macro_history = "\\n".join([",".join(row) for row in rows[-5:]])
+                    macro_history = "\n".join([",".join(row) for row in rows[-5:]])
     except Exception as e:
         print(f"讀取歷史數據失敗: {e}")
-        
-    # 嘗試讀取昨日的市場記憶 (Market Memory State)
+
     market_memory = "尚無昨日市場記憶"
     try:
         if os.path.exists(HISTORY_FILE):
-            with open(HISTORY_FILE, 'r', encoding='utf-8') as f:
+            with open(HISTORY_FILE, "r", encoding="utf-8") as f:
                 hist_data = json.load(f)
                 if hist_data and isinstance(hist_data, list) and len(hist_data) > 0:
                     last_entry = hist_data[0]
                     last_date = last_entry.get("date", "未知日期")
                     last_narrative = last_entry.get("weekly_narrative", "")
-                    
-                    market_memory = f"【前次分析時間】: {last_date}\n【前次主旋律敘事】: {last_narrative}\n"
-                    
+                    last_regime = last_entry.get("market_regime", "")
+                    last_anomaly = last_entry.get("anomaly_signals", [])
+
+                    market_memory = (
+                        f"【前次分析時間】: {last_date}\n"
+                        f"【前次市場 Regime】: {last_regime}\n"
+                        f"【前次異常定價】: {last_anomaly}\n"
+                        f"【前次主旋律敘事】: {last_narrative}\n"
+                    )
+
                     import re
                     risk_html = last_entry.get("risk_html", "")
                     risk_texts = re.findall(r'<p class="risk-content">(.*?)</p>', risk_html)
@@ -196,129 +475,199 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
                         market_memory += "【前次風險預警】: " + " / ".join(risk_texts)
     except Exception as e:
         print(f"讀取昨日市場記憶失敗: {e}")
-        
-    # 定義輸出的 JSON Schema 確保 AI 回傳的結構百分之百合法
-    # 🚨 關鍵修正：警告 AI 絕不可在 HTML 內使用雙引號
+
+    macro_skills = load_macro_skills()
+    macro_skills_context = json.dumps(macro_skills, ensure_ascii=False, indent=2)
+
+    macro_causal_graphs = load_macro_causal_graphs()
+    macro_causal_graphs_context = json.dumps(macro_causal_graphs, ensure_ascii=False, indent=2)
+
     prompt = f"""你現在是一位資深的全球總經策略分析師。請根據以下數據與新聞連結進行邏輯推演。
 
-### 🌐 代理人搜尋指令 (Search Grounding):
-本次任務中，我們為你啟用了 Google Search Grounding。請務必優先使用該工具，點擊下方【最新新聞頭條】中的 URL，特別鎖定 CNBC, Reuters, Bloomberg, WSJ 與 Financial Times 等權威來源，去閱讀「新聞的全文內容」，而非只依賴標題。這將幫助你取得最新的 Fed 動向與就業/通膨細節。請不要自己寫程式爬網頁，直接利用內建的 Search Grounding 檢索內容。
+### 🌐 Search Grounding 指令:
+本次任務中，我們為你啟用了 Google Search Grounding。請使用 Search Grounding 查核下方【最新新聞頭條】與相關最新報導，特別鎖定 CNBC, Reuters, Bloomberg, WSJ 與 Financial Times 等權威來源，補充 Fed 動向、就業、通膨、利率、能源與美元相關脈絡。
+請不要自己寫程式爬網頁，直接利用內建 Search Grounding 檢索內容。
 
-### 今日日期: {today_str}
+### 今日日期:
+{today_str}
 
-### 📊 最新市場即時報價 (絕對精確，請務必參考):
+### 📊 最新市場即時報價（絕對精確，請務必參考）:
 {realtime_data}
 
 ### 歷史數據參考:
 {macro_history}
 
-### 🧠 昨日市場記憶 (Market Memory State - 敘事追蹤):
+### 🧠 昨日市場記憶（Market Memory State - 敘事追蹤）:
 {market_memory}
+
+### 🧩 Macro Skills Library（可複利總經分析模板）:
+以下是系統內建的可重複總經分析 skill templates。它們不是結論，而是協助你辨識常見市場 regime、傳導鏈與 visual template 的參考框架。
+請先判斷今日市場是否接近其中一種 skill；若不符合，請說明偏離原因，不要硬套。
+{macro_skills_context}
+
+### 🕸️ Macro Causal Graph Library Lite（總經因果傳導鏈模板）:
+以下是系統內建的 5 條核心 structured macro logic graphs。它們不是要你全部展開，而是讓你根據今日新聞與市場數據選出最相關的 1-3 條。
+請輸出 selected_graphs，並說明為何啟動該傳導鏈。
+{macro_causal_graphs_context}
 
 ### 最新新聞頭條:
 {news_text}
 
-### 撰寫指令 (三部曲核心邏輯):
-🚨【新聞時效規定】`focus_items` 中每則新聞的 `publish_date` **必須在今日 ({today_str}) 起算的過去 72 小時以內**。若找不到 72 小時內的新聞，請改用 Search Grounding 搜尋最新的相關報導。絕對禁止引用超過 3 天前的舊新聞。
-1. **Phase 1 新聞解析 (News Parsing)**: 請從下方【最新新聞頭條】提供的 6 則新聞中，**挑選「最重要、最具市場影響力」的 3 則新聞進行深入解析即可（嚴格限制只輸出 3 則 `focus_items`）**。解析 Fed 利率路徑、通膨 (CPI/PCE) 與就業數據。運用 Search Grounding 補充這 3 則新聞背後的脈絡。
-2. **Phase 2 走勢研判與敘事經濟學 (Narrative Economics)**: **【核心要求】請詳細研判「十年期公債殖利率」、「美元指數」、「亞洲貨幣 (台幣/日圓)」、「黃金」與「原油」等資產背後的驅動邏輯。請務必比較當前狀態與上方【昨日市場記憶】，明確指出市場的主軸敘事 (Market Narrative) 發生了什麼轉變（例如：從交易「軟著陸」變成「通膨復燃」），或是延續了什麼趨勢。**
-3. **Phase 3 圖表驗證 (Chart Verification)**: 產出結論以對照網頁下方的即時走勢圖。確保你的推論方向符合【最新市場即時報價】的水位。
+### 撰寫指令（三部曲核心邏輯）:
+🚨【新聞時效規定】`focus_items` 中每則新聞的 `publish_date` 必須在今日 ({today_str}) 起算的過去 72 小時以內。若找不到 72 小時內的新聞，請改用 Search Grounding 搜尋最新相關報導。絕對禁止引用超過 3 天前的舊新聞。
 
-### 精確報價與防範幻覺 (Data Accuracy): 
-   - 🚨 當你在分析中提及具體價格、點位或殖利率時，**必須且只能使用上方【最新市場即時報價】中的數據**。
-   - 結合新聞頭條的利多/利空事件進行推演。
-   - 絕對禁止憑空捏造上方未提供的數字。對於未提供報價的標的，一律使用「純定性趨勢詞彙」描述（例如：高位震盪、跌破支撐）。
+1. Phase 1 新聞解析：
+   請從【最新新聞頭條】提供的 6 則新聞中，挑選最重要、最具市場影響力的 3 則新聞深入解析。嚴格限制只輸出 3 則 `focus_items`。
+   重點聚焦 Fed 利率路徑、通膨 CPI/PCE、就業數據、能源、美元、美債殖利率。
 
-### HTML 格式限制: 
-   - 在 next_week_forecast_html 欄位中使用 <details> 標籤與分點結構。
-   - 🚨 絕對禁止在 HTML 內容中使用雙引號 (")，所有 class、href 或 style 屬性「必須且只能」使用單引號 (')，否則 JSON 解析會崩潰！
+2. Phase 2 走勢研判與敘事經濟學：
+   詳細研判「十年期公債殖利率」、「美元指數」、「亞洲貨幣（台幣/日圓/韓元）」、「黃金」與「原油」背後驅動邏輯。
+   請比較當前狀態與【昨日市場記憶】，明確指出市場主軸敘事 Market Narrative 發生何種轉變，或延續何種趨勢。
 
-### 輸出格式 (JSON):
+3. Phase 3 圖表驗證：
+   產出結論以對照網頁下方即時走勢圖。
+   確保推論方向符合【最新市場即時報價】的水位。
+
+### 精確報價與防幻覺:
+- 當你提及具體價格、點位或殖利率時，必須且只能使用上方【最新市場即時報價】中的數據。
+- 絕對禁止憑空捏造上方未提供的數字。
+- 對未提供報價的標的，一律使用定性趨勢詞彙，例如高位震盪、跌破支撐、偏強、偏弱。
+
+### Skill-driven 分析指令:
+請根據 Macro Skills Library 判斷今日市場最接近哪個 skill / regime。
+但請務必遵守：
+- skill 只是模板，不是答案。
+- 若今日市場出現混合 regime，請以主導敘事為主，並在 skill_notes 說明。
+- 若出現模板無法解釋的 anomaly，請優先保留 anomaly，而不是強迫符合模板。
+- 這個設計參考 Garry Tan / ABMedia 關於 Meta-Meta-Prompting 與可複利 AI workflow 的概念：將重複任務抽象為可重用 skill，而不是每次從零開始 prompt。
+
+### Macro Causal Engine Lite 指令:
+請根據 Macro Causal Graph Library Lite，選出今日最重要的 1-3 條 selected_graphs。
+請遵守：
+- 不要全部選，只選與今日市場最相關者。
+- selected_graphs 必須協助解釋 market_regime、anomaly_signals 與 visual_scenes。
+- 若某條 graph 的傳統理論與實際市場反應相反，請保留 anomaly，並在 why_selected 中說明。
+- 這一層是「因果傳導參考」，不是僵硬規則；請根據即時報價與新聞脈絡判斷。
+
+### Visual Macro Scene 指令:
+請產生 3 個 `visual_scenes`，用於網頁資訊圖與影片背景。
+目的不是美化，而是幫助觀眾理解總經傳導。
+
+每個 scene 必須符合下列其中一種:
+1. transmission_chain：事件 → 預期 → 資產價格
+2. regime_dashboard：目前市場 regime 與支持訊號
+3. cross_asset_flow：美元、利率、黃金、原油、股市之間的異常關係
+4. risk_radar：未來 1 週主要風險
+
+請注意:
+- nodes 請用短句，適合放在資訊圖中。
+- 每個 scene 的 nodes 以 3 到 5 個為佳。
+- asset_signals 不超過 4 個。
+- main_message 請用一眼可懂的句子。
+- 請避免長篇文字。
+
+### HTML 格式限制:
+- 在 next_week_forecast_html 欄位中使用 <details> 標籤與分點結構。
+- 絕對禁止在 HTML 內容中使用雙引號 (")，所有 class、href 或 style 屬性必須且只能使用單引號 (')，否則 JSON 解析會崩潰。
+
+### 輸出格式 JSON:
 請嚴格輸出以下 JSON 格式，不要有任何多餘文字：
 {{
   "weekly_narrative": "(約 150 字) 基於市場情緒與 Phase 1、Phase 2 解析撰寫的總經分析摘要，請聚焦於客觀趨勢描述，避開任何主觀投資建議。",
-  "focus_items": [ {{
-    "category": "事件分類(例:央行政策)",
-    "title": "新聞標題",
-    "source": "新聞來源",
-    "publish_date": "發布時間 (格式：YYYY-MM-DD，必須為今日起算 72 小時以內的新聞，請優先挑選今日或昨日的新聞)",
-    "price_direction": "物價方向(偏多/偏空/中性)",
-    "rate_direction": "利率方向(偏多/偏空/中性)",
-    "usd_direction": "美元指數方向(偏多/偏空/中性)",
-    "short_summary": "一句話總結",
-    "original_summary": "新聞原始摘要",
-    "one_sentence_conclusion": "一句話結論",
-    "news_summary": "新聞詳細摘要",
-    "transmission_path": "傳導路徑",
-    "price_reason": "物價變動原因",
-    "rate_reason": "利率變動原因",
-    "usd_reason": "美元變動原因",
-    "original_focus": "原始重點",
-    "original_link": "新聞原始連結網址"
-  }} ],
+  "focus_items": [
+    {{
+      "category": "事件分類(例:央行政策)",
+      "title": "新聞標題",
+      "source": "新聞來源",
+      "publish_date": "發布時間 (格式：YYYY-MM-DD，必須為今日起算 72 小時以內的新聞)",
+      "price_direction": "物價方向(偏多/偏空/中性)",
+      "rate_direction": "利率方向(偏多/偏空/中性)",
+      "usd_direction": "美元指數方向(偏多/偏空/中性)",
+      "short_summary": "一句話總結",
+      "original_summary": "新聞原始摘要",
+      "one_sentence_conclusion": "一句話結論",
+      "news_summary": "新聞詳細摘要",
+      "transmission_path": "傳導路徑",
+      "price_reason": "物價變動原因",
+      "rate_reason": "利率變動原因",
+      "usd_reason": "美元變動原因",
+      "original_focus": "原始重點",
+      "original_link": "新聞原始連結網址"
+    }}
+  ],
   "fx_rates_linkage": "(120 字) Phase 2 走勢研判，拆解利率與匯率的實際傳導。",
   "market_regime": "當前市場主要的定價敘事，以 5-10 個英文字精準命名（例: Higher for Longer、Stagflation Risk、Risk-Off / Flight to Safety、Soft Landing Trade、Rate Cut Euphoria）。僅輸出敘事標籤，不含其他說明文字。",
-  "anomaly_signals": ["若存在與傳統理論相悖的資產定價現象，請以 '資產A↑資產B↑(異常)' 格式列出，例如 '美元↑黃金↑'、'殖利率↑科技股↑'；若無明顯異常則輸出空陣列 []"],
-  "outlook_risks": [ {{ "title": "...", "content": "..." }}, {{ "title": "...", "content": "..." }} ],
+  "anomaly_signals": ["若存在與傳統理論相悖的資產定價現象，請以 '資產A↑資產B↑(異常)' 格式列出，例如 '美元↑黃金↑(異常)'、'殖利率↑科技股↑(異常)'；若無明顯異常則輸出空陣列 []"],
+  "visual_scenes": [
+    {{
+      "scene_title": "場景標題，例如：就業強勁但結構轉弱",
+      "scene_type": "transmission_chain",
+      "main_message": "這個場景要讓觀眾一眼理解的核心訊息",
+      "nodes": ["節點1", "節點2", "節點3", "節點4"],
+      "asset_signals": [
+        {{"asset": "US10Y", "direction": "↑", "meaning": "降息預期收斂"}},
+        {{"asset": "DXY", "direction": "↑", "meaning": "美元利差支撐"}}
+      ],
+      "risk_note": "此場景對市場的關鍵風險提示"
+    }}
+  ],
+  "outlook_risks": [
+    {{ "title": "...", "content": "..." }},
+    {{ "title": "...", "content": "..." }}
+  ],
   "analysis": [
-    {{ 
-      "variable_name": "🔥 通膨預期", 
-      "badge_text": "CPI/PPI Outlook", 
-      "status": "簡短摘要(例: 能源成本攀升)", 
-      "status_detail": "報價數據(例: WTI原油報94.0 USD/bbl)", 
-      "trend_class": "trend-up", 
-      "trend_text": "...", 
-      "drivers": "...", 
-      "impact": "..." 
+    {{
+      "variable_name": "🔥 通膨預期",
+      "badge_text": "CPI/PPI Outlook",
+      "status": "簡短摘要(例: 能源成本攀升)",
+      "status_detail": "報價數據(例: WTI原油報94.0 USD/bbl)",
+      "trend_class": "trend-up",
+      "trend_text": "...",
+      "drivers": "...",
+      "impact": "..."
     }},
-    {{ 
-      "variable_name": "📉 利率預期", 
-      "badge_text": "Fed Funds / US10Y", 
-      "status": "簡短摘要(例: 殖利率創波段新高)", 
-      "status_detail": "報價數據(例: 4.292%)", 
-      "trend_class": "trend-up", 
-      "trend_text": "...", 
-      "drivers": "...", 
-      "impact": "..." 
+    {{
+      "variable_name": "📉 利率預期",
+      "badge_text": "Fed Funds / US10Y",
+      "status": "簡短摘要(例: 殖利率創波段新高)",
+      "status_detail": "報價數據(例: 4.292%)",
+      "trend_class": "trend-up",
+      "trend_text": "...",
+      "drivers": "...",
+      "impact": "..."
     }},
-    {{ 
-      "variable_name": "🦅 美元指數", 
-      "badge_text": "DXY Strength", 
-      "status": "簡短摘要(例: 避險情緒推升)", 
-      "status_detail": "報價數據(例: 逼近百元大關)", 
-      "trend_class": "trend-up", 
-      "trend_text": "...", 
-      "drivers": "...", 
-      "impact": "..." 
+    {{
+      "variable_name": "🦅 美元指數",
+      "badge_text": "DXY Strength",
+      "status": "簡短摘要(例: 避險情緒推升)",
+      "status_detail": "報價數據(例: 逼近百元大關)",
+      "trend_class": "trend-up",
+      "trend_text": "...",
+      "drivers": "...",
+      "impact": "..."
     }}
   ],
   "next_week_forecast_html": "<details class='analysis-container'><summary>📢 下週預測：[主旋律]</summary><div class='analysis-content'><strong>⛓️ 市場邏輯傳導：</strong><p>[因子] ➔ 影響<strong>通膨/利率預期</strong> ➔ 最終定價<strong>美元走勢</strong>。</p><hr><strong>📉 資產動態預測：</strong><ul><li><strong>亞洲貨幣 (TWD/JPY/KRW)：</strong>...</li><li><strong>避險成本與鋼鐵業：</strong>...</li></ul></div></details>",
   "podcast_script": "(約 800-1000 字) 高品質財經 Podcast 每日精華，雙主持人對談格式。每行嚴格遵循：[Tom]: (台詞) 或 [Miranda]: (台詞)。\\n\\n【角色設定】\\n[Tom]：主持人，Bloomberg Odd Lots 風格，有觀點，負責開場 + Hook 轉場，不喊段落名稱。\\n[Miranda]：資深總經策略師，hedge fund macro strategist 語氣，談 narrative / positioning / 情緒面，保留不確定空間。\\n\\n【禁止事項】禁止段落標題、編號、Markdown、播報式開場、Miranda 主動介紹話題。\\n\\n【開場要求】Tom 第一句：今日日期 + 市場氛圍一句話定調 (2-3句)，自然邀 Miranda 展開。\\n\\n【敘事邊界——每段只講一個核心問題】\\n§1 全球市場主旋律：盤面情緒、risk appetite、市場在交易什麼 narrative。Hook: Tom 引出通膨疑問。\\n§2 物價通膨趨勢：CPI/PCE、能源/薪資通膨、市場通膨預期。Hook: Tom 引出央行難題。\\n§3 央行利率動向：Fed/ECB 政策訊號、殖利率、鷹鴿。Hook: Tom 引出資產定價。\\n§4 美元與關鍵資產：美元、黃金、原油、亞幣、資金流。Hook: Tom 帶出風險。\\n§5 今日風險展望：今明兩日需關注的關鍵訊號，Miranda 自然收尾帶一句免責。\\n\\n【寫作規則】口語自然，允許不完整句；不確定性語氣「市場看起來像是...」；單段不超過兩組具體數字。"
 }}
 """
-    
-    # 使用者指定：只使用 3.1 PRO，若失敗則退回 2.5 PRO
+
     strategies = [
-        ("v1beta", "gemini-3.1-pro-preview"), 
+        ("v1beta", "gemini-3.1-pro-preview"),
         ("v1beta", "gemini-2.5-pro")
     ]
-    
+
     import time
     for version, model in strategies:
-        # 內層重試機制 (針對 503/429) - 將重試次數提高，以應付伺服器高負載
         max_retries = 6
         for attempt in range(max_retries):
             try:
-                print(f"-> 嘗試連線方案: {version} / {model} (第 {attempt+1} 次)...")
+                print(f"-> 嘗試連線方案: {version} / {model} (第 {attempt + 1} 次)...")
                 url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent?key={GEMINI_API_KEY}"
-                # 加入 tools 以啟動 Search Grounding
+
                 data = {
                     "contents": [{"parts": [{"text": prompt}]}],
-                    "tools": [
-                        {
-                            "googleSearch": {}
-                        }
-                    ],
+                    "tools": [{"googleSearch": {}}],
                     "generationConfig": {
                         "responseMimeType": "application/json"
                     },
@@ -329,54 +678,57 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
                         {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
                     ]
                 }
-                req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers={'Content-Type': 'application/json'})
-                
+
+                req = urllib.request.Request(
+                    url,
+                    data=json.dumps(data).encode("utf-8"),
+                    headers={"Content-Type": "application/json"}
+                )
+
                 try:
                     response = urllib.request.urlopen(req, timeout=180)
-                    result = json.loads(response.read().decode('utf-8'))
-                    
-                    # 💡 關鍵修正：增加 API 回傳結構的安全檢查
-                    if 'candidates' not in result or not result['candidates']:
-                        prompt_feedback = result.get('promptFeedback', {})
-                        print(f"   [FAIL] {model} 未產生有效回應 (可能被安全過濾器攔截)。Feedback: {prompt_feedback}")
+                    result = json.loads(response.read().decode("utf-8"))
+
+                    if "candidates" not in result or not result["candidates"]:
+                        prompt_feedback = result.get("promptFeedback", {})
+                        print(f"   [FAIL] {model} 未產生有效回應。Feedback: {prompt_feedback}")
                         break
 
-                    text = result['candidates'][0]['content']['parts'][0]['text'].strip()
-                    
-                    # 💡 關鍵修正：更強健的 JSON 提取 (支持包含前言或後記的 AI 輸出)
-                    start_idx = text.find('{')
-                    end_idx = text.rfind('}')
+                    text = result["candidates"][0]["content"]["parts"][0]["text"].strip()
+
+                    start_idx = text.find("{")
+                    end_idx = text.rfind("}")
                     if start_idx != -1 and end_idx != -1:
-                        text = text[start_idx:end_idx+1]
-                    
-                    # 取代可能在 JSON 內引發解析錯誤的控制字元
-                    text = text.replace('\\n', ' ').replace('\\r', '')
-                    
+                        text = text[start_idx:end_idx + 1]
+
+                    text = text.replace("\r", "")
+
                     print(f"[SUCCESS] {model} 回應成功！")
                     return json.loads(text, strict=False)
+
                 except urllib.error.HTTPError as e:
-                    error_data = e.read().decode('utf-8')
-                    # 如果是 503 (系統忙碌) 或 429 (配額滿)，我們稍微休息一下再試
+                    error_data = e.read().decode("utf-8")
                     if e.code in [429, 503] and attempt < max_retries - 1:
-                        wait_time = 90  # 預設至少等待超過一分鐘
+                        wait_time = 90
                         if "Please retry in" in error_data:
                             try:
                                 import re
                                 match = re.search(r"Please retry in (\d+\.\d+)s", error_data)
                                 if match:
                                     wait_time = int(float(match.group(1))) + 5
-                            except:
+                            except Exception:
                                 pass
                         print(f"   [WAIT] 伺服器忙碌或配額限制，等待 {wait_time} 秒後重試...")
                         time.sleep(wait_time)
                         continue
                     else:
                         print(f"   [FAIL] {model} 錯誤 ({e.code}): {error_data}")
-                        break # 跳出重試，換下一個型號
+                        break
+
             except Exception as e:
                 print(f"   [FAIL] {model} 發生其他錯誤: {e}")
                 break
-            
+
     print("\n[CRITICAL ERROR] 所有連線方案均告失敗。")
     return None
 
@@ -384,43 +736,41 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
 # 3. 渲染並覆寫 HTML 網頁與 CSV 資料表
 # ==============================================================================
 def update_dashboard(ai_response, news_list, today_str):
-    if not ai_response or not isinstance(ai_response, dict) or 'analysis' not in ai_response:
+    if not ai_response or not isinstance(ai_response, dict) or "analysis" not in ai_response:
         print("[ERROR] 戰情分析資料格式不正確，無法更新儀表板。")
         return
-        
+
     print("正在將深度週報結果寫入儀表板與 CSV 檔案...")
-    
-    analysis_data = ai_response.get('analysis') or []
-    weekly_narrative = ai_response.get('weekly_narrative') or '本週尚無綜合摘要。'
-    focus_items = ai_response.get('focus_items') or []
-    fx_rates_linkage = ai_response.get('fx_rates_linkage') or '尚無傳導分析。'
-    market_regime = ai_response.get('market_regime') or ''
-    anomaly_signals = ai_response.get('anomaly_signals') or []
-    outlook_risks = ai_response.get('outlook_risks') or []
-    next_week_forecast_html = ai_response.get('next_week_forecast_html') or ''
-    podcast_script = ai_response.get('podcast_script') or '本日尚無語音戰情腳本。'
-    
+
+    analysis_data = ai_response.get("analysis") or []
+    weekly_narrative = ai_response.get("weekly_narrative") or "本週尚無綜合摘要。"
+    focus_items = ai_response.get("focus_items") or []
+    fx_rates_linkage = ai_response.get("fx_rates_linkage") or "尚無傳導分析。"
+    market_regime = ai_response.get("market_regime") or ""
+    skill_used = ai_response.get("skill_used") or ""
+    skill_notes = ai_response.get("skill_notes") or ""
+    selected_graphs = ai_response.get("selected_graphs") or []
+    anomaly_signals = ai_response.get("anomaly_signals") or []
+    visual_scenes = ai_response.get("visual_scenes") or []
+    outlook_risks = ai_response.get("outlook_risks") or []
+    next_week_forecast_html = ai_response.get("next_week_forecast_html") or ""
+    podcast_script = ai_response.get("podcast_script") or "本日尚無語音戰情腳本。"
+
     # ══════════════════════════════════════════════════════════
     # 產生 podcast mp3 — Multi-Speaker TTS Pipeline
-    #   1. Regex 解析 [Tom] / [Miranda] 角色標籤
-    #   2. 各角色使用各自的 edge-tts 聲音分段生成
-    #   3. ffmpeg concat 合併為單一 podcast mp3
     # ══════════════════════════════════════════════════════════
     podcast_filename = "podcast.mp3"
     try:
         import subprocess
         import re as _re
         import shutil as _shutil
-        from datetime import datetime
 
-        curr_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+        curr_time_str = datetime.now(ZoneInfo("Asia/Taipei")).strftime("%Y%m%d_%H%M%S")
         podcast_filename = f"podcast_{curr_time_str}.mp3"
         podcast_path = os.path.join(WORKSPACE_DIR, podcast_filename)
 
-        # ── Step 1：解析角色台詞 ────────────────────────────
-        # 支援 [Tom]: / [Miranda]: 格式，台詞可跨多字
         dialogue_pattern = _re.compile(
-            r'\[(Tom|Miranda)\]\s*[:：]\s*(.*?)(?=\s*\[(?:Tom|Miranda)\]\s*[:：]|$)',
+            r"\[(Tom|Miranda)\]\s*[:：]\s*(.*?)(?=\s*\[(?:Tom|Miranda)\]\s*[:：]|$)",
             _re.DOTALL
         )
         dialogue_parts = [
@@ -430,85 +780,82 @@ def update_dashboard(ai_response, news_list, today_str):
         ]
 
         if not dialogue_parts:
-            # 沒有找到角色標籤 → fallback 單人
             print("⚠️ 未偵測到 [Tom]/[Miranda] 標籤，改用單人配音。")
             dialogue_parts = [("Miranda", podcast_script)]
 
-        print(f"✅ 解析完成：共 {len(dialogue_parts)} 段對話 "
-              f"(Tom: {sum(1 for s,_ in dialogue_parts if s=='Tom')}, "
-              f"Miranda: {sum(1 for s,_ in dialogue_parts if s=='Miranda')})")
+        print(
+            f"✅ 解析完成：共 {len(dialogue_parts)} 段對話 "
+            f"(Tom: {sum(1 for s, _ in dialogue_parts if s == 'Tom')}, "
+            f"Miranda: {sum(1 for s, _ in dialogue_parts if s == 'Miranda')})"
+        )
 
-        # ── Step 2：voice mapping ────────────────────────────
-        # Tom  → 台灣男聲 (YunJhe)，Miranda → 台灣女聲 (HsiaoChen)
         VOICE_MAP = {
-            "Tom":     "zh-TW-YunJheNeural",
+            "Tom": "zh-TW-YunJheNeural",
             "Miranda": "zh-TW-HsiaoChenNeural",
         }
 
-        # edge-tts 執行路徑（本機優先，找不到再 fallback PATH）
         edge_tts_path = r"C:\Users\soga52\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\Scripts\edge-tts.exe"
         if not os.path.exists(edge_tts_path):
             edge_tts_path = "edge-tts"
 
-        # ── Step 3：建立暫存目錄，逐段生成 ──────────────────
         temp_audio_dir = os.path.join(WORKSPACE_DIR, f"temp_podcast_{curr_time_str}")
         os.makedirs(temp_audio_dir, exist_ok=True)
 
         audio_segments = []
         print(f"正在生成 Podcast 語音檔 ({podcast_filename})...")
+
         for i, (speaker, content) in enumerate(dialogue_parts):
             seg_path = os.path.join(temp_audio_dir, f"seg_{i:03d}.mp3")
             text_path = os.path.join(temp_audio_dir, f"text_{i:03d}.txt")
             voice = VOICE_MAP.get(speaker, "zh-TW-HsiaoChenNeural")
 
-            # 將台詞寫入暫存 txt（避免 shell 特殊字元問題）
             with open(text_path, "w", encoding="utf-8") as f:
                 f.write(content)
 
-            print(f"   [{i+1:02d}/{len(dialogue_parts)}] {speaker} ({voice[:20]}…)")
+            print(f"   [{i + 1:02d}/{len(dialogue_parts)}] {speaker} ({voice})")
             try:
                 subprocess.run(
-                    [edge_tts_path, '--file', text_path, '--voice', voice, '--write-media', seg_path],
-                    check=True, timeout=90
+                    [edge_tts_path, "--file", text_path, "--voice", voice, "--write-media", seg_path],
+                    check=True,
+                    timeout=90
                 )
                 audio_segments.append(seg_path)
             except subprocess.TimeoutExpired:
-                print(f"   ⚠️ {speaker} 第{i+1}段配音超時，跳過。")
+                print(f"   ⚠️ {speaker} 第 {i + 1} 段配音超時，跳過。")
             except Exception as tts_err:
-                print(f"   ⚠️ {speaker} 第{i+1}段配音失敗: {tts_err}")
+                print(f"   ⚠️ {speaker} 第 {i + 1} 段配音失敗: {tts_err}")
 
-        # ── Step 4：ffmpeg concat 合併所有片段 ───────────────
         if audio_segments:
             concat_list = os.path.join(temp_audio_dir, "concat_list.txt")
             with open(concat_list, "w", encoding="utf-8") as f:
                 for seg in audio_segments:
                     safe = seg.replace("\\", "/")
                     f.write(f"file '{safe}'\n")
+
             try:
                 subprocess.run(
-                    ['ffmpeg', '-y', '-f', 'concat', '-safe', '0',
-                     '-i', concat_list, '-c', 'copy', podcast_path],
-                    check=True, timeout=120
+                    ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", concat_list, "-c", "copy", podcast_path],
+                    check=True,
+                    timeout=120
                 )
                 print(f"🔈 Podcast 雙人語音合併完畢！({len(audio_segments)} 段)")
             except Exception as merge_err:
                 print(f"⚠️ ffmpeg 合併失敗: {merge_err}")
+                podcast_filename = "podcast.mp3"
         else:
             print("⚠️ 所有音軌片段均生成失敗，跳過 podcast 產製。")
-            podcast_filename = "podcast.mp3"  # 回退為預設值，避免 HTML 出錯
+            podcast_filename = "podcast.mp3"
 
-        # ── Step 5：清理暫存目錄 ─────────────────────────────
         try:
             _shutil.rmtree(temp_audio_dir)
         except Exception:
             pass
 
-        # ── Step 6：清理超過 7 天的舊 podcast 檔 ─────────────
-        current_time = datetime.now()
+        current_time = datetime.now(ZoneInfo("Asia/Taipei"))
         for f_name in os.listdir(WORKSPACE_DIR):
             if f_name.startswith("podcast_") and f_name.endswith(".mp3"):
                 file_path = os.path.join(WORKSPACE_DIR, f_name)
-                file_mtime = datetime.fromtimestamp(os.path.getmtime(file_path))
+                file_mtime = datetime.fromtimestamp(os.path.getmtime(file_path), ZoneInfo("Asia/Taipei"))
                 if (current_time - file_mtime).days > 7:
                     try:
                         os.remove(file_path)
@@ -517,28 +864,26 @@ def update_dashboard(ai_response, news_list, today_str):
                         print(f"清理過期語音檔失敗: {ex}")
 
     except Exception as e:
-        print(f"⚠️ Podcast 語音生成失敗 (請確認是否安裝 edge-tts 與 ffmpeg): {e}")
-    
-    # 更新 CSV (維持基本數據結構)
+        print(f"⚠️ Podcast 語音生成失敗（請確認 edge-tts 與 ffmpeg）: {e}")
+
+    # 更新 CSV
     csv_content = "變數與項目,當前狀態,短期趨勢,主要驅動因素,全球經濟交互影響\n"
     for item in analysis_data:
-        drivers = str(item.get('drivers', '')).replace(',', '，')
-        impact = str(item.get('impact', '')).replace(',', '，')
-        var_name = item.get('variable_name', '')
-        status = item.get('status', '')
-        status_detail = item.get('status_detail', '')
-        trend_text = item.get('trend_text', '')
+        drivers = str(item.get("drivers", "")).replace(",", "，")
+        impact = str(item.get("impact", "")).replace(",", "，")
+        var_name = item.get("variable_name", "")
+        status = item.get("status", "")
+        status_detail = item.get("status_detail", "")
+        trend_text = item.get("trend_text", "")
         csv_content += f"{var_name},{status} {status_detail},{trend_text},{drivers},{impact}\n"
-    
+
     with open(CSV_PATH, "w", encoding="utf-8") as f:
         f.write(csv_content)
 
-    # 輔助函式：格式化發布日期，若超過 3 天則標注警示
     def format_publish_date(pubdate_str, today_str):
         try:
-            # 嘗試解析 YYYY-MM-DD 格式
             import re
-            match = re.search(r'(\d{4})[-/](\d{1,2})[-/](\d{1,2})', str(pubdate_str))
+            match = re.search(r"(\d{4})[-/](\d{1,2})[-/](\d{1,2})", str(pubdate_str))
             if match:
                 y, m, d = int(match.group(1)), int(match.group(2)), int(match.group(3))
                 pub_dt = datetime(y, m, d)
@@ -555,28 +900,27 @@ def update_dashboard(ai_response, news_list, today_str):
             pass
         return str(pubdate_str)
 
-    # 準備焦點事件 HTML
-    import html
+    # 焦點事件 HTML
     focus_html = ""
-    for idx, item in enumerate(focus_items):
-        cat = html.escape(item.get('category', '總經動態'))
-        title = html.escape(item.get('title', '無標題'))
-        source = html.escape(item.get('source', '網路新聞'))
-        pubdate = html.escape(format_publish_date(item.get('publish_date', today_str), today_str))
-        price_dir = html.escape(item.get('price_direction', '中性'))
-        rate_dir = html.escape(item.get('rate_direction', '中性'))
-        usd_dir = html.escape(item.get('usd_direction', '中性'))
-        short_sum = html.escape(item.get('short_summary', ''))
-        orig_sum = html.escape(item.get('original_summary', ''))
-        one_sent = html.escape(item.get('one_sentence_conclusion', ''))
-        news_sum = html.escape(item.get('news_summary', ''))
-        trans_path = html.escape(item.get('transmission_path', ''))
-        price_rsn = html.escape(item.get('price_reason', ''))
-        rate_rsn = html.escape(item.get('rate_reason', ''))
-        usd_rsn = html.escape(item.get('usd_reason', ''))
-        orig_focus = html.escape(item.get('original_focus', ''))
-        orig_link = item.get('original_link', '#')
-        
+    for item in focus_items:
+        cat = html.escape(str(item.get("category", "總經動態")))
+        title = html.escape(str(item.get("title", "無標題")))
+        source = html.escape(str(item.get("source", "網路新聞")))
+        pubdate = html.escape(format_publish_date(item.get("publish_date", today_str), today_str))
+        price_dir = html.escape(str(item.get("price_direction", "中性")))
+        rate_dir = html.escape(str(item.get("rate_direction", "中性")))
+        usd_dir = html.escape(str(item.get("usd_direction", "中性")))
+        short_sum = html.escape(str(item.get("short_summary", "")))
+        orig_sum = html.escape(str(item.get("original_summary", "")))
+        one_sent = html.escape(str(item.get("one_sentence_conclusion", "")))
+        news_sum = html.escape(str(item.get("news_summary", "")))
+        trans_path = html.escape(str(item.get("transmission_path", "")))
+        price_rsn = html.escape(str(item.get("price_reason", "")))
+        rate_rsn = html.escape(str(item.get("rate_reason", "")))
+        usd_rsn = html.escape(str(item.get("usd_reason", "")))
+        orig_focus = html.escape(str(item.get("original_focus", "")))
+        orig_link = html.escape(str(item.get("original_link", "#")))
+
         focus_html += f"""
         <div class="news-detail-card">
             <div class="nd-header">
@@ -604,17 +948,17 @@ def update_dashboard(ai_response, news_list, today_str):
                         <div class="nd-dir-box">
                             <div class="nd-dir-label">物價方向</div>
                             <div class="nd-dir-value">{price_dir}</div>
-                            <div style="margin-top:0.8rem; font-size:0.95rem; color:#475569; font-weight:normal; line-height:1.5;">{price_rsn}</div>
+                            <div class="nd-dir-reason">{price_rsn}</div>
                         </div>
                         <div class="nd-dir-box">
                             <div class="nd-dir-label">利率方向</div>
                             <div class="nd-dir-value">{rate_dir}</div>
-                            <div style="margin-top:0.8rem; font-size:0.95rem; color:#475569; font-weight:normal; line-height:1.5;">{rate_rsn}</div>
+                            <div class="nd-dir-reason">{rate_rsn}</div>
                         </div>
                         <div class="nd-dir-box">
                             <div class="nd-dir-label">美元指數方向</div>
                             <div class="nd-dir-value">{usd_dir}</div>
-                            <div style="margin-top:0.8rem; font-size:0.95rem; color:#475569; font-weight:normal; line-height:1.5;">{usd_rsn}</div>
+                            <div class="nd-dir-reason">{usd_rsn}</div>
                         </div>
                     </div>
                     <div class="nd-conclusion">
@@ -640,38 +984,42 @@ def update_dashboard(ai_response, news_list, today_str):
             </details>
         </div>"""
 
-    # 準備風險預警 HTML
+    # 風險預警 HTML
     risk_html = ""
     for item in outlook_risks:
+        title = html.escape(str(item.get("title", "未知風險")))
+        content = html.escape(str(item.get("content", "")))
         risk_html += f"""
         <div class="risk-item">
-            <span class="risk-title">⚠️ {item.get('title', '未知風險')}</span>
-            <p class="risk-content">{item.get('content', '')}</p>
+            <span class="risk-title">⚠️ {title}</span>
+            <p class="risk-content">{content}</p>
         </div>"""
 
-    # 準備新聞 HTML
+    # 新聞 HTML
     news_html = ""
     if isinstance(news_list, list) and news_list:
         for news in news_list:
+            link = html.escape(str(news.get("link", "#")))
+            title = html.escape(str(news.get("title", "新聞標題")))
             news_html += f"""
                 <li class="news-item">
-                    <a href="{news['link']}" target="_blank">📄 {news['title']}</a>
+                    <a href="{link}" target="_blank">📄 {title}</a>
                 </li>"""
     else:
         news_html = "<li class='news-item'><a href='#'>暫無新聞。</a></li>"
 
-    # 準備分析表格 HTML
+    # 分析表格 HTML
     tbody_html = ""
     for item in analysis_data:
-        trend_class = item.get('trend_class', '')
-        var_name = item.get('variable_name', '')
-        badge = item.get('badge_text', '')
-        status = item.get('status', '')
-        status_det = item.get('status_detail', '')
-        trend = item.get('trend_text', '')
-        trend_icon = item.get('trend_icon', '')
-        drivers = item.get('drivers', '')
-        
+        trend_class = html.escape(str(item.get("trend_class", "")))
+        var_name = html.escape(str(item.get("variable_name", "")))
+        badge = html.escape(str(item.get("badge_text", "")))
+        status = html.escape(str(item.get("status", "")))
+        status_det = html.escape(str(item.get("status_detail", "")))
+        trend = html.escape(str(item.get("trend_text", "")))
+        trend_icon = html.escape(str(item.get("trend_icon", "")))
+        drivers = html.escape(str(item.get("drivers", "")))
+
         tbody_html += f"""
                 <tr>
                     <td data-label="核心變數">
@@ -683,48 +1031,201 @@ def update_dashboard(ai_response, news_list, today_str):
                     <td data-label="驅動因素" class="desc-text">{drivers}</td>
                 </tr>"""
 
-    # 尋找最新的週報影片 (僅週四才帶入影片連結，與影片產製排程一致)
+    # Regime Bar HTML
+    regime_bar_html = ""
+    if market_regime:
+        anomaly_tags_html = "".join(
+            f'<span class="anomaly-tag">{html.escape(str(sig))}</span>'
+            for sig in anomaly_signals if sig
+        )
+        regime_bar_html = f"""
+        <div class="regime-bar" id="regime-bar">
+            <span class="regime-label">CURRENT MARKET REGIME</span>
+            <span class="regime-badge" id="regime-badge">{html.escape(str(market_regime))}</span>
+            <div class="anomaly-tags" id="anomaly-tags">{anomaly_tags_html}</div>
+        </div>"""
+
+    # Macro Causal Graph HTML
+    causal_graph_html = ""
+    if selected_graphs:
+        causal_graph_html += """
+        <section>
+            <h2 class="section-h2">🕸️ 今日啟動的總經傳導鏈</h2>
+            <div class="causal-graph-grid">
+        """
+
+        for graph in selected_graphs[:3]:
+            graph_id = html.escape(str(graph.get("graph_id", "")))
+            graph_label = html.escape(str(graph.get("graph_label", "總經傳導鏈")))
+            why_selected = html.escape(str(graph.get("why_selected", "")))
+            confidence = graph.get("confidence", "")
+            active_nodes = graph.get("active_nodes") or []
+            asset_impacts = graph.get("asset_impacts") or {}
+
+            try:
+                conf_value = float(confidence)
+                if conf_value <= 1:
+                    conf_pct = int(conf_value * 100)
+                else:
+                    conf_pct = int(conf_value)
+                conf_display = f"{conf_pct}%"
+            except Exception:
+                conf_display = html.escape(str(confidence))
+
+            nodes_html = ""
+            max_nodes = min(len(active_nodes), 5)
+            for idx, node in enumerate(active_nodes[:5]):
+                nodes_html += f"""
+                <div class="causal-node">
+                    <span class="causal-node-dot">{idx + 1}</span>
+                    <span class="causal-node-text">{html.escape(str(node))}</span>
+                </div>
+                """
+                if idx < max_nodes - 1:
+                    nodes_html += "<div class='causal-arrow'>→</div>"
+
+            impacts_html = ""
+            for asset, direction in list(asset_impacts.items())[:5]:
+                impacts_html += f"""
+                <div class="causal-impact">
+                    <span class="causal-impact-asset">{html.escape(str(asset))}</span>
+                    <span class="causal-impact-dir">{html.escape(str(direction))}</span>
+                </div>
+                """
+
+            causal_graph_html += f"""
+            <div class="causal-graph-card">
+                <div class="causal-graph-top">
+                    <span class="causal-graph-id">{graph_id}</span>
+                    <span class="causal-confidence">Confidence {conf_display}</span>
+                </div>
+                <h3>{graph_label}</h3>
+                <p class="causal-why">{why_selected}</p>
+                <div class="causal-chain">
+                    {nodes_html}
+                </div>
+                <div class="causal-impacts">
+                    {impacts_html}
+                </div>
+            </div>
+            """
+
+        causal_graph_html += """
+            </div>
+        </section>
+        """
+
+    # Skill System Note HTML
+    # 目的：讓使用者知道目前的 regime / visual scenes 不是隨機產生，
+    # 而是參考可複利 Macro Skills Library 進行判斷與填充。
+    skill_note_html = ""
+    if skill_used or skill_notes:
+        skill_note_html = f"""
+        <div class="skill-note" id="skill-note">
+            <div class="skill-note-kicker">SKILL-DRIVEN MACRO WORKFLOW</div>
+            <div class="skill-note-title">使用模板：{html.escape(str(skill_used or '未指定'))}</div>
+            <p>{html.escape(str(skill_notes or '今日市場敘事由 AI 根據新聞、市場數據與 Macro Skills Library 綜合判斷。'))}</p>
+            <div class="skill-note-source">
+                參考概念：Garry Tan / ABMedia《Meta-Meta-Prompting》— 將重複 AI 工作流抽象為可累積、可重用的 skill system。
+            </div>
+        </div>
+        """
+
+    # Visual Macro Scene HTML
+    visual_scene_html = ""
+    if visual_scenes:
+        visual_scene_html += """
+        <section>
+            <h2 class="section-h2">🧠 總經傳導圖解</h2>
+            <div class="visual-scene-grid">
+        """
+
+        for scene in visual_scenes[:3]:
+            scene_title = html.escape(str(scene.get("scene_title", "總經場景")))
+            scene_type = html.escape(str(scene.get("scene_type", "transmission_chain")))
+            main_message = html.escape(str(scene.get("main_message", "")))
+            nodes = scene.get("nodes") or []
+            asset_signals = scene.get("asset_signals") or []
+            risk_note = html.escape(str(scene.get("risk_note", "")))
+
+            nodes_html = ""
+            max_nodes = min(len(nodes), 5)
+            for idx, node in enumerate(nodes[:5]):
+                nodes_html += f"""
+                <div class="scene-node">
+                    <span class="scene-node-index">{idx + 1}</span>
+                    <span class="scene-node-text">{html.escape(str(node))}</span>
+                </div>
+                """
+                if idx < max_nodes - 1:
+                    nodes_html += "<div class='scene-arrow'>↓</div>"
+
+            assets_html = ""
+            for sig in asset_signals[:4]:
+                asset = html.escape(str(sig.get("asset", "")))
+                direction = html.escape(str(sig.get("direction", "")))
+                meaning = html.escape(str(sig.get("meaning", "")))
+                assets_html += f"""
+                <div class="scene-asset">
+                    <span class="scene-asset-name">{asset}</span>
+                    <span class="scene-asset-dir">{direction}</span>
+                    <span class="scene-asset-meaning">{meaning}</span>
+                </div>
+                """
+
+            visual_scene_html += f"""
+            <div class="visual-scene-card">
+                <div class="scene-type">{scene_type}</div>
+                <h3>{scene_title}</h3>
+                <p class="scene-main">{main_message}</p>
+
+                <div class="scene-chain">
+                    {nodes_html}
+                </div>
+
+                <div class="scene-assets">
+                    {assets_html}
+                </div>
+
+                <div class="scene-risk">
+                    ⚠ {risk_note}
+                </div>
+            </div>
+            """
+
+        visual_scene_html += """
+            </div>
+        </section>
+        """
+
+    # 尋找最新週報影片
     weekly_video_filename = ""
     try:
-        from datetime import timezone, timedelta
-        tw_tz = timezone(timedelta(hours=8))
-        now_tw = datetime.now(tw_tz)
-        # 週四 = weekday() 3
+        now_tw = datetime.now(ZoneInfo("Asia/Taipei"))
         is_thursday = (now_tw.weekday() == 3)
-        
+
         if is_thursday:
-            video_files = [f for f in os.listdir(WORKSPACE_DIR) if f.startswith("weekly_video_") and f.endswith(".mp4")]
+            video_files = [
+                f for f in os.listdir(WORKSPACE_DIR)
+                if f.startswith("weekly_video_") and f.endswith(".mp4")
+            ]
             if video_files:
                 video_files.sort(reverse=True)
                 weekly_video_filename = video_files[0]
                 print(f"📹 今天是週四，載入本週影片: {weekly_video_filename}")
         else:
             print(f"📅 今天是星期 {now_tw.weekday() + 1}（非週四），不載入影片連結。")
-    except Exception as e:
+    except Exception:
         pass
 
-    # === 歷史資料存檔 (保留過去 7 天) ===
+    # 歷史資料存檔
     historical_data = []
     if os.path.exists(HISTORY_FILE):
         try:
             with open(HISTORY_FILE, "r", encoding="utf-8") as f:
                 historical_data = json.load(f)
-        except:
+        except Exception:
             pass
-            
-    # ── 產生 Regime Bar HTML ──
-    regime_bar_html = ""
-    if market_regime:
-        anomaly_tags_html = "".join(
-            f'<span class="anomaly-tag">{sig}</span>'
-            for sig in anomaly_signals if sig
-        )
-        regime_bar_html = f"""
-        <div class="regime-bar" id="regime-bar">
-            <span class="regime-label">CURRENT MARKET REGIME</span>
-            <span class="regime-badge" id="regime-badge">{market_regime}</span>
-            <div class="anomaly-tags" id="anomaly-tags">{anomaly_tags_html}</div>
-        </div>"""
 
     today_pack = {
         "date": today_str,
@@ -738,23 +1239,30 @@ def update_dashboard(ai_response, news_list, today_str):
         "podcast_file": podcast_filename,
         "weekly_video": weekly_video_filename,
         "market_regime": market_regime,
+        "skill_used": skill_used,
+        "skill_notes": skill_notes,
+        "skill_note_html": skill_note_html,
+        "selected_graphs": selected_graphs,
+        "causal_graph_html": causal_graph_html,
         "anomaly_signals": anomaly_signals,
-        "regime_bar_html": regime_bar_html
+        "regime_bar_html": regime_bar_html,
+        "visual_scene_html": visual_scene_html,
+        "visual_scenes": visual_scenes
     }
-    
-    # 若當日(取日期前綴)已存在則更新，否則新增於最前面
-    existing_idx = next((i for i, v in enumerate(historical_data) if v["date"].split()[0] == today_str.split()[0]), None)
+
+    existing_idx = next(
+        (i for i, v in enumerate(historical_data) if v.get("date", "").split()[0] == today_str.split()[0]),
+        None
+    )
+
     if existing_idx is not None:
         historical_data[existing_idx] = today_pack
     else:
         historical_data.insert(0, today_pack)
-        
-    # 強制依日期由新到舊排序 (防呆機制，確保最新的一定在最前面)
+
     historical_data.sort(key=lambda x: x.get("date", ""), reverse=True)
-    
-    # 保留前 7 筆 (最舊的第 8 筆會被自動淘汰)
     historical_data = historical_data[:7]
-    
+
     with open(HISTORY_FILE, "w", encoding="utf-8") as f:
         json.dump(historical_data, f, ensure_ascii=False, indent=2)
 
@@ -764,7 +1272,7 @@ def update_dashboard(ai_response, news_list, today_str):
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>【全球總經報導】宏觀趨勢與資產配置分析</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;800&display=swap" rel="stylesheet">
     <style>
         :root {{
             --bg-color: #f4f7f9;
@@ -777,11 +1285,11 @@ def update_dashboard(ai_response, news_list, today_str):
             --down-color: #15803d;
             --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05);
         }}
-        
+
         * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-        
+
         body {{
-            font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Helvetica Neue", sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Helvetica Neue", "Noto Sans TC", sans-serif;
             background-color: var(--bg-color);
             color: var(--text-primary);
             line-height: 1.8;
@@ -805,8 +1313,8 @@ def update_dashboard(ai_response, news_list, today_str):
         .report-header h1 {{ font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.5rem; }}
         .report-header .date {{ color: var(--text-secondary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.9rem; }}
 
-        .section-h2 {{ 
-            font-size: 1.5rem; font-weight: 700; margin: 3rem 0 1.5rem 0; 
+        .section-h2 {{
+            font-size: 1.5rem; font-weight: 700; margin: 3rem 0 1.5rem 0;
             display: flex; align-items: center; gap: 0.8rem;
             color: #0f172a;
         }}
@@ -839,7 +1347,326 @@ def update_dashboard(ai_response, news_list, today_str):
             font-size: 0.78rem; font-weight: 600; white-space: nowrap;
         }}
         .anomaly-tag::before {{ content: '⚠ '; }}
-        
+
+        /* ── Macro Causal Engine Lite ── */
+        .causal-graph-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.2rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .causal-graph-card {
+            background: #ffffff;
+            border: 1px solid #dbeafe;
+            border-radius: 16px;
+            padding: 1.35rem;
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.08);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .causal-graph-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(37,99,235,0.08), transparent 38%);
+            pointer-events: none;
+        }
+
+        .causal-graph-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 0.7rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .causal-graph-id {
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #2563eb;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            padding: 0.25rem 0.55rem;
+            border-radius: 999px;
+        }
+
+        .causal-confidence {
+            font-size: 0.76rem;
+            font-weight: 800;
+            color: #0f172a;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 0.25rem 0.55rem;
+            border-radius: 999px;
+            white-space: nowrap;
+        }
+
+        .causal-graph-card h3 {
+            font-size: 1.18rem;
+            color: #0f172a;
+            line-height: 1.4;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .causal-why {
+            font-size: 0.95rem;
+            color: #475569;
+            line-height: 1.7;
+            margin-bottom: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .causal-chain {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.45rem;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 0.9rem;
+            margin-bottom: 0.9rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .causal-node {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 999px;
+            padding: 0.35rem 0.65rem;
+        }
+
+        .causal-node-dot {
+            width: 22px;
+            height: 22px;
+            border-radius: 999px;
+            background: #2563eb;
+            color: #ffffff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72rem;
+            font-weight: 900;
+        }
+
+        .causal-node-text {
+            font-size: 0.86rem;
+            color: #1e293b;
+            font-weight: 650;
+        }
+
+        .causal-arrow {
+            color: #2563eb;
+            font-weight: 900;
+            opacity: 0.75;
+        }
+
+        .causal-impacts {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .causal-impact {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: #0f172a;
+            color: #e2e8f0;
+            border-radius: 999px;
+            padding: 0.32rem 0.7rem;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        .causal-impact-asset { color: #93c5fd; }
+        .causal-impact-dir { color: #f8fafc; }
+
+        /* ── Skill-driven Macro Workflow Note ── */
+        .skill-note {
+            margin: -0.6rem 0 2rem 0;
+            padding: 1rem 1.2rem;
+            border-radius: 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            color: #334155;
+        }
+
+        .skill-note-kicker {
+            font-size: 0.72rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            font-weight: 800;
+            color: #64748b;
+            margin-bottom: 0.35rem;
+        }
+
+        .skill-note-title {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 0.35rem;
+        }
+
+        .skill-note p {
+            font-size: 0.92rem;
+            line-height: 1.7;
+            color: #475569;
+        }
+
+        .skill-note-source {
+            margin-top: 0.55rem;
+            font-size: 0.78rem;
+            color: #94a3b8;
+            line-height: 1.6;
+        }
+
+        /* ── Visual Macro Scene Layer ── */
+        .visual-scene-grid {{
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.4rem;
+            margin-bottom: 3rem;
+        }}
+
+        .visual-scene-card {{
+            background:
+                radial-gradient(circle at top right, rgba(56,189,248,0.15), transparent 30%),
+                linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            border: 1px solid rgba(56,189,248,0.22);
+            border-radius: 16px;
+            padding: 1.6rem;
+            box-shadow: 0 12px 30px rgba(15,23,42,0.18);
+        }}
+
+        .scene-type {{
+            display: inline-block;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #38bdf8;
+            background: rgba(56,189,248,0.08);
+            border: 1px solid rgba(56,189,248,0.25);
+            padding: 0.25rem 0.65rem;
+            border-radius: 999px;
+            margin-bottom: 0.8rem;
+        }}
+
+        .visual-scene-card h3 {{
+            font-size: 1.25rem;
+            color: #f8fafc;
+            margin-bottom: 0.6rem;
+            line-height: 1.4;
+        }}
+
+        .scene-main {{
+            font-size: 0.98rem;
+            color: #cbd5e1;
+            margin-bottom: 1.2rem;
+        }}
+
+        .scene-chain {{
+            background: rgba(15,23,42,0.5);
+            border: 1px solid rgba(148,163,184,0.18);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }}
+
+        .scene-node {{
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            padding: 0.55rem 0.4rem;
+        }}
+
+        .scene-node-index {{
+            width: 26px;
+            height: 26px;
+            border-radius: 999px;
+            background: #38bdf8;
+            color: #0f172a;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 800;
+            flex-shrink: 0;
+        }}
+
+        .scene-node-text {{
+            font-size: 1rem;
+            font-weight: 650;
+            color: #f1f5f9;
+        }}
+
+        .scene-arrow {{
+            color: #38bdf8;
+            padding-left: 0.9rem;
+            font-size: 1rem;
+            opacity: 0.75;
+        }}
+
+        .scene-assets {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.7rem;
+            margin-bottom: 1rem;
+        }}
+
+        .scene-asset {{
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(148,163,184,0.18);
+            border-radius: 10px;
+            padding: 0.75rem;
+        }}
+
+        .scene-asset-name {{
+            display: block;
+            font-size: 0.78rem;
+            color: #94a3b8;
+            font-weight: 700;
+        }}
+
+        .scene-asset-dir {{
+            display: inline-block;
+            font-size: 1.25rem;
+            color: #67e8f9;
+            font-weight: 900;
+            margin-right: 0.35rem;
+        }}
+
+        .scene-asset-meaning {{
+            font-size: 0.82rem;
+            color: #cbd5e1;
+        }}
+
+        .scene-risk {{
+            background: rgba(239,68,68,0.08);
+            border: 1px solid rgba(239,68,68,0.2);
+            color: #fecaca;
+            border-radius: 10px;
+            padding: 0.75rem 0.9rem;
+            font-size: 0.9rem;
+        }}
+
         .trend-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 3rem; }}
         .trend-card {{ background: #fff; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; box-shadow: var(--shadow-md); min-height: 550px; display: flex; flex-direction: column; }}
         .trend-card h4 {{ font-size: 1.05rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.8rem; text-align: center; }}
@@ -865,6 +1692,7 @@ def update_dashboard(ai_response, news_list, today_str):
         .nd-dir-box {{ border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; text-align: left; }}
         .nd-dir-label {{ font-size: 0.85rem; color: #64748b; margin-bottom: 0.5rem; }}
         .nd-dir-value {{ font-size: 1.5rem; font-weight: 700; color: #64748b; }}
+        .nd-dir-reason {{ margin-top:0.8rem; font-size:0.95rem; color:#475569; font-weight:normal; line-height:1.5; }}
         .nd-conclusion {{ background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 1.2rem; margin-bottom: 1.5rem; }}
         .nd-box-title {{ font-size: 0.9rem; font-weight: 700; color: #0284c7; margin-bottom: 0.5rem; }}
         .nd-conclusion p {{ font-size: 1.05rem; color: #0f172a; font-weight: 500; }}
@@ -874,7 +1702,7 @@ def update_dashboard(ai_response, news_list, today_str):
         .nd-btn {{ display: inline-block; background: #0284c7; color: #fff; text-decoration: none; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.9rem; font-weight: 600; align-self: flex-start; margin-top: 1rem; }}
         .nd-btn:hover {{ background: #0369a1; }}
 
-        .deep-dive-box {{ 
+        .deep-dive-box {{
             background: #fffcf0; border: 1px solid #fef3c7; padding: 2rem; border-radius: 12px; margin-bottom: 3rem;
             line-height: 1.9; font-size: 1.1rem; color: #92400e;
         }}
@@ -895,8 +1723,7 @@ def update_dashboard(ai_response, news_list, today_str):
         .trend-down {{ color: var(--down-color); font-weight: 600; }}
         .status {{ font-weight: 600; color: var(--text-primary); }}
         .status-detail {{ display: block; font-size: 0.9rem; font-weight: 400; color: #475569; margin-top: 0.4rem; line-height: 1.5; }}
-        
-        /* 專業分析收合方塊樣式 */
+
         .analysis-container {{
             margin: 20px 0;
             border: 1px solid #e0e0e0;
@@ -912,7 +1739,7 @@ def update_dashboard(ai_response, news_list, today_str):
             cursor: pointer;
             font-weight: 700;
             font-size: 1.1rem;
-            list-style: none; /* 隱藏原生箭頭 */
+            list-style: none;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -925,7 +1752,6 @@ def update_dashboard(ai_response, news_list, today_str):
             background: #ffffff;
         }}
 
-        /* 自定義小箭頭 */
         .analysis-container summary::after {{
             content: "▼";
             font-size: 0.8rem;
@@ -949,9 +1775,9 @@ def update_dashboard(ai_response, news_list, today_str):
         .analysis-content strong {{ color: var(--accent-color); }}
 
         .visual-tools {{ display: grid; grid-template-columns: 1fr; gap: 2rem; margin-top: 2rem; }}
-        .widget-box {{ 
-            background: #fff; border: 1px solid var(--border-color); border-radius: 8px; 
-            padding: 1rem; box-shadow: var(--shadow-md); 
+        .widget-box {{
+            background: #fff; border: 1px solid var(--border-color); border-radius: 8px;
+            padding: 1rem; box-shadow: var(--shadow-md);
         }}
         .widget-title {{ font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: var(--text-secondary); }}
 
@@ -974,9 +1800,13 @@ def update_dashboard(ai_response, news_list, today_str):
         .podcast-audio-element {{ height: 40px; outline: none; margin-left: 0.5rem; max-width: 100%; }}
 
         @media (max-width: 768px) {{
+            body {{ padding: 2rem 0.75rem; }}
+            .newsletter-wrapper {{ padding: 2rem 1.5rem; }}
+            .report-header h1 {{ font-size: 1.9rem; }}
+            .regime-bar {{ align-items: flex-start; }}
+            .anomaly-tags {{ margin-left: 0; width: 100%; }}
             .nd-directions {{ grid-template-columns: 1fr; }}
             .nd-grid {{ grid-template-columns: 1fr; }}
-            .newsletter-wrapper {{ padding: 2rem 1.5rem; }}
             .risk-grid {{ grid-template-columns: 1fr; }}
             table, thead, tbody, th, td, tr {{ display: block; }}
             thead {{ display: none; }}
@@ -986,26 +1816,23 @@ def update_dashboard(ai_response, news_list, today_str):
             .podcast-container {{ border-radius: 30px; padding: 0.8rem 1rem; gap: 0.5rem; }}
             .podcast-audio-element {{ margin-left: 0; width: 100%; }}
         }}
-
     </style>
 </head>
 <body>
     <div class="newsletter-wrapper">
         <header class="report-header">
             <span class="date">GLOBAL MACRO WEEKLY INSIGHTS</span>
-            <h1>全球總經報導 <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 400;">[PRO-ENGINE V3.0]</span></h1>
+            <h1>全球總經報導 <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 400;">[PRO-ENGINE V3.7]</span></h1>
             <p style="color: #94a3b8;">由 AI 驅動的自動化全域分析 (Rolling 48-Hour Window)</p>
             <p style="font-size: 1rem; color: #ef4444; font-weight: 800; margin-top: 0.5rem; text-decoration: underline;" class="date-display">🕒 最後更新時間：{today_str}</p>
-            
-            <!-- 日期選單與狀態列 -->
-            <div style="margin-top: 1rem; display: flex; align-items: center; justify-content: center; gap: 10px;">
+
+            <div style="margin-top: 1rem; display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;">
                 <label for="history-selector" style="font-weight: 600; color: #475569;">📅 歷史回顧：</label>
                 <select id="history-selector" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #cbd5e1; outline: none; font-family: inherit; font-size: 0.95rem; background: #fffcf0;">
                     <option value="0">{today_str} (最新)</option>
                 </select>
             </div>
-            
-            <!-- Podcast 播放器 -->
+
             <div class="podcast-container">
                 <span class="podcast-icon">🎙️</span>
                 <div class="podcast-text">
@@ -1017,12 +1844,11 @@ def update_dashboard(ai_response, news_list, today_str):
                     您的瀏覽器不支援音訊元素。
                 </audio>
             </div>
-            
-            <!-- 每週回顧影片 (若存在) -->
+
             <div id="weekly-video-container" style="margin-top: 1.5rem; display: {'block' if weekly_video_filename else 'none'};">
                 <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 1.5rem; border-radius: 16px; border: 1px solid rgba(56,189,248,0.3); box-shadow: 0 0 30px rgba(56,189,248,0.08), 0 10px 40px rgba(0,0,0,0.4); text-align: center;">
                     <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 1rem;">
-                        <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#ef4444; box-shadow:0 0 8px #ef4444; animation: pulse 1.5s infinite;"></span>
+                        <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#ef4444; box-shadow:0 0 8px #ef4444;"></span>
                         <h3 style="font-size: 1rem; color: #38bdf8; margin: 0; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">本週總經戰情回顧</h3>
                     </div>
                     <video id="weekly-video-player" controls playsinline
@@ -1034,11 +1860,36 @@ def update_dashboard(ai_response, news_list, today_str):
                 </div>
             </div>
 
-
-            <div style="margin-top: 1.5rem;" class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>{{"symbols": [ {{"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}}, {{"proName": "FOREXCOM:NSXUSD", "title": "Nasdaq 100"}}, {{"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}}, {{"proName": "FX:USDJPY", "title": "USD/JPY"}}, {{"proName": "FX_IDC:USDTWD", "title": "USD/TWD"}}, {{"proName": "NYSE:CLF", "title": "Cleveland-Cliffs"}}, {{"proName": "OTC:NPSCY", "title": "Nippon Steel"}}, {{"proName": "NYSE:NUE", "title": "Nucor"}}, {{"proName": "FRED:DGS10", "title": "US10Y"}} ], "showSymbolLogo": true, "colorTheme": "light", "isTransparent": true, "displayMode": "adaptive", "locale": "zh_TW"}}</script></div>
+            <div style="margin-top: 1.5rem;" class="tradingview-widget-container">
+                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+                {{"symbols": [
+                    {{"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"}},
+                    {{"proName": "FOREXCOM:NSXUSD", "title": "Nasdaq 100"}},
+                    {{"proName": "FX_IDC:EURUSD", "title": "EUR/USD"}},
+                    {{"proName": "FX:USDJPY", "title": "USD/JPY"}},
+                    {{"proName": "FX_IDC:USDTWD", "title": "USD/TWD"}},
+                    {{"proName": "NYSE:CLF", "title": "Cleveland-Cliffs"}},
+                    {{"proName": "OTC:NPSCY", "title": "Nippon Steel"}},
+                    {{"proName": "NYSE:NUE", "title": "Nucor"}},
+                    {{"proName": "FRED:DGS10", "title": "US10Y"}}
+                ], "showSymbolLogo": true, "colorTheme": "light", "isTransparent": true, "displayMode": "adaptive", "locale": "zh_TW"}}
+                </script>
+            </div>
         </header>
 
         {regime_bar_html}
+
+        <div id="skill-note-wrap">
+            {skill_note_html}
+        </div>
+
+        <div id="causal-graph-wrap">
+            {causal_graph_html}
+        </div>
+
+        <div id="visual-scene-wrap">
+            {visual_scene_html}
+        </div>
 
         <section>
             <h2 class="section-h2">🎯 新聞剖析</h2>
@@ -1060,41 +1911,38 @@ def update_dashboard(ai_response, news_list, today_str):
             <div class="trend-grid">
                 <div class="trend-card">
                     <h4>US 10Y Yield (十年期公債)</h4>
-                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["美國十年期公債", "FRED:DGS10"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["美國十年期公債", "FRED:DGS10"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
                 </div>
                 <div class="trend-card">
                     <h4>Dollar Index (美元指數)</h4>
-                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["美元指數", "CAPITALCOM:DXY"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["美元指數", "CAPITALCOM:DXY"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
                 </div>
                 <div class="trend-card">
                     <h4>Gold Spot (黃金)</h4>
-                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["TVC:GOLD|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["TVC:GOLD|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
                 </div>
                 <div class="trend-card">
                     <h4>WTI Crude (西德州原油)</h4>
-                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["原油期貨 (WTI)", "TVC:USOIL|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["原油期貨 (WTI)", "TVC:USOIL|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
                 </div>
                 <div class="trend-card">
                     <h4>Brent Crude (布蘭特原油)</h4>
-                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["布蘭特原油", "TVC:UKOIL|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["布蘭特原油", "TVC:UKOIL|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
                 </div>
-                <!-- 亞洲貨幣 -->
                 <div class="trend-card">
                     <h4>USD / JPY (美元/日圓)</h4>
-                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["FX:USDJPY|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["FX:USDJPY|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
                 </div>
                 <div class="trend-card">
                     <h4>USD / TWD (美元/台幣)</h4>
-                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["FX_IDC:USDTWD|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["FX_IDC:USDTWD|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
                 </div>
                 <div class="trend-card">
                     <h4>USD / KRW (美元/韓元)</h4>
-                    <div class="trend-widget-container" style="height: 500px; width: 100%;"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["FX_IDC:USDKRW|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
+                    <div class="trend-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>{{"symbols": [["FX_IDC:USDKRW|1M"]], "chartOnly": false, "width": "100%", "height": "100%", "locale": "zh_TW", "colorTheme": "light", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "hideMarketStatus": false, "hideSymbolLogo": false, "scalePosition": "right", "scaleMode": "Normal", "fontSize": "10", "noTimeScale": false, "valuesTracking": "1", "changeMode": "price-and-percent", "chartType": "area", "lineWidth": 2, "lineType": 0, "dateRanges": ["1m|30", "3m|60", "12m|1D", "60m|1W", "all|1M"], "isTransparent": true}}</script></div>
                 </div>
             </div>
         </section>
-
-
 
         <section style="display: none;">
             <h2 class="section-h2">⛓️ 利率與匯率傳導矩陣</h2>
@@ -1135,11 +1983,19 @@ def update_dashboard(ai_response, news_list, today_str):
             <div class="visual-tools">
                 <div class="widget-box">
                     <div class="widget-title">美股 S&P 500 板塊熱圖</div>
-                    <div class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js" async>{{ "exchanges": [], "dataSource": "S&P500", "grouping": "sector", "blockSize": "market_cap", "blockColor": "change", "locale": "zh_TW", "symbolUrl": "", "colorTheme": "light", "hasTopBar": false, "isTransparent": true, "hasSymbolTooltip": true, "width": "100%", "height": "450" }}</script></div>
+                    <div class="tradingview-widget-container">
+                        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js" async>
+                        {{ "exchanges": [], "dataSource": "S&P500", "grouping": "sector", "blockSize": "market_cap", "blockColor": "change", "locale": "zh_TW", "symbolUrl": "", "colorTheme": "light", "hasTopBar": false, "isTransparent": true, "hasSymbolTooltip": true, "width": "100%", "height": "450" }}
+                        </script>
+                    </div>
                 </div>
                 <div class="widget-box">
                     <div class="widget-title">主要貨幣對強弱熱力圖 (Forex Heat Map)</div>
-                    <div class="tradingview-widget-container"><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-forex-heat-map.js" async>{{"width": "100%","height": "400","currencies": ["EUR","USD","JPY","GBP","CHF","AUD","CAD","NZD","CNY"],"isTransparent": true,"colorTheme": "light","locale": "zh_TW"}}</script></div>
+                    <div class="tradingview-widget-container">
+                        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-forex-heat-map.js" async>
+                        {{"width": "100%","height": "400","currencies": ["EUR","USD","JPY","GBP","CHF","AUD","CAD","NZD","CNY"],"isTransparent": true,"colorTheme": "light","locale": "zh_TW"}}
+                        </script>
+                    </div>
                 </div>
             </div>
         </section>
@@ -1154,17 +2010,16 @@ def update_dashboard(ai_response, news_list, today_str):
             <p style="text-align: center; color: #cbd5e1; font-size: 0.8rem; margin-top: 2rem;">© 2026 Macro Strategy Lab. 最後更新：<span class="date-display">{today_str}</span></p>
         </footer>
     </div>
+
     <script>
-    // 歷史資料切換邏輯
     document.addEventListener('DOMContentLoaded', async () => {{
         try {{
-            // 加上時間戳防止快取
             const response = await fetch('historical_data.json?t=' + new Date().getTime());
             if (!response.ok) return;
+
             const data = await response.json();
             const selector = document.getElementById('history-selector');
-            
-            // 重新填寫選項
+
             selector.innerHTML = '';
             data.forEach((item, idx) => {{
                 const option = document.createElement('option');
@@ -1173,35 +2028,37 @@ def update_dashboard(ai_response, news_list, today_str):
                 selector.appendChild(option);
             }});
 
-            // 綁定選單事件
             selector.addEventListener('change', (e) => {{
                 const selectedItem = data[e.target.value];
                 if (!selectedItem) return;
-                
-                // 動態替換各區塊內容
-                document.getElementById('narrative-box').innerHTML = selectedItem.weekly_narrative;
-                document.getElementById('forecast-box').innerHTML = selectedItem.next_week_forecast_html || '';
-                document.getElementById('focus-grid').innerHTML = selectedItem.focus_html;
-                document.getElementById('linkage-box').innerHTML = selectedItem.fx_rates_linkage;
-                document.getElementById('tbody-html').innerHTML = selectedItem.tbody_html;
-                document.getElementById('risk-grid').innerHTML = selectedItem.risk_html;
-                document.getElementById('news-list').innerHTML = selectedItem.news_html;
 
-                // 動態更新 Regime Bar
+                document.getElementById('narrative-box').innerHTML = selectedItem.weekly_narrative || '';
+                document.getElementById('forecast-box').innerHTML = selectedItem.next_week_forecast_html || '';
+                document.getElementById('focus-grid').innerHTML = selectedItem.focus_html || '';
+                document.getElementById('linkage-box').innerHTML = selectedItem.fx_rates_linkage || '';
+                document.getElementById('tbody-html').innerHTML = selectedItem.tbody_html || '';
+                document.getElementById('risk-grid').innerHTML = selectedItem.risk_html || '';
+                document.getElementById('news-list').innerHTML = selectedItem.news_html || '';
+
+                const visualSceneWrap = document.getElementById('visual-scene-wrap');
+                if (visualSceneWrap) {{
+                    visualSceneWrap.innerHTML = selectedItem.visual_scene_html || '';
+                }}
+
                 const regimeBar = document.getElementById('regime-bar');
                 if (regimeBar) {{
                     const badge = document.getElementById('regime-badge');
                     const tags = document.getElementById('anomaly-tags');
+
                     if (badge) badge.textContent = selectedItem.market_regime || '';
                     if (tags) {{
                         tags.innerHTML = (selectedItem.anomaly_signals || []).map(
-                            s => `<span class="anomaly-tag">${{s}}</span>`
+                            s => `<span class="anomaly-tag">${{String(s).replace(/[&<>"']/g, function(m) {{ return ({{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}})[m]; }})}}</span>`
                         ).join('');
                     }}
                     regimeBar.style.display = selectedItem.market_regime ? 'flex' : 'none';
                 }}
-                
-                // 動態更新 Podcast 音訊來源
+
                 const audioPlayer = document.getElementById('podcast-audio');
                 const audioSource = audioPlayer.querySelector('source');
                 const newSrc = selectedItem.podcast_file || 'podcast.mp3';
@@ -1209,8 +2066,7 @@ def update_dashboard(ai_response, news_list, today_str):
                     audioSource.src = newSrc;
                     audioPlayer.load();
                 }}
-                
-                // 動態更新影片來源
+
                 const videoContainer = document.getElementById('weekly-video-container');
                 const videoPlayer = document.getElementById('weekly-video-player');
                 const videoSource = videoPlayer.querySelector('source');
@@ -1223,10 +2079,10 @@ def update_dashboard(ai_response, news_list, today_str):
                 }} else {{
                     videoContainer.style.display = 'none';
                 }}
-                
-                // 更新時間戳記
+
                 document.querySelectorAll('.date-display').forEach(el => el.textContent = selectedItem.date);
             }});
+
         }} catch (error) {{
             console.log('無法載入歷史資料:', error);
         }}
@@ -1235,49 +2091,47 @@ def update_dashboard(ai_response, news_list, today_str):
 </body>
 </html>"""
 
-    # 加入全台統一時區標記 (方便在原始碼檢查是否更新)
     html_template += f"\n<!-- Build Trace (TPE): {today_str} -->"
 
     with open(HTML_PATH, "w", encoding="utf-8") as f:
         f.write(html_template)
-    
+
     print(f"[OK] 更新成功！請打開 {HTML_PATH} 查看最新儀表板。")
 
 # ==============================================================================
-# 主程式執行區 (機器人自動呼叫進入點)
+# 主程式執行區
 # ==============================================================================
 if __name__ == "__main__":
     try:
         if not GEMINI_API_KEY or GEMINI_API_KEY == "YOUR_GEMINI_API_KEY_HERE":
             print("[ERROR] 嚴重安全性錯誤：找不到 GEMINI_API_KEY 環境變數。")
-            print("-> 如果您是在地端測試，請先用指令設定金鑰 (set GEMINI_API_KEY=YOUR_KEY)")
-            print("-> 如果您是在 GitHub 雲端執行，請確認您已經在專案的 Settings -> Secrets and variables 中加入了金鑰！")
+            print("-> 如果您是在地端測試，請先用指令設定金鑰：set GEMINI_API_KEY=YOUR_KEY")
+            print("-> 如果您是在 GitHub 雲端執行，請確認 Settings -> Secrets and variables 已加入金鑰。")
+            sys.exit(1)
+
+        today_str = datetime.now(
+            ZoneInfo("Asia/Taipei")
+        ).strftime("%Y-%m-%d %H:%M")
+
+        ensure_macro_skills_file()
+        ensure_macro_causal_graphs_file()
+
+        news_list = fetch_weekly_news()
+        realtime_data = fetch_realtime_data()
+        fred_data_str = fetch_fred_data()
+        combined_data = realtime_data + "\n" + fred_data_str
+
+        ai_response = analyze_with_gemini(news_list, today_str, combined_data)
+
+        if ai_response and isinstance(ai_response, dict) and "analysis" in ai_response:
+            update_dashboard(ai_response, news_list, today_str)
+            print(f"\n[OK] 雲端戰情室更新腳本執行完畢（更新時間: {today_str}）。")
         else:
-            # 取得今日日期字串 (調整為台灣時間 UTC+8)
-            today_str = (datetime.utcnow() + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M")
-            
-            # 呼叫正確的週報抓取函式
-            news_list = fetch_weekly_news()
-            realtime_data = fetch_realtime_data()
-            
-            # 加入 FRED 總經數據 (如果有設定金鑰的話)
-            fred_data_str = fetch_fred_data()
-            combined_data = realtime_data + "\n" + fred_data_str
-            
-            ai_response = analyze_with_gemini(news_list, today_str, combined_data)
-            
-            # 安全性檢查：確保 AI 回傳內容正確
-            if ai_response and isinstance(ai_response, dict) and 'analysis' in ai_response:
-                update_dashboard(ai_response, news_list, today_str)
-                print(f"\n[OK] 雲端戰情室更新腳本執行完畢 (更新時間: {today_str})。")
-            else:
-                print("\n[ERROR] AI 回傳內容格式不全，已中斷更新。")
-                import sys
-                sys.exit(1)
-            
+            print("\n[ERROR] AI 回傳內容格式不全，已中斷更新。")
+            sys.exit(1)
+
     except Exception as e:
         import traceback
         print(f"\n[CRASH] 程式發生未預期錯誤: {e}")
         traceback.print_exc()
-        import sys
         sys.exit(1)
