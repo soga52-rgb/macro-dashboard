@@ -106,9 +106,16 @@ jobs:
             fi
           done
 
+          # ✅ 確保所有變更都被加入
+          git add .
+          
           # ✅ 若沒有任何變更則不 commit；若有變更則以台灣時間寫入 commit message
-          git diff --quiet && git diff --staged --quiet || \
-          (git commit -m "Auto-update: Dashboard generated on $(TZ='Asia/Taipei' date +'%Y-%m-%d %H:%M')" && git push)
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Auto-update: Dashboard generated on $(TZ='Asia/Taipei' date +'%Y-%m-%d %H:%M')"
+            git push origin main
+          fi
 
       - name: 📦 上傳網頁產物 (Upload Artifact)
         uses: actions/upload-pages-artifact@v3
