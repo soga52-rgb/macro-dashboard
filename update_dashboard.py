@@ -652,24 +652,30 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
 }}
 """
 
+    # v3.8.1 Hotfix Strategies: Decouple Search Grounding from JSON mode
     strategies = [
-        ("v1beta", "gemini-3.1-pro-preview"),
-        ("v1beta", "gemini-2.5-pro")
+        {"model": "gemini-3.1-pro-preview", "version": "v1beta", "use_search": True, "force_json": False, "label": "3.1 Pro + Search Grounding"},
+        {"model": "gemini-2.5-pro", "version": "v1beta", "use_search": True, "force_json": False, "label": "2.5 Pro + Search Grounding"},
+        {"model": "gemini-3.1-pro-preview", "version": "v1beta", "use_search": False, "force_json": True, "label": "3.1 Pro + Pure JSON"},
+        {"model": "gemini-2.5-pro", "version": "v1beta", "use_search": False, "force_json": True, "label": "2.5 Pro + Pure JSON"}
     ]
 
     import time
-    for version, model in strategies:
-        max_retries = 6
+    for strat in strategies:
+        model = strat["model"]
+        version = strat["version"]
+        use_search = strat["use_search"]
+        force_json = strat["force_json"]
+        label = strat["label"]
+
+        max_retries = 3 if use_search else 5 # 搜尋模式重試次數略少
         for attempt in range(max_retries):
             try:
-                print(f"-> 嘗試連線方案: {version} / {model} (第 {attempt + 1} 次)...")
+                print(f"-> 嘗試連線方案: {label} (第 {attempt + 1} 次)...")
                 url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent?key={GEMINI_API_KEY}"
 
                 data = {
                     "contents": [{"parts": [{"text": prompt}]}],
-                    "generationConfig": {
-                        "responseMimeType": "application/json"
-                    },
                     "safetySettings": [
                         {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
                         {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
@@ -678,6 +684,14 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
                     ]
                 }
 
+                generation_config = {}
+                if force_json:
+                    generation_config["responseMimeType"] = "application/json"
+                data["generationConfig"] = generation_config
+
+                if use_search:
+                    data["tools"] = [{"googleSearch": {}}]
+
                 req = urllib.request.Request(
                     url,
                     data=json.dumps(data).encode("utf-8"),
@@ -685,48 +699,55 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
                 )
 
                 try:
-                    response = urllib.request.urlopen(req, timeout=180)
+                    # Timeout 提高到 240 秒
+                    response = urllib.request.urlopen(req, timeout=240)
                     result = json.loads(response.read().decode("utf-8"))
 
                     if "candidates" not in result or not result["candidates"]:
-                        prompt_feedback = result.get("promptFeedback", {})
-                        print(f"   [FAIL] {model} 未產生有效回應。Feedback: {prompt_feedback}")
+                        print(f"   [FAIL] {label} 未產生有效回應。")
                         break
 
                     text = result["candidates"][0]["content"]["parts"][0]["text"].strip()
 
+                    # 即使沒強制 JSON 模式，也嘗試抽取 JSON
                     start_idx = text.find("{")
                     end_idx = text.rfind("}")
                     if start_idx != -1 and end_idx != -1:
-                        text = text[start_idx:end_idx + 1]
-
-                    text = text.replace("\r", "")
-
-                    print(f"[SUCCESS] {model} 回應成功！")
-                    return json.loads(text, strict=False)
+                        json_str = text[start_idx:end_idx + 1]
+                        try:
+                            parsed_json = json.loads(json_str, strict=False)
+                            print(f"[SUCCESS] {label} 回應成功並成功解析 JSON！")
+                            return parsed_json
+                        except json.JSONDecodeError:
+                            print(f"   [FAIL] {label} 雖然回傳文字但 JSON 解析失敗。")
+                            if not force_json: # 如果是搜尋模式且解析失敗，可能需要重試或換方案
+                                break
+                    else:
+                        print(f"   [FAIL] {label} 回傳內容不包含 JSON 結構。")
+                        break
 
                 except urllib.error.HTTPError as e:
                     error_data = e.read().decode("utf-8")
+                    # 400 錯誤不重試，直接換下一個策略 (可能是參數衝突或模型限制)
+                    if e.code == 400:
+                        print(f"   [FAIL] {label} 發生 400 錯誤 (參數衝突或不支援)，跳過此方案。")
+                        break
+                    
                     if e.code in [429, 503] and attempt < max_retries - 1:
-                        wait_time = 90
-                        if "Please retry in" in error_data:
-                            try:
-                                import re
-                                match = re.search(r"Please retry in (\d+\.\d+)s", error_data)
-                                if match:
-                                    wait_time = int(float(match.group(1))) + 5
-                            except Exception:
-                                pass
-                        print(f"   [WAIT] 伺服器忙碌或配額限制，等待 {wait_time} 秒後重試...")
+                        wait_time = 60
+                        print(f"   [WAIT] 伺服器忙碌，等待 {wait_time} 秒後重試...")
                         time.sleep(wait_time)
                         continue
                     else:
-                        print(f"   [FAIL] {model} 錯誤 ({e.code}): {error_data}")
+                        print(f"   [FAIL] {label} 錯誤 ({e.code}): {error_data}")
                         break
 
             except Exception as e:
-                print(f"   [FAIL] {model} 發生其他錯誤: {e}")
+                print(f"   [FAIL] {label} 發生其他錯誤: {e}")
                 break
+
+    print("\n[CRITICAL ERROR] 所有連線方案均告失敗。")
+    return None
 
     print("\n[CRITICAL ERROR] 所有連線方案均告失敗。")
     return None
