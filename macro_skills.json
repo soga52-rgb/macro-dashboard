@@ -1,0 +1,75 @@
+{
+  "higher_for_longer": {
+    "label": "Higher for Longer",
+    "description": "通膨或就業韌性使市場延後降息預期，長端殖利率與美元通常偏強。",
+    "typical_triggers": [
+      "US10Y↑",
+      "DXY↑",
+      "Fed cut odds↓",
+      "Inflation sticky",
+      "Payrolls resilient"
+    ],
+    "default_transmission": [
+      "通膨/就業韌性",
+      "降息預期收斂",
+      "美債殖利率上升",
+      "美元獲得利差支撐",
+      "風險資產估值承壓"
+    ],
+    "visual_template": "rate_dollar_chain"
+  },
+  "stagflation_risk": {
+    "label": "Stagflation Risk",
+    "description": "供給衝擊或能源上漲推升通膨，同時成長動能轉弱。",
+    "typical_triggers": [
+      "Oil↑",
+      "Inflation↑",
+      "Growth↓",
+      "Real income pressure",
+      "Yield volatility↑"
+    ],
+    "default_transmission": [
+      "能源/供給衝擊",
+      "通膨預期升溫",
+      "實質購買力下滑",
+      "央行政策兩難",
+      "股債波動放大"
+    ],
+    "visual_template": "oil_inflation_yield_chain"
+  },
+  "risk_off_flight_to_safety": {
+    "label": "Risk-Off / Flight to Safety",
+    "description": "市場避險需求升溫，資金偏向美元、黃金與高流動性資產。",
+    "typical_triggers": [
+      "VIX↑",
+      "Gold↑",
+      "DXY↑",
+      "Equities↓",
+      "Geopolitical risk↑"
+    ],
+    "default_transmission": [
+      "風險事件升溫",
+      "避險需求增加",
+      "美元/黃金獲支撐",
+      "股票與高風險資產承壓"
+    ],
+    "visual_template": "risk_off_flow"
+  },
+  "dollar_squeeze": {
+    "label": "Dollar Squeeze",
+    "description": "美元流動性偏緊或美國利差優勢擴大，壓迫非美貨幣與新興市場資產。",
+    "typical_triggers": [
+      "DXY↑",
+      "US yield↑",
+      "Asia FX↓",
+      "EM stress↑"
+    ],
+    "default_transmission": [
+      "美國利差擴大",
+      "美元需求升溫",
+      "亞洲貨幣承壓",
+      "外幣負債與進口成本壓力上升"
+    ],
+    "visual_template": "dxy_asia_fx_pressure"
+  }
+}

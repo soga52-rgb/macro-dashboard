@@ -1,0 +1,130 @@
+{
+  "fed_policy_transmission": {
+    "label": "Fed Policy Transmission Graph",
+    "category": "rates_driven_regime",
+    "core_logic": "央行政策語氣會先影響利率預期，再透過金融條件影響風險資產。",
+    "trigger": "Fed Hawkish / Dovish Tone",
+    "default_nodes": [
+      "Fed policy tone changes",
+      "Rate expectations reprice",
+      "Financial conditions adjust",
+      "Risk assets respond"
+    ],
+    "asset_impacts": {
+      "US10Y": "hawkish_up / dovish_down",
+      "DXY": "hawkish_up / dovish_down",
+      "Equity": "hawkish_down / dovish_up",
+      "Gold": "hawkish_down_or_mixed"
+    },
+    "visual_template": "fed_rates_financial_conditions",
+    "best_used_when": [
+      "Fed 官員發言明顯改變市場預期",
+      "利率期貨或市場降息定價改變",
+      "美債殖利率與美元同步反應"
+    ]
+  },
+  "real_yield_transmission": {
+    "label": "Real Yield Transmission Graph",
+    "category": "rates_driven_regime",
+    "core_logic": "名目利率與通膨預期共同決定實質利率，進而影響美元、黃金與股票估值。",
+    "trigger": "Nominal Yield ↑ with inflation expectations stable or lower",
+    "default_nodes": [
+      "Nominal yield rises",
+      "Real yield rises",
+      "USD strengthens",
+      "Gold faces opportunity cost pressure",
+      "Equity valuation compresses"
+    ],
+    "asset_impacts": {
+      "US10Y": "up",
+      "Real Yield": "up",
+      "DXY": "up",
+      "Gold": "down_or_mixed",
+      "Tech": "down"
+    },
+    "visual_template": "real_yield_usd_gold_equity",
+    "best_used_when": [
+      "美債殖利率上升但黃金或股市反應不一致",
+      "市場討論實質利率與估值折現",
+      "美元與利率同步偏強"
+    ]
+  },
+  "usd_anchor_graph": {
+    "label": "USD Anchor Graph",
+    "category": "cross_asset_linkage",
+    "core_logic": "美元是全球定價錨。DXY 上升通常壓迫非美貨幣、新興市場與美元計價商品。",
+    "trigger": "DXY ↑",
+    "default_nodes": [
+      "DXY strengthens",
+      "EM / Asia FX weakens",
+      "Dollar-priced commodities face pressure",
+      "Global liquidity tightens",
+      "US equities show mixed reaction"
+    ],
+    "asset_impacts": {
+      "DXY": "up",
+      "Asia FX": "down",
+      "Commodities": "down_or_mixed",
+      "Gold": "down_or_safe_haven_mixed",
+      "US Equity": "mixed"
+    },
+    "visual_template": "dxy_global_pricing_anchor",
+    "best_used_when": [
+      "美元指數成為市場主軸",
+      "台幣、日圓、韓元等亞洲貨幣同步承壓",
+      "商品與新興市場受到美元流動性壓力"
+    ]
+  },
+  "energy_inflation_chain": {
+    "label": "Energy → Inflation Chain",
+    "category": "inflation_regime",
+    "core_logic": "能源價格透過 CPI 與通膨預期影響利率預期、美元與風險資產。",
+    "trigger": "Oil ↑",
+    "default_nodes": [
+      "Oil price rises",
+      "Headline CPI pressure increases",
+      "Rate expectations move higher",
+      "USD strengthens short-term",
+      "Equity valuation faces pressure"
+    ],
+    "asset_impacts": {
+      "Oil": "up",
+      "Inflation Expectations": "up",
+      "US10Y": "up",
+      "DXY": "up_short_term",
+      "Equity": "down"
+    },
+    "visual_template": "oil_cpi_yield_equity",
+    "best_used_when": [
+      "原油或能源價格是新聞主軸",
+      "市場重新擔心通膨復燃",
+      "利率與油價方向一致"
+    ]
+  },
+  "vix_risk_off_cascade": {
+    "label": "VIX Risk-Off Cascade",
+    "category": "risk_sentiment_regime",
+    "core_logic": "波動率上升通常引發風險資產去槓桿，並推動避險資產輪動。",
+    "trigger": "VIX ↑ / risk sentiment deteriorates",
+    "default_nodes": [
+      "Volatility rises",
+      "Equities sell off",
+      "Safe-haven demand increases",
+      "Gold and defensive FX strengthen",
+      "Liquidity preference rises"
+    ],
+    "asset_impacts": {
+      "VIX": "up",
+      "Equity": "down",
+      "Gold": "up",
+      "JPY": "up_safe_haven",
+      "USD": "up_or_mixed"
+    },
+    "visual_template": "vix_risk_off_safe_haven",
+    "best_used_when": [
+      "市場風險情緒急轉弱",
+      "VIX 或避險資產同步上升",
+      "股市下跌且黃金/美元/日圓獲支撐"
+    ]
+  }
+}
