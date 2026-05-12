@@ -1349,14 +1349,14 @@ def update_dashboard(ai_response, news_list, today_str):
         .anomaly-tag::before {{ content: '⚠ '; }}
 
         /* ── Macro Causal Engine Lite ── */
-        .causal-graph-grid {
+        .causal-graph-grid {{
             display: grid;
             grid-template-columns: 1fr;
             gap: 1.2rem;
             margin-bottom: 2.5rem;
-        }
+        }}
 
-        .causal-graph-card {
+        .causal-graph-card {{
             background: #ffffff;
             border: 1px solid #dbeafe;
             border-radius: 16px;
@@ -1364,17 +1364,17 @@ def update_dashboard(ai_response, news_list, today_str):
             box-shadow: 0 8px 24px rgba(37, 99, 235, 0.08);
             position: relative;
             overflow: hidden;
-        }
+        }}
 
-        .causal-graph-card::before {
+        .causal-graph-card::before {{
             content: "";
             position: absolute;
             inset: 0;
             background: linear-gradient(135deg, rgba(37,99,235,0.08), transparent 38%);
             pointer-events: none;
-        }
+        }}
 
-        .causal-graph-top {
+        .causal-graph-top {{
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -1382,9 +1382,9 @@ def update_dashboard(ai_response, news_list, today_str):
             margin-bottom: 0.7rem;
             position: relative;
             z-index: 1;
-        }
+        }}
 
-        .causal-graph-id {
+        .causal-graph-id {{
             font-size: 0.72rem;
             font-weight: 800;
             letter-spacing: 0.08em;
@@ -1394,9 +1394,9 @@ def update_dashboard(ai_response, news_list, today_str):
             border: 1px solid #bfdbfe;
             padding: 0.25rem 0.55rem;
             border-radius: 999px;
-        }
+        }}
 
-        .causal-confidence {
+        .causal-confidence {{
             font-size: 0.76rem;
             font-weight: 800;
             color: #0f172a;
@@ -1405,27 +1405,27 @@ def update_dashboard(ai_response, news_list, today_str):
             padding: 0.25rem 0.55rem;
             border-radius: 999px;
             white-space: nowrap;
-        }
+        }}
 
-        .causal-graph-card h3 {
+        .causal-graph-card h3 {{
             font-size: 1.18rem;
             color: #0f172a;
             line-height: 1.4;
             margin-bottom: 0.5rem;
             position: relative;
             z-index: 1;
-        }
+        }}
 
-        .causal-why {
+        .causal-why {{
             font-size: 0.95rem;
             color: #475569;
             line-height: 1.7;
             margin-bottom: 1rem;
             position: relative;
             z-index: 1;
-        }
+        }}
 
-        .causal-chain {
+        .causal-chain {{
             display: flex;
             flex-wrap: wrap;
             align-items: center;
@@ -1437,9 +1437,9 @@ def update_dashboard(ai_response, news_list, today_str):
             margin-bottom: 0.9rem;
             position: relative;
             z-index: 1;
-        }
+        }}
 
-        .causal-node {
+        .causal-node {{
             display: inline-flex;
             align-items: center;
             gap: 0.45rem;
@@ -1447,9 +1447,9 @@ def update_dashboard(ai_response, news_list, today_str):
             border: 1px solid #e2e8f0;
             border-radius: 999px;
             padding: 0.35rem 0.65rem;
-        }
+        }}
 
-        .causal-node-dot {
+        .causal-node-dot {{
             width: 22px;
             height: 22px;
             border-radius: 999px;
@@ -1460,29 +1460,29 @@ def update_dashboard(ai_response, news_list, today_str):
             justify-content: center;
             font-size: 0.72rem;
             font-weight: 900;
-        }
+        }}
 
-        .causal-node-text {
+        .causal-node-text {{
             font-size: 0.86rem;
             color: #1e293b;
             font-weight: 650;
-        }
+        }}
 
-        .causal-arrow {
+        .causal-arrow {{
             color: #2563eb;
             font-weight: 900;
             opacity: 0.75;
-        }
+        }}
 
-        .causal-impacts {
+        .causal-impacts {{
             display: flex;
             flex-wrap: wrap;
             gap: 0.5rem;
             position: relative;
             z-index: 1;
-        }
+        }}
 
-        .causal-impact {
+        .causal-impact {{
             display: inline-flex;
             align-items: center;
             gap: 0.35rem;
@@ -1492,49 +1492,50 @@ def update_dashboard(ai_response, news_list, today_str):
             padding: 0.32rem 0.7rem;
             font-size: 0.78rem;
             font-weight: 700;
-        }
+        }}
 
-        .causal-impact-asset { color: #93c5fd; }
-        .causal-impact-dir { color: #f8fafc; }
+        .causal-impact-asset {{ color: #93c5fd; }}
+        .causal-impact-dir {{ color: #f8fafc; }}
 
         /* ── Skill-driven Macro Workflow Note ── */
-        .skill-note {
+        .skill-note {{
             margin: -0.6rem 0 2rem 0;
             padding: 1rem 1.2rem;
             border-radius: 12px;
             background: #f8fafc;
             border: 1px solid #e2e8f0;
             color: #334155;
-        }
+        }}
 
-        .skill-note-kicker {
+        .skill-note-kicker {{
             font-size: 0.72rem;
             letter-spacing: 0.12em;
             text-transform: uppercase;
             font-weight: 800;
             color: #64748b;
             margin-bottom: 0.35rem;
-        }
+        }}
 
-        .skill-note-title {
+        .skill-note-title {{
             font-size: 1rem;
             font-weight: 800;
             color: #0f172a;
             margin-bottom: 0.35rem;
-        }
+        }}
 
-        .skill-note p {
+        .skill-note p {{
             font-size: 0.92rem;
             line-height: 1.7;
             color: #475569;
-        }
+        }}
 
-        .skill-note-source {
+        .skill-note-source {{
             margin-top: 0.55rem;
             font-size: 0.78rem;
             color: #94a3b8;
             line-height: 1.6;
-        }
+        }}
+
 
         /* ── Visual Macro Scene Layer ── */
         .visual-scene-grid {{
