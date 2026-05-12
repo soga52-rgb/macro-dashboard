@@ -614,7 +614,8 @@ with open(slides_txt_path, "w", encoding="utf-8") as f:
         duration = slide_timings[i][1] - slide_timings[i][0]
         f.write(f"duration {duration:.3f}\n")
     # 最後一幀需要補上
-    f.write(f"file '{slide_files[-1].replace('\\', '/')}'\n")
+    safe_last_sf = slide_files[-1].replace('\\', '/')
+    f.write(f"file '{safe_last_sf}'\n")
 
 ffmpeg_cmd = [
     'ffmpeg', '-y',
