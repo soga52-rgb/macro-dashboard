@@ -667,7 +667,6 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
 
                 data = {
                     "contents": [{"parts": [{"text": prompt}]}],
-                    "tools": [{"googleSearch": {}}],
                     "generationConfig": {
                         "responseMimeType": "application/json"
                     },
