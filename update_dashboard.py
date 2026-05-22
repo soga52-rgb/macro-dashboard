@@ -654,9 +654,9 @@ def analyze_with_gemini(news_data, today_str, realtime_data="尚無即時數據"
 
     # v3.8.1 Hotfix Strategies: Decouple Search Grounding from JSON mode
     strategies = [
-        {"model": "gemini-3.1-pro-preview", "version": "v1beta", "use_search": True, "force_json": False, "label": "3.1 Pro + Search Grounding"},
+        {"model": "gemini-3.1-flash-lite", "version": "v1beta", "use_search": True, "force_json": False, "label": "3.1 Pro + Search Grounding"},
         {"model": "gemini-2.5-pro", "version": "v1beta", "use_search": True, "force_json": False, "label": "2.5 Pro + Search Grounding"},
-        {"model": "gemini-3.1-pro-preview", "version": "v1beta", "use_search": False, "force_json": True, "label": "3.1 Pro + Pure JSON"},
+        {"model": "gemini-3.1-flash-lite", "version": "v1beta", "use_search": False, "force_json": True, "label": "3.1 Pro + Pure JSON"},
         {"model": "gemini-2.5-pro", "version": "v1beta", "use_search": False, "force_json": True, "label": "2.5 Pro + Pure JSON"}
     ]
 
